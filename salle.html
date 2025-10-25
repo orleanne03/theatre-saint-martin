@@ -79,143 +79,8 @@ display:flex;justify-content:center;align-items:center;z-index:9999;transition:o
 #loader.hidden{opacity:0;pointer-events:none}
 .loader-content{text-align:center;color:#0d47a1;font-weight:600;font-size:1.1rem}
 .spinner{width:40px;height:40px;border:4px solid #bbdefb;border-top:4px solid #1976d2;border-radius:50%;
-         /* === Style visuel des sièges === */
-.seat {
-  width: 36px;
-  height: 34px;
-  margin: 4px;
-  border-radius: 10px 10px 4px 4px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  position: relative;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.seat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 70%;
-  border-radius: 10px 10px 0 0;
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Effet au survol */
-.seat:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-}
-
-/* Couleurs selon état */
-.free {
-  background: linear-gradient(180deg, #9e9e9e, #616161);
-}
-.selected {
-  background: linear-gradient(180deg, #42a5f5, #1e88e5);
-}
-.reserved {
-  background: linear-gradient(180deg, #ef5350, #d32f2f);
-}
-.strapontin {
-  background: linear-gradient(180deg, #ffeb3b, #fbc02d);
-  color: #333;
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
 animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}.row-label{font-size:12px;margin-right:4px}h1{font-size:1.5rem}}
-  /* === Sièges façon fauteuil de théâtre === */
-.seat {
-  width: 38px;
-  height: 36px;
-  margin: 4px;
-  border-radius: 12px 12px 6px 6px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  position: relative;
-  background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Dossier du siège (partie supérieure plus claire) */
-.seat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 65%;
-  border-radius: 12px 12px 0 0;
-  background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 90%);
-}
-
-/* Pied doré sous le siège */
-.seat::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #c6a700, #ffd600, #c6a700);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-/* Effet de survol */
-.seat:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.35);
-}
-
-/* États de couleur */
-.free {
-  background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
-}
-.selected {
-  background: linear-gradient(180deg, #1976d2 0%, #0d47a1 100%);
-}
-.reserved {
-  background: linear-gradient(180deg, #9e9e9e 0%, #616161 100%);
-}
-.strapontin {
-  background: linear-gradient(180deg, #ffeb3b, #fbc02d);
-  color: #333;
-  cursor: not-allowed;
-  opacity: 0.8;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
-}
-
-/* Adaptation mobile */
-@media (max-width: 600px) {
-  .seat {
-    width: 30px;
-    height: 28px;
-    font-size: 9px;
-    border-radius: 8px 8px 4px 4px;
-  }
-  .seat::after {
-    width: 14px;
-    height: 3px;
-  }
-}
-
 </style>
 </head>
 
@@ -320,18 +185,9 @@ function makeSeat(id, label, extra){
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
-
-  // ✅ Tous les sièges, y compris strapontins, peuvent être sélectionnés
   d.onclick = () => toggle(id, d);
   return d;
 }
-
-
-  // 🎟️ Sinon, siège normal cliquable
-  d.onclick = () => toggle(id, d);
-  return d;
-}
-
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
@@ -449,10 +305,6 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
-
-
-
-
 
 
 
