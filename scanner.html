@@ -12,14 +12,14 @@
   body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
   h1{color:#0d47a1;margin:6px 0}
   #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-  .panel{max-width:480px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:center}
+  .panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:center}
   .ok{color:#2e7d32;font-weight:700;margin:0}
   .err{color:#d32f2f;font-weight:700;margin:0}
   button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
-  .btn{background:#1976d2}.btn:hover{background:#0d47a1}
   .danger{background:#d32f2f}.danger:hover{background:#b71c1c}
   .violet{background:#8e24aa}.violet:hover{background:#6a1b9a}
   #counter{font-weight:700;color:#0d47a1}
+  #details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
   @media(max-width:420px){#reader{width:260px}}
 </style>
 </head>
@@ -32,6 +32,7 @@
   <div class="panel">
     <p id="status">Prêt à scanner.</p>
     <p id="counter">Billets scannés : 0</p>
+    <div id="details" style="display:none;"></div>
 
     <div>
       <button id="resetScans" class="danger">♻️ Réinitialiser les scans</button>
@@ -41,12 +42,13 @@
 
 <script>
 let scanner;
-let scanning = false; // état du scanner
+let scanning = false;
 let lastScanText = "";
 let lastScanTime = 0;
 
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
+const detailsEl = document.getElementById("details");
 
 function updateCounter(){
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
@@ -85,15 +87,27 @@ async function stopScanner(){
   } catch(e){ console.error(e); }
 }
 
+function safeDecode(str){
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str);
+  } catch(e){}
+  return str;
+}
+
 async function onScanSuccess(text){
   const now = Date.now();
-  if (text === lastScanText && now - lastScanTime < 3000) return; // anti double instantané
+  if (text === lastScanText && now - lastScanTime < 3000) return;
   lastScanText = text; lastScanTime = now;
 
-  await stopScanner(); // on stoppe le scanner immédiatement
+  await stopScanner();
 
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   const already = scanned.includes(text);
+
+  // essaie de décoder et parser JSON
+  const decoded = safeDecode(text);
+  let data = null;
+  try { data = JSON.parse(decoded); } catch(e){ data = null; }
 
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
@@ -106,9 +120,24 @@ async function onScanSuccess(text){
     flash("lime");
   }
 
-  // ⏱️ Attendre 5 secondes avant de relancer le scanner
+  // affiche les infos si disponibles
+  if (data && typeof data === "object") {
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}
+    `;
+  } else {
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
+  }
+
+  // Pause de 5 secondes avant relance
   setTimeout(() => {
     statusEl.textContent = "Prêt à scanner le prochain billet...";
+    detailsEl.style.display = "none";
     startScanner();
   }, 5000);
 }
@@ -129,6 +158,7 @@ document.getElementById("resetScans").onclick = ()=>{
     localStorage.removeItem("scannedTickets");
     updateCounter();
     statusEl.textContent = "Liste effacée. Prêt à scanner.";
+    detailsEl.style.display = "none";
   }
 };
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
