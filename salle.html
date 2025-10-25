@@ -119,13 +119,26 @@ Object.assign(adminBadge.style, {
 });
 document.body.append(adminBadge);
 
-// === Génération du plan de salle ===
+// === Génération du plan de salle avec lettres de rangée ===
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
+
+  // Lettre de rangée (à gauche)
+  const label = document.createElement("div");
+  label.className = "row-label";
+  label.textContent = r;
+  row.append(label);
+
+  // Strapontin gauche
   row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
+
+  // Sièges numérotés
   seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
+
+  // Strapontin droit
   row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+
   hall.append(row);
 });
 
@@ -301,4 +314,5 @@ document.getElementById("scanTicket").onclick = () => {
 
 </body>
 </html>
+
 
