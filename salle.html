@@ -193,11 +193,11 @@ function makeSeat(id, label, extra){
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
-  render(); updateTable();
+  render();
+  updateTable();
   setTimeout(() => loader.classList.add("hidden"), 400);
 });
 
-/* === Fonctions principales === */
 function save(){ set(seatsRef, seats); }
 
 function render(){
@@ -207,10 +207,6 @@ function render(){
     if(seats[id]) el.classList.add("reserved");
   });
 }
-
-/* (le reste de ton script continue ici : sélection, modale, admin, export, etc.) */
-</script>
-
 
 /* === Sélection sièges === */
 function toggle(id,el){
@@ -247,7 +243,10 @@ document.getElementById("save").onclick=async()=>{
 
 /* === EmailJS + QR === */
 async function sendEmail(user){
-  const reservedSeats=Object.entries(seats).filter(([_,v])=>v.email===user.email).map(([id])=>id).join(", ");
+  const reservedSeats=Object.entries(seats)
+    .filter(([_,v])=>v.email===user.email)
+    .map(([id])=>id)
+    .join(", ");
   const qrData=JSON.stringify({nom:user.name,email:user.email,tel:user.phone,sieges:reservedSeats});
   const qrImage=await QRCode.toDataURL(qrData,{width:180});
   emailjs.send("service_91fpmi6","template_xzjnnc2",{
@@ -276,24 +275,37 @@ document.getElementById("export").onclick=()=>{
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="reservations.csv";a.click();
 };
 
-/* === Tableau === */
-function updateTable(){
-  const tbody=document.getElementById("resBody");tbody.innerHTML="";
-  const entries=Object.entries(seats);
-  if(!entries.length){tbody.innerHTML='<tr><td colspan="5">Aucune réservation.</td></tr>';return;}
-  entries.forEach(([id,data])=>{
-    const[r,s]=id.split("-");
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
-    tbody.append(tr);
+/* === Tableau des réservations === */
+function updateTable() {
+  const tbody = document.getElementById("resBody");
+  tbody.innerHTML = "";
+
+  const entries = Object.entries(seats || {});
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
+    return;
+  }
+
+  entries.forEach(([id, data]) => {
+    const [r, s] = id.split("-");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r}</td>
+      <td>${s}</td>
+      <td>${data.name}</td>
+      <td>${data.email}</td>
+      <td>${data.phone}</td>`;
+    tbody.appendChild(tr);
   });
 }
 
 /* === Bouton scanner === */
 document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.html";
 </script>
+
 </body>
 </html>
+
 
 
 
