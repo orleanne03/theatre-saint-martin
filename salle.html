@@ -5,233 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>🎭 Théâtre Saint Martin – Réservations</title>
 
-<!-- Librairies -->
+<!-- Librairies externes -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
-<style>
-body {
-  font-family: "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #e8f0fe 0%, #ffffff 100%);
-  margin: 0;
-  color: #212121;
-  text-align: center;
-}
-<!-- Écran de chargement -->
-<div id="loader">
-  <div class="loader-content">
-    <div class="spinner"></div>
-    <p>Chargement de la salle…</p>
-  </div>
-</div>
-
-/* --- entête --- */
-h1 {
-  color: #0d47a1;
-  margin: 25px 0 10px;
-  font-size: 1.9rem;
-  font-weight: 700;
-}
-.scene {
-  background: #212121;
-  color: #fff;
-  width: 80%;
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.3);
-  font-weight: bold;
-  letter-spacing: 2px;
-}
-
-/* --- légende --- */
-.legend {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-.legend span { width:18px; height:18px; border-radius:3px; display:inline-block; }
-.free{background:#e0e0e0}
-.selected{background:#64b5f6}
-.reserved{background:#ef5350}
-.strapontin{background:#ffd54f}
-
-/* --- plan --- */
-.hall-wrapper {
-  display: flex;
-  justify-content: center;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 10px;
-}
-#hall {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  width: max-content;
-  scroll-behavior: smooth;
-}
-.row {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:4px 0;
-}
-.row-label {
-  width: 24px;
-  font-weight: bold;
-  color: #0d47a1;
-  font-size: 14px;
-  margin-right:6px;
-  text-align:center;
-}
-.seat {
-  width: 32px;
-  height: 32px;
-  margin: 3px;
-  border-radius: 8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:11px;
-  cursor:pointer;
-  transition:transform .2s,box-shadow .3s;
-  box-shadow:0 1px 3px rgba(0,0,0,.2);
-}
-.seat:hover{transform:scale(1.1);box-shadow:0 2px 5px rgba(0,0,0,.3)}
-.free{background:#e0e0e0}
-.selected{background:#64b5f6;color:#fff}
-.reserved{background:#ef5350;color:#fff}
-.strapontin{background:#ffd54f}
-
-/* --- boutons --- */
-.buttons {
-  margin: 25px 0 10px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background .3s, transform .2s;
-}
-button:hover { transform: scale(1.05); }
-#confirm { background:#1976d2; }
-#confirm:hover { background:#0d47a1; }
-#admin { background:#d32f2f; }
-#reset { background:#757575; }
-#export { background:#009688; }
-#scanTicket { background:#8e24aa; }
-
-/* --- tableau --- */
-#reservations {
-  margin: 25px auto;
-  width: 90%;
-  max-width: 800px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.15);
-  padding: 15px;
-  text-align:left;
-}
-#reservations h3 { color:#0d47a1;margin-bottom:10px; }
-#reservations table { width:100%;border-collapse:collapse;font-size:14px; }
-#reservations th,#reservations td { border-bottom:1px solid #ddd;padding:6px; }
-#reservations th { background:#1976d2;color:#fff; }
-
-/* --- modale --- */
-.modal {
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,.5);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
-}
-.modal.hidden{display:none}
-.modal-content {
-  background:#fff;
-  padding:20px;
-  border-radius:10px;
-  width:300px;
-  max-width:90%;
-  box-shadow:0 4px 12px rgba(0,0,0,.3);
-  animation:popupFade .3s ease;
-}
-.modal-content input {
-  width:90%;
-  margin:6px auto;
-  padding:8px;
-  border:1px solid #ccc;
-  border-radius:5px;
-  display:block;
-}
-  /* === Écran de chargement === */
-#loader {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(180deg, #e3f2fd 0%, #fafafa 100%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-  transition: opacity 0.4s ease;
-}
-#loader.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-.loader-content {
-  text-align: center;
-  color: #0d47a1;
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #bbdefb;
-  border-top: 4px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes popupFade{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-
-@media(max-width:600px){
-  h1{font-size:1.5rem}
-  .seat{width:26px;height:26px;font-size:9px;margin:2px}
-  .row-label{width:18px;font-size:12px;margin-right:3px}
-  .buttons{gap:6px}
-  button{font-size:13px;padding:8px 10px}
-}
-</style>
-  <!-- Import Firebase SDK v11 -->
+<!-- ✅ Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-  // 🧩 Remplace par ta propre configuration Firebase
   const firebaseConfig = {
   apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
   authDomain: "theatre-saint-martin.firebaseapp.com",
@@ -241,20 +23,67 @@ button:hover { transform: scale(1.05); }
   appId: "1:416838692467:web:677e8dafe82831af5dc406"
 };
 
-  // Initialisation Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-
-  // Rendre dispo dans le reste du code
   window._firebaseDB = db;
   window._firebaseRef = ref;
   window._firebaseSet = set;
   window._firebaseOnValue = onValue;
-  window._firebaseGet = get;
 </script>
 
+<style>
+body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+margin:0;text-align:center;color:#212121}
+h1{color:#0d47a1;margin:20px 0;font-size:1.8rem;display:flex;justify-content:center;align-items:center;gap:8px}
+.scene{background:#212121;color:#fff;width:80%;max-width:800px;margin:10px auto 20px;padding:10px;border-radius:8px;
+box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600;letter-spacing:1px}
+.legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:14px}
+.legend div{display:flex;align-items:center;gap:5px}
+.legend span{width:18px;height:18px;border-radius:3px;display:inline-block}
+.free{background:#e0e0e0}.selected{background:#64b5f6}.reserved{background:#ef5350}.strapontin{background:#ffd54f}
+.hall-wrapper{display:flex;justify-content:center;align-items:flex-start;margin:0 auto;width:100%;max-width:900px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+#hall{display:flex;flex-direction:column;align-items:center;background:#fff;border-radius:10px;padding:15px;
+box-shadow:0 3px 10px rgba(0,0,0,.15);width:max-content;min-width:100%}
+.row{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;margin:4px 0}
+.row-label{font-weight:600;margin-right:8px;min-width:18px}
+.seat{width:32px;height:32px;margin:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+font-size:11px;cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.seat:hover{transform:scale(1.1)}
+.buttons{margin:20px 0;display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+button{padding:10px 16px;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:.3s}
+#confirm{background:#2e7d32}#confirm:hover{background:#1b5e20}
+#admin{background:#d32f2f}#admin:hover{background:#b71c1c}
+#reset{background:#455a64}#reset:hover{background:#263238}
+#export{background:#009688}#export:hover{background:#00695c}
+#scanTicket{background:#8e24aa}#scanTicket:hover{background:#6a1b9a}
+#reservations{margin:20px auto;width:90%;max-width:800px;background:#fff;border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
+#reservations h3{text-align:left;margin:10px;font-size:1.1rem;display:flex;align-items:center;gap:6px}
+#reservations table{width:100%;border-collapse:collapse;font-size:14px}
+#reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px;text-align:left}
+#reservations th{background:#1976d2;color:#fff}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:10}
+.modal.hidden{display:none}
+.modal-content{background:#fff;padding:20px;border-radius:10px;width:300px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.modal-content input{width:90%;margin:6px auto;padding:8px;border:1px solid #ccc;border-radius:5px;display:block}
+#loader{position:fixed;inset:0;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+display:flex;justify-content:center;align-items:center;z-index:9999;transition:opacity .4s ease}
+#loader.hidden{opacity:0;pointer-events:none}
+.loader-content{text-align:center;color:#0d47a1;font-weight:600;font-size:1.1rem}
+.spinner{width:40px;height:40px;border:4px solid #bbdefb;border-top:4px solid #1976d2;border-radius:50%;
+animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}.row-label{font-size:12px;margin-right:4px}h1{font-size:1.5rem}}
+</style>
 </head>
+
 <body>
+<!-- Écran de chargement -->
+<div id="loader">
+  <div class="loader-content">
+    <div class="spinner"></div>
+    <p>Chargement de la salle…</p>
+  </div>
+</div>
 
 <h1>🎭 Théâtre Saint Martin</h1>
 <div class="scene">SCÈNE</div>
@@ -266,18 +95,20 @@ button:hover { transform: scale(1.05); }
   <div><span class="strapontin"></span>Strapontin</div>
 </div>
 
-<div class="hall-wrapper"><div id="hall"></div></div>
+<div class="hall-wrapper">
+  <div class="aisle"></div>
+  <div id="hall"></div>
+  <div class="aisle"></div>
+</div>
 
-<!-- boutons -->
 <div class="buttons">
   <button id="confirm">✅ Confirmer</button>
   <button id="admin">🔐 Admin</button>
-  <button id="reset" class="admin-only">♻️ Réinitialiser</button>
+  <button id="reset">♻️ Réinitialiser</button>
   <button id="export">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
 </div>
 
-<!-- tableau -->
 <div id="reservations">
   <h3>📋 Liste des réservations</h3>
   <table>
@@ -286,78 +117,86 @@ button:hover { transform: scale(1.05); }
   </table>
 </div>
 
-<!-- modale -->
+<!-- Modale de réservation -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Informations de réservation</h3>
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
-    <div style="margin-top:10px">
-      <button id="save" style="background:#1976d2">Valider</button>
-      <button id="close" style="background:#757575">Annuler</button>
+    <div>
+      <button id="save">Valider</button>
+      <button id="close">Annuler</button>
     </div>
   </div>
 </div>
 
 <script>
-  const loader = document.getElementById("loader");
-
-/* === Initialisation EmailJS === */
+/* === EmailJS === */
 emailjs.init("2m3fNNkp36a2wCfZn");
 
-/* === Connexion Firebase (déjà importée dans le <head>) === */
+/* === Firebase global === */
 const db = window._firebaseDB;
-const { ref, set, onValue } = window;
-const seatsRef = ref(db, "seats");
+const ref = window._firebaseRef;
+const set = window._firebaseSet;
+const onValue = window._firebaseOnValue;
 
-let seats = {};
-let selected = [];
-let admin = false;
-
-/* === Références DOM === */
+/* === Variables === */
+let seats = {}, selected = [], admin = false;
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
+const loader = document.getElementById("loader");
 
-/* === Création du plan === */
+/* === Génération du plan === */
 const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
 const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
-
   const label = document.createElement("div");
   label.className = "row-label";
   label.textContent = r;
   row.append(label);
-
   row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
   seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
   row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
-
   hall.append(row);
 });
 
-/* === Création siège === */
-function makeSeat(id, label, extra) {
+function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
-  d.onclick = () => toggle(id, d);
+  d.onclick = ()=>toggle(id,d);
   return d;
 }
 
-/* === Sélection de sièges === */
-function toggle(id, el) {
-  if (seats[id]) {
-    alert("⚠️ Ce siège vient d’être réservé !");
-    return;
-  }
-  if (selected.includes(id)) {
-    selected = selected.filter(s => s !== id);
+/* === Firebase synchro === */
+const seatsRef = ref(db,"seats");
+onValue(seatsRef,snapshot=>{
+  seats = snapshot.val()||{};
+  render(); updateTable();
+  setTimeout(()=>loader.classList.add("hidden"),400);
+});
+
+function save(){ set(seatsRef,seats); }
+
+function render(){
+  document.querySelectorAll(".seat").forEach(el=>{
+    const id=el.dataset.id;
+    el.classList.remove("reserved","selected");
+    if(seats[id]) el.classList.add("reserved");
+  });
+}
+
+/* === Sélection sièges === */
+function toggle(id,el){
+  if(seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+  if(selected.includes(id)){
+    selected=selected.filter(s=>s!==id);
     el.classList.remove("selected");
   } else {
     selected.push(id);
@@ -365,157 +204,73 @@ function toggle(id, el) {
   }
 }
 
-/* === Synchronisation Firebase en temps réel === */
-onValue(seatsRef, snapshot => {
-  seats = snapshot.val() || {};
-  render();
-  updateTable();
-  loader.classList.add("hidden"); // ✅ cache le message une fois chargé
-});
-
-/* === Sauvegarde vers Firebase === */
-function save() {
-  set(seatsRef, seats);
-}
-
-/* === Rafraîchir visuellement === */
-function render() {
-  document.querySelectorAll(".seat").forEach(el => {
-    const id = el.dataset.id;
-    el.classList.remove("reserved", "selected");
-    if (seats[id]) el.classList.add("reserved");
-  });
-}
-
-/* === Ouverture / fermeture modale === */
-document.getElementById("confirm").onclick = () => {
-  if (!selected.length) return alert("Aucun siège sélectionné !");
+/* === Confirmation === */
+document.getElementById("confirm").onclick=()=>{
+  if(!selected.length) return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
 };
-document.getElementById("close").onclick = () =>
-  document.getElementById("modal").classList.add("hidden");
+document.getElementById("close").onclick=()=>document.getElementById("modal").classList.add("hidden");
 
-/* === Validation réservation === */
-document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  if (!name || !email || !phone)
-    return alert("Tous les champs sont requis.");
-
-  const user = { name, email, phone };
-
-  // Enregistre chaque siège réservé
-  selected.forEach(id => {
-    if (!seats[id]) seats[id] = user;
-  });
-
-  save(); // 🔥 sauvegarde dans Firebase
-  await sendEmail(user); // 💌 envoi du mail
-  selected = [];
+document.getElementById("save").onclick=async()=>{
+  const name=document.getElementById("name").value.trim();
+  const email=document.getElementById("email").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  if(!name||!email||!phone) return alert("Tous les champs sont requis.");
+  const user={name,email,phone};
+  selected.forEach(id=>{if(!seats[id]) seats[id]=user;});
+  save();
+  await sendEmail(user);
+  selected=[];
   document.getElementById("modal").classList.add("hidden");
   alert("✅ Réservation confirmée et email envoyé !");
 };
 
-/* === Envoi EmailJS + QR code === */
-async function sendEmail(user) {
-  const reservedSeats = Object.entries(seats)
-    .filter(([_, v]) => v.email === user.email)
-    .map(([id]) => id)
-    .join(", ");
-
-  const qrData = JSON.stringify({
-    nom: user.name,
-    email: user.email,
-    tel: user.phone,
-    sieges: reservedSeats
-  });
-
-  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
-
-  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
-    to_name: user.name,
-    to_email: user.email,
-    seats: reservedSeats,
-    phone: user.phone,
-    qr_image: qrImage
-  })
-  .then(() => console.log("✅ Email envoyé à", user.email))
-  .catch(err => console.error("❌ Erreur EmailJS :", err));
+/* === EmailJS + QR === */
+async function sendEmail(user){
+  const reservedSeats=Object.entries(seats).filter(([_,v])=>v.email===user.email).map(([id])=>id).join(", ");
+  const qrData=JSON.stringify({nom:user.name,email:user.email,tel:user.phone,sieges:reservedSeats});
+  const qrImage=await QRCode.toDataURL(qrData,{width:180});
+  emailjs.send("service_91fpmi6","template_xzjnnc2",{
+    to_name:user.name,to_email:user.email,seats:reservedSeats,phone:user.phone,qr_image:qrImage
+  }).then(()=>console.log("✅ Email envoyé")).catch(err=>console.error("❌ Erreur EmailJS :",err));
 }
 
-/* === Mode Admin === */
-adminBtn.textContent = "Activer le mode admin";
-resetBtn.style.display = "none";
-
-adminBtn.onclick = () => {
-  if (!admin) {
-    const p = prompt("Mot de passe admin :");
-    if (p === "admin123") {
-      admin = true;
-      alert("Mode administrateur activé.");
-      adminBtn.textContent = "Désactiver le mode admin";
-      adminBtn.style.background = "#1976d2";
-      resetBtn.style.display = "inline-block";
-    } else {
-      alert("Mot de passe incorrect.");
-    }
-  } else {
-    admin = false;
-    alert("Mode administrateur désactivé.");
-    adminBtn.textContent = "Activer le mode admin";
-    adminBtn.style.background = "#d32f2f";
-    resetBtn.style.display = "none";
-  }
+/* === Admin === */
+adminBtn.onclick=()=>{
+  if(!admin){
+    const p=prompt("Mot de passe admin :");
+    if(p==="admin123"){admin=true;alert("Mode admin activé");resetBtn.style.display="inline-block";}
+    else alert("Mot de passe incorrect.");
+  } else {admin=false;alert("Mode admin désactivé");resetBtn.style.display="none";}
 };
-
-/* === Réinitialisation complète === */
-resetBtn.onclick = () => {
-  if (!admin) return alert("Vous devez être en mode administrateur.");
-  if (confirm("Voulez-vous vraiment effacer toutes les réservations ?")) {
-    seats = {};
-    save();
-    alert("✅ Toutes les réservations ont été effacées.");
-  }
+resetBtn.onclick=()=>{
+  if(!admin)return alert("Activez le mode admin.");
+  if(confirm("Effacer toutes les réservations ?")){seats={};save();alert("✅ Réinitialisation complète.");}
 };
 
 /* === Export CSV === */
-document.getElementById("export").onclick = () => {
-  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
-  for (const [k, v] of Object.entries(seats)) {
-    const [r, s] = k.split("-");
-    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
-  }
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "reservations.csv";
-  a.click();
+document.getElementById("export").onclick=()=>{
+  let csv="Rangée;Siège;Nom;Email;Téléphone\n";
+  for(const[k,v]of Object.entries(seats)){const[r,s]=k.split("-");csv+=`${r};${s};${v.name};${v.email};${v.phone}\n`;}
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="reservations.csv";a.click();
 };
 
-/* === Mise à jour du tableau === */
-function updateTable() {
-  const tbody = document.getElementById("resBody");
-  tbody.innerHTML = "";
-  const entries = Object.entries(seats);
-  if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
-    return;
-  }
-  entries.forEach(([id, data]) => {
-    const [r, s] = id.split("-");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
+/* === Tableau === */
+function updateTable(){
+  const tbody=document.getElementById("resBody");tbody.innerHTML="";
+  const entries=Object.entries(seats);
+  if(!entries.length){tbody.innerHTML='<tr><td colspan="5">Aucune réservation.</td></tr>';return;}
+  entries.forEach(([id,data])=>{
+    const[r,s]=id.split("-");
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
     tbody.append(tr);
   });
 }
 
-/* === Bouton Scanner === */
-document.getElementById("scanTicket").onclick = () =>
-  window.location.href = "scanner.html";
+/* === Bouton scanner === */
+document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.html";
 </script>
-
 </body>
 </html>
-
-
