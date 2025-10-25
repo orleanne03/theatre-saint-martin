@@ -87,11 +87,12 @@ function startScanner() {
     config,
     onScanSuccess,
     onScanError
-  )console.log("✅ Scanner démarré !");
-.catch(err => {
+  ).catch(err => {
     document.getElementById("result").innerHTML =
       '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
   });
+  console.log("✅ Scanner démarré !");
+
 }
 
 function flash(color) {
