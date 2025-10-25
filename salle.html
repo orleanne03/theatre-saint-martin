@@ -213,11 +213,13 @@ async function sendEmail(user) {
     .join(", ");
 
   const qrData = JSON.stringify({
-    nom: user.name,
-    email: user.email,
-    tel: user.phone,
-    sieges: reservedSeats
-  });
+  id: Date.now() + "-" + Math.random().toString(36).substring(2, 8), // identifiant unique
+  nom: user.name,
+  email: user.email,
+  tel: user.phone,
+  sieges: reservedSeats
+});
+
 
   const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
 
@@ -317,4 +319,5 @@ updateTable();
 
 </body>
 </html>
+
 
