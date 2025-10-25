@@ -59,33 +59,45 @@ button:hover { background: #0d47a1; }
 <button onclick="window.location.href='index.html'">← Retour à l'accueil</button>
 
 <script>
-let html5QrcodeScanner;
+let scanner;
+let lastScanText = "";
+let lastScanTime = 0;
 
 function startScanner() {
-  html5QrcodeScanner = new Html5Qrcode("reader");
+  scanner = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-  html5QrcodeScanner.start(
+  scanner.start(
     { facingMode: "environment" },
     config,
     onScanSuccess,
     onScanError
-  );
+  ).catch(err => {
+    document.getElementById("result").innerHTML =
+      '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
+  });
 }
 
 function onScanSuccess(decodedText) {
+  const now = Date.now();
+  // Empêche plusieurs déclenchements du même QR en 3 secondes
+  if (decodedText === lastScanText && now - lastScanTime < 3000) {
+    return;
+  }
+  lastScanText = decodedText;
+  lastScanTime = now;
+
+  const out = document.getElementById("result");
   try {
     const data = JSON.parse(decodedText);
-    const div = document.getElementById("result");
     const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
 
     if (scanned.includes(decodedText)) {
-      div.innerHTML = `
+      out.innerHTML = `
         <p class="error">⚠️ Billet déjà validé !</p>
-        <p><b>Nom :</b> ${data.nom}</p>
-        <p><b>Email :</b> ${data.email}</p>
-        <p><b>Sièges :</b> ${data.sieges}</p>
-        <p><b>Date de réservation :</b> ${data.date_reservation || "Non spécifiée"}</p>
+        <p><b>Nom :</b> ${data.nom || "—"}</p>
+        <p><b>Email :</b> ${data.email || "—"}</p>
+        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
+        <p><b>Date :</b> ${data.date_reservation || "—"}</p>
       `;
       return;
     }
@@ -93,26 +105,35 @@ function onScanSuccess(decodedText) {
     scanned.push(decodedText);
     localStorage.setItem("scannedTickets", JSON.stringify(scanned));
 
-    div.innerHTML = `
+    out.innerHTML = `
       <p class="valid">✅ Billet valide</p>
-      <p><b>Nom :</b> ${data.nom}</p>
-      <p><b>Email :</b> ${data.email}</p>
-      <p><b>Téléphone :</b> ${data.tel}</p>
-      <p><b>Sièges :</b> ${data.sieges}</p>
-      <p><b>Date de réservation :</b> ${data.date_reservation || "Non spécifiée"}</p>
+      <p><b>Nom :</b> ${data.nom || "—"}</p>
+      <p><b>Email :</b> ${data.email || "—"}</p>
+      <p><b>Téléphone :</b> ${data.tel || "—"}</p>
+      <p><b>Sièges :</b> ${data.sieges || "—"}</p>
+      <p><b>Date :</b> ${data.date_reservation || "—"}</p>
     `;
   } catch (err) {
-    document.getElementById("result").innerHTML =
-      '<p class="error">❌ QR Code invalide</p>';
+    out.innerHTML = '<p class="error">❌ QR Code invalide</p>';
   }
 }
 
-
 function onScanError(error) {
-  console.warn("Erreur de lecture :", error);
+  // on ignore les erreurs silencieuses
 }
 
-startScanner();
+document.getElementById("clearScans").onclick = () => {
+  if (!confirm("Effacer la liste des billets scannés sur cet appareil ?")) return;
+  localStorage.removeItem("scannedTickets");
+  document.getElementById("result").innerHTML =
+    "<p>Liste des scans effacée. Prêt à scanner.</p>";
+};
+
+document.getElementById("gotoHome").onclick = () => {
+  window.location.href = "index.html";
+};
+
+window.addEventListener("load", startScanner);
 </script>
 
 
