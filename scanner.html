@@ -91,7 +91,7 @@ function startScanner() {
     document.getElementById("result").innerHTML =
       '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
   });
-  console.log("✅ Scanner démarré !");
+ 
 
 }
 
@@ -102,16 +102,38 @@ function flash(color) {
 
 function onScanSuccess(decodedText) {
   const now = Date.now();
-  if (decodedText === lastScanText && now - lastScanTime < 3000) return;
+
+  // Si le même code revient dans les 3 s, on l'ignore.
+  if (decodedText === lastScanText && now - lastScanTime < 3000) {
+    return;
+  }
+
+  // On met à jour les valeurs pour ce nouveau code
   lastScanText = decodedText;
   lastScanTime = now;
 
   const out = document.getElementById("result");
+
   try {
     const data = JSON.parse(decodedText);
     const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
 
-    if (scanned.includes(decodedText)) {
+    // 🔹 Permet de rescanner un nouveau billet même après 3 s
+    if (!scanned.includes(decodedText)) {
+      scanned.push(decodedText);
+      localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+      updateCounter();
+
+      out.innerHTML = `
+        <p class="valid">✅ Billet valide</p>
+        <p><b>Nom :</b> ${data.nom || "—"}</p>
+        <p><b>Email :</b> ${data.email || "—"}</p>
+        <p><b>Téléphone :</b> ${data.tel || "—"}</p>
+        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
+        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
+      flash("#e8f5e9");
+      beepOk.play();
+    } else {
       out.innerHTML = `
         <p class="error">⚠️ Billet déjà validé !</p>
         <p><b>Nom :</b> ${data.nom || "—"}</p>
@@ -120,26 +142,15 @@ function onScanSuccess(decodedText) {
         <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
       flash("#ffebee");
       beepErr.play();
-      return;
     }
-
-    scanned.push(decodedText);
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-    out.innerHTML = `
-      <p class="valid">✅ Billet valide</p>
-      <p><b>Nom :</b> ${data.nom || "—"}</p>
-      <p><b>Email :</b> ${data.email || "—"}</p>
-      <p><b>Téléphone :</b> ${data.tel || "—"}</p>
-      <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-      <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
-    flash("#e8f5e9");
-    beepOk.play();
   } catch (err) {
+    console.error("Erreur QR :", err);
     out.innerHTML = '<p class="error">❌ QR Code invalide</p>';
     flash("#ffebee");
     beepErr.play();
   }
 }
+
 
 function onScanError() { /* ignore */ }
 
