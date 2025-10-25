@@ -321,13 +321,11 @@ function makeSeat(id, label, extra){
   d.dataset.id = id;
   d.textContent = label;
 
-  // 🔒 Si c’est un strapontin, il est non réservable
-  if (extra === "strapontin") {
-    d.style.opacity = "0.7";
-    d.style.cursor = "not-allowed";
-    d.title = "Strapontin non réservable";
-    return d; // on ne lui ajoute pas d'événement clic
-  }
+  // ✅ Tous les sièges, y compris strapontins, peuvent être sélectionnés
+  d.onclick = () => toggle(id, d);
+  return d;
+}
+
 
   // 🎟️ Sinon, siège normal cliquable
   d.onclick = () => toggle(id, d);
@@ -451,6 +449,7 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
+
 
 
 
