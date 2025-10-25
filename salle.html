@@ -54,6 +54,24 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
 .btn-home:hover {
   background: #6a1b9a;
 }
+  .row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0;
+  position: relative;
+}
+
+.row-label {
+  position: absolute;
+  left: -40px;
+  width: 30px;
+  text-align: right;
+  font-weight: bold;
+  color: #0d47a1;
+  font-size: 16px;
+}
+
 
 @media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}h1{font-size:1.4rem}}
 </style>
@@ -139,11 +157,21 @@ document.body.append(adminBadge);
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
+
+  // Lettre de rangée (A, B, C...)
+  const label = document.createElement("div");
+  label.className = "row-label";
+  label.textContent = r;
+  row.append(label);
+
+  // Sièges de la rangée
   row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
   seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
   row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+
   hall.append(row);
 });
+
 
 function makeSeat(id, label, extra) {
   const d = document.createElement("div");
@@ -321,6 +349,7 @@ updateTable();
 
 </body>
 </html>
+
 
 
 
