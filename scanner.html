@@ -112,7 +112,8 @@ function onScanSuccess(decodedText) {
 
   const out = document.getElementById("result");
   try {
-    const data = JSON.parse(decodedText);
+    const data = JSON.parse(decodeURIComponent(decodedText));
+
     out.innerHTML = `
       <p class="valid">✅ Billet valide</p>
       <p><b>Nom :</b> ${data.nom || "—"}</p>
