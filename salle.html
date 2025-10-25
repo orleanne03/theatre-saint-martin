@@ -185,6 +185,33 @@ button:hover { transform: scale(1.05); }
   button{font-size:13px;padding:8px 10px}
 }
 </style>
+  <!-- Import Firebase SDK v11 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  // 🧩 Remplace par ta propre configuration Firebase
+  const firebaseConfig = {
+  apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
+  authDomain: "theatre-saint-martin.firebaseapp.com",
+  projectId: "theatre-saint-martin",
+  storageBucket: "theatre-saint-martin.firebasestorage.app",
+  messagingSenderId: "416838692467",
+  appId: "1:416838692467:web:677e8dafe82831af5dc406"
+};
+
+  // Initialisation Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Rendre dispo dans le reste du code
+  window._firebaseDB = db;
+  window._firebaseRef = ref;
+  window._firebaseSet = set;
+  window._firebaseOnValue = onValue;
+  window._firebaseGet = get;
+</script>
+
 </head>
 <body>
 
@@ -233,157 +260,217 @@ button:hover { transform: scale(1.05); }
 </div>
 
 <script>
+/* === Initialisation EmailJS === */
 emailjs.init("2m3fNNkp36a2wCfZn");
 
-const rows=[...Array(19)].map((_,i)=>String.fromCharCode(65+i));
-const seatNums=[15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
-let seats=JSON.parse(localStorage.getItem("seats")||"{}");
-let selected=[],admin=false;
-const hall=document.getElementById("hall");
+/* === Connexion Firebase (déjà importée dans le <head>) === */
+const db = window._firebaseDB;
+const { ref, set, onValue } = window;
+const seatsRef = ref(db, "seats");
 
-// plan avec lettres
-rows.forEach(r=>{
-  const row=document.createElement("div");
-  row.className="row";
-  const label=document.createElement("div");
-  label.className="row-label";
-  label.textContent=r;
+let seats = {};
+let selected = [];
+let admin = false;
+
+/* === Références DOM === */
+const hall = document.getElementById("hall");
+const resetBtn = document.getElementById("reset");
+const adminBtn = document.getElementById("admin");
+
+/* === Création du plan === */
+const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
+const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
+
+rows.forEach(r => {
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const label = document.createElement("div");
+  label.className = "row-label";
+  label.textContent = r;
   row.append(label);
-  row.append(makeSeat(`${r}-S15`,"S","strapontin"));
-  seatNums.forEach(n=>row.append(makeSeat(`${r}-${n}`,n)));
-  row.append(makeSeat(`${r}-S16`,"S","strapontin"));
+
+  row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
+  seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
+  row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+
   hall.append(row);
 });
-function makeSeat(id,label,extra){
-  const d=document.createElement("div");
-  d.className="seat "+(extra||"free");
-  d.dataset.id=id;
-  d.textContent=label;
-  d.title=seats[id]?seats[id].name:"Siège libre";
-  if(seats[id])d.classList.add("reserved");
-  d.onclick=()=>toggle(id,d);
+
+/* === Création siège === */
+function makeSeat(id, label, extra) {
+  const d = document.createElement("div");
+  d.className = "seat " + (extra || "free");
+  d.dataset.id = id;
+  d.textContent = label;
+  d.onclick = () => toggle(id, d);
   return d;
 }
-function toggle(id,el){
-  if(seats[id]){
-    if(admin&&confirm("Annuler la réservation de "+seats[id].name+" ?")){
-      delete seats[id];save();render();updateTable();
-    }
+
+/* === Sélection de sièges === */
+function toggle(id, el) {
+  if (seats[id]) {
+    alert("⚠️ Ce siège vient d’être réservé !");
     return;
   }
-  if(selected.includes(id)){
-    selected=selected.filter(s=>s!==id);
+  if (selected.includes(id)) {
+    selected = selected.filter(s => s !== id);
     el.classList.remove("selected");
-  }else{
+  } else {
     selected.push(id);
     el.classList.add("selected");
   }
 }
-function save(){localStorage.setItem("seats",JSON.stringify(seats));}
-function render(){
-  document.querySelectorAll(".seat").forEach(el=>{
-    const id=el.dataset.id;
-    el.classList.remove("reserved","selected");
-    if(seats[id])el.classList.add("reserved");
-    el.title=seats[id]?seats[id].name:"Siège libre";
+
+/* === Synchronisation Firebase en temps réel === */
+onValue(seatsRef, snapshot => {
+  seats = snapshot.val() || {};
+  render();
+  updateTable();
+});
+
+/* === Sauvegarde vers Firebase === */
+function save() {
+  set(seatsRef, seats);
+}
+
+/* === Rafraîchir visuellement === */
+function render() {
+  document.querySelectorAll(".seat").forEach(el => {
+    const id = el.dataset.id;
+    el.classList.remove("reserved", "selected");
+    if (seats[id]) el.classList.add("reserved");
   });
 }
 
-// modale
-document.getElementById("confirm").onclick=()=>{
-  if(!selected.length)return alert("Aucun siège sélectionné !");
+/* === Ouverture / fermeture modale === */
+document.getElementById("confirm").onclick = () => {
+  if (!selected.length) return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
 };
-document.getElementById("close").onclick=()=>document.getElementById("modal").classList.add("hidden");
-
-document.getElementById("save").onclick=async()=>{
-  const name=document.getElementById("name").value.trim(),
-        email=document.getElementById("email").value.trim(),
-        phone=document.getElementById("phone").value.trim();
-  if(!name||!email||!phone)return alert("Tous les champs sont requis.");
-  const u={name,email,phone};
-  selected.forEach(id=>seats[id]=u);
-  save();selected=[];render();updateTable();
-  await sendEmail(u);
+document.getElementById("close").onclick = () =>
   document.getElementById("modal").classList.add("hidden");
-  alert("Réservation confirmée et email envoyé !");
+
+/* === Validation réservation === */
+document.getElementById("save").onclick = async () => {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  if (!name || !email || !phone)
+    return alert("Tous les champs sont requis.");
+
+  const user = { name, email, phone };
+
+  // Enregistre chaque siège réservé
+  selected.forEach(id => {
+    if (!seats[id]) seats[id] = user;
+  });
+
+  save(); // 🔥 sauvegarde dans Firebase
+  await sendEmail(user); // 💌 envoi du mail
+  selected = [];
+  document.getElementById("modal").classList.add("hidden");
+  alert("✅ Réservation confirmée et email envoyé !");
 };
 
-// email + QR
-async function sendEmail(user){
-  const reservedSeats=Object.entries(seats)
-    .filter(([_,v])=>v.email===user.email)
-    .map(([id])=>id).join(", ");
-  const qrData=JSON.stringify({nom:user.name,email:user.email,tel:user.phone,sieges:reservedSeats});
-  const qrImage=await QRCode.toDataURL(qrData,{width:180});
-  emailjs.send("service_91fpmi6","template_xzjnnc2",{
-    to_name:user.name,to_email:user.email,seats:reservedSeats,phone:user.phone,qr_image:qrImage
+/* === Envoi EmailJS + QR code === */
+async function sendEmail(user) {
+  const reservedSeats = Object.entries(seats)
+    .filter(([_, v]) => v.email === user.email)
+    .map(([id]) => id)
+    .join(", ");
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    tel: user.phone,
+    sieges: reservedSeats
+  });
+
+  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
+
+  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
+    to_name: user.name,
+    to_email: user.email,
+    seats: reservedSeats,
+    phone: user.phone,
+    qr_image: qrImage
   })
-  .then(()=>console.log("✅ Email envoyé"))
-  .catch(err=>console.error("❌ Erreur EmailJS :",err));
+  .then(() => console.log("✅ Email envoyé à", user.email))
+  .catch(err => console.error("❌ Erreur EmailJS :", err));
 }
 
-// admin
-const adminBtn=document.getElementById("admin"),resetBtn=document.getElementById("reset");
-adminBtn.textContent="Activer le mode admin";resetBtn.style.display="none";
-adminBtn.onclick=()=>{
-  if(!admin){
-    const p=prompt("Mot de passe admin :");
-    if(p==="admin123"){
-      admin=true;alert("Mode administrateur activé.");
-      adminBtn.textContent="Désactiver le mode admin";
-      adminBtn.style.background="#1976d2";
-      resetBtn.style.display="inline-block";
-    }else alert("Mot de passe incorrect.");
-  }else{
-    admin=false;alert("Mode administrateur désactivé.");
-    adminBtn.textContent="Activer le mode admin";
-    adminBtn.style.background="#d32f2f";
-    resetBtn.style.display="none";
-  }
-};
-resetBtn.onclick=()=>{
-  if(!admin)return alert("Vous devez être en mode administrateur.");
-  if(confirm("Voulez-vous vraiment réinitialiser toutes les réservations ?")){
-    seats={};save();render();updateTable();alert("✅ Toutes les réservations ont été effacées.");
+/* === Mode Admin === */
+adminBtn.textContent = "Activer le mode admin";
+resetBtn.style.display = "none";
+
+adminBtn.onclick = () => {
+  if (!admin) {
+    const p = prompt("Mot de passe admin :");
+    if (p === "admin123") {
+      admin = true;
+      alert("Mode administrateur activé.");
+      adminBtn.textContent = "Désactiver le mode admin";
+      adminBtn.style.background = "#1976d2";
+      resetBtn.style.display = "inline-block";
+    } else {
+      alert("Mot de passe incorrect.");
+    }
+  } else {
+    admin = false;
+    alert("Mode administrateur désactivé.");
+    adminBtn.textContent = "Activer le mode admin";
+    adminBtn.style.background = "#d32f2f";
+    resetBtn.style.display = "none";
   }
 };
 
-// export
-document.getElementById("export").onclick=()=>{
-  let csv="Rangée;Siège;Nom;Email;Téléphone\n";
-  for(const [k,v]of Object.entries(seats)){
-    const [r,s]=k.split("-");
-    csv+=`${r};${s};${v.name};${v.email};${v.phone}\n`;
+/* === Réinitialisation complète === */
+resetBtn.onclick = () => {
+  if (!admin) return alert("Vous devez être en mode administrateur.");
+  if (confirm("Voulez-vous vraiment effacer toutes les réservations ?")) {
+    seats = {};
+    save();
+    alert("✅ Toutes les réservations ont été effacées.");
   }
-  const blob=new Blob([csv],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="reservations.csv";
+};
+
+/* === Export CSV === */
+document.getElementById("export").onclick = () => {
+  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
+  for (const [k, v] of Object.entries(seats)) {
+    const [r, s] = k.split("-");
+    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
+  }
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "reservations.csv";
   a.click();
 };
 
-// tableau
-function updateTable(){
-  const tbody=document.getElementById("resBody");
-  tbody.innerHTML="";
-  const entries=Object.entries(seats);
-  if(!entries.length){
-    tbody.innerHTML='<tr><td colspan="5">Aucune réservation.</td></tr>';
+/* === Mise à jour du tableau === */
+function updateTable() {
+  const tbody = document.getElementById("resBody");
+  tbody.innerHTML = "";
+  const entries = Object.entries(seats);
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
     return;
   }
-  entries.forEach(([id,data])=>{
-    const [r,s]=id.split("-");
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
+  entries.forEach(([id, data]) => {
+    const [r, s] = id.split("-");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
     tbody.append(tr);
   });
 }
 
-// bouton scanner
-document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.html";
-
-render();updateTable();
+/* === Bouton Scanner === */
+document.getElementById("scanTicket").onclick = () =>
+  window.location.href = "scanner.html";
 </script>
+
 </body>
 </html>
+
