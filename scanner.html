@@ -12,8 +12,7 @@
   body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
   h1{color:#0d47a1;margin:6px 0}
   #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-  .panel{max-width:640px;margin:16px auto;background:#fff;padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:left}
-  pre{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;padding:8px;border-radius:6px;overflow:auto}
+  .panel{max-width:480px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:center}
   .ok{color:#2e7d32;font-weight:700;margin:0}
   .err{color:#d32f2f;font-weight:700;margin:0}
   button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
@@ -26,14 +25,11 @@
 </head>
 <body>
   <h1>🎭 Théâtre Saint Martin — Scanner</h1>
-  <p>Alignez le QR dans le carré.</p>
+  <p>Alignez le QR dans le carré pour valider un billet.</p>
 
   <div id="reader"></div>
 
   <div class="panel">
-    <h3>📥 Lu (brut)</h3>
-    <pre id="raw">—</pre>
-
     <p id="status">Prêt à scanner.</p>
     <p id="counter">Billets scannés : 0</p>
 
@@ -48,7 +44,6 @@ let scanner;
 let lastScanText = "";
 let lastScanTime = 0;
 
-const rawEl = document.getElementById("raw");
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 
@@ -71,7 +66,7 @@ function startScanner(){
     { facingMode: "environment" },
     config,
     onScanSuccess,
-    onScanError
+    () => {} // erreur silencieuse
   ).then(() => console.log("✅ Caméra démarrée"))
    .catch(err => { statusEl.innerHTML = "<span class='err'>Impossible d'accéder à la caméra : "+err+"</span>"; });
   updateCounter();
@@ -82,13 +77,12 @@ function onScanSuccess(text){
   if (text === lastScanText && now - lastScanTime < 3000) return; // anti-double trigger
   lastScanText = text; lastScanTime = now;
 
-  rawEl.textContent = text;
-
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   const already = scanned.includes(text);
 
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
+    flash("red");
     return;
   }
 
@@ -97,9 +91,18 @@ function onScanSuccess(text){
   updateCounter();
 
   statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
+  flash("lime");
 }
 
-function onScanError(){ /* silencieux */ }
+// effet flash visuel (vert/rouge)
+function flash(color) {
+  const overlay = document.createElement("div");
+  Object.assign(overlay.style, {
+    position:"fixed", inset:"0", background:color, opacity:"0.25", zIndex:"99",
+  });
+  document.body.append(overlay);
+  setTimeout(() => overlay.remove(), 150);
+}
 
 // Boutons
 document.getElementById("resetScans").onclick = ()=>{
