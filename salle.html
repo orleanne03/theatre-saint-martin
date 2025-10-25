@@ -38,231 +38,49 @@
   console.log("🔥 Firebase initialisé :", db);
 </script>
 
+
 <style>
-body {
-  font-family: "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #e3f2fd 0%, #fafafa 100%);
-  margin: 0;
-  text-align: center;
-  color: #212121;
-}
-
-h1 {
-  color: #0d47a1;
-  margin: 20px 0;
-  font-size: 1.8rem;
-}
-
-.scene {
-  background: #212121;
-  color: #fff;
-  width: 80%;
-  max-width: 800px;
-  margin: 10px auto 20px;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.legend {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.legend div {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.legend span {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  display: inline-block;
-}
-
-.free { background: #e0e0e0; }
-.selected { background: #64b5f6; }
-.reserved { background: #ef5350; }
-.strapontin { background: #ffd54f; }
-
-.hall-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 15px;
-  margin: 0 auto;
-  width: 90%;
-  max-width: 900px;
-}
-
-#hall {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: radial-gradient(circle at center, #fafafa 0%, #e0e0e0 100%);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  opacity: 0;
-  transform: scale(0.98);
-  transition: opacity 0.8s ease, transform 0.6s ease;
-}
-#hall.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  align-items: center;
-  margin: 4px 0;
-}
-
-.row-label {
-  font-weight: bold;
-  margin-right: 8px;
-  color: #0d47a1;
-}
-
-/* === Sièges façon fauteuil de théâtre === */
-.seat {
-  width: 38px;
-  height: 36px;
-  margin: 4px;
-  border-radius: 12px 12px 6px 6px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  position: relative;
-  background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Dossier du siège (effet de relief) */
-.seat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 65%;
-  border-radius: 12px 12px 0 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
-  pointer-events: none; /* ✅ ne bloque plus les clics */
-}
-
-/* Pied doré sous le siège */
-.seat::after {
-  content: "";
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #c6a700, #ffd600, #c6a700);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-/* Effet au survol */
-.seat:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.35);
-}
-
-/* États de couleur */
-.free {
-  background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
-}
-.selected {
-  background: linear-gradient(180deg, #1976d2 0%, #0d47a1 100%);
-}
-.reserved {
-  background: linear-gradient(180deg, #9e9e9e 0%, #616161 100%);
-}
-.strapontin {
-  background: linear-gradient(180deg, #ffeb3b, #fbc02d);
-  color: #333;
-  cursor: pointer; /* ✅ cliquable */
-  opacity: 1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-}
-
-/* === Boutons et tableau === */
-.buttons {
-  margin: 20px 0;
-}
-
-button {
-  margin: 5px;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  background: #1976d2;
-  color: #fff;
-  cursor: pointer;
-  transition: 0.3s;
-  font-size: 14px;
-}
-button:hover { background: #0d47a1; }
-button.admin-only { background: #d32f2f; }
-
-#reservations {
-  margin: 20px auto;
-  width: 90%;
-  max-width: 800px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  padding: 10px;
-}
-
-#reservations table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-#reservations th, #reservations td {
-  border-bottom: 1px solid #ddd;
-  padding: 6px;
-}
-#reservations th {
-  background: #1976d2;
-  color: #fff;
-  text-align: left;
-}
-
-/* === Responsive mobile === */
-@media(max-width: 600px){
-  h1 { font-size: 1.4rem; }
-  .seat {
-    width: 30px;
-    height: 28px;
-    font-size: 9px;
-    border-radius: 8px 8px 4px 4px;
-  }
-  .seat::after {
-    width: 14px;
-    height: 3px;
-  }
-}
+body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+margin:0;text-align:center;color:#212121}
+h1{color:#0d47a1;margin:20px 0;font-size:1.8rem;display:flex;justify-content:center;align-items:center;gap:8px}
+.scene{background:#212121;color:#fff;width:80%;max-width:800px;margin:10px auto 20px;padding:10px;border-radius:8px;
+box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600;letter-spacing:1px}
+.legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:14px}
+.legend div{display:flex;align-items:center;gap:5px}
+.legend span{width:18px;height:18px;border-radius:3px;display:inline-block}
+.free{background:#e0e0e0}.selected{background:#64b5f6}.reserved{background:#ef5350}.strapontin{background:#ffd54f}
+.hall-wrapper{display:flex;justify-content:center;align-items:flex-start;margin:0 auto;width:100%;max-width:900px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:10px}
+#hall{display:flex;flex-direction:column;align-items:center;background:#fff;border-radius:10px;padding:15px;
+box-shadow:0 3px 10px rgba(0,0,0,.15);width:max-content;min-width:100%}
+.row{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;margin:4px 0}
+.row-label{font-weight:600;margin-right:8px;min-width:18px}
+.seat{width:32px;height:32px;margin:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+font-size:11px;cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.seat:hover{transform:scale(1.1)}
+.buttons{margin:20px 0;display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+button{padding:10px 16px;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:14px;font-weight:600;transition:.3s}
+#confirm{background:#2e7d32}#confirm:hover{background:#1b5e20}
+#admin{background:#d32f2f}#admin:hover{background:#b71c1c}
+#reset{background:#455a64}#reset:hover{background:#263238}
+#export{background:#009688}#export:hover{background:#00695c}
+#scanTicket{background:#8e24aa}#scanTicket:hover{background:#6a1b9a}
+#reservations{margin:20px auto;width:90%;max-width:800px;background:#fff;border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
+#reservations h3{text-align:left;margin:10px;font-size:1.1rem;display:flex;align-items:center;gap:6px}
+#reservations table{width:100%;border-collapse:collapse;font-size:14px}
+#reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px;text-align:left}
+#reservations th{background:#1976d2;color:#fff}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:10}
+.modal.hidden{display:none}
+.modal-content{background:#fff;padding:20px;border-radius:10px;width:300px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.modal-content input{width:90%;margin:6px auto;padding:8px;border:1px solid #ccc;border-radius:5px;display:block}
+#loader{position:fixed;inset:0;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+display:flex;justify-content:center;align-items:center;z-index:9999;transition:opacity .4s ease}
+#loader.hidden{opacity:0;pointer-events:none}
+.loader-content{text-align:center;color:#0d47a1;font-weight:600;font-size:1.1rem}
+.spinner{width:40px;height:40px;border:4px solid #bbdefb;border-top:4px solid #1976d2;border-radius:50%;
+animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}.row-label{font-size:12px;margin-right:4px}h1{font-size:1.5rem}}
 </style>
 </head>
 
@@ -371,9 +189,6 @@ function makeSeat(id, label, extra){
   return d;
 }
 
-
-
-
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
@@ -394,23 +209,16 @@ function render(){
 }
 
 /* === Sélection sièges === */
-function toggle(id, el) {
-  // Si le siège est déjà réservé, on bloque
-  if (seats[id]) {
-    alert("⚠️ Ce siège est déjà réservé !");
-    return;
-  }
-
-  // Si le siège est déjà sélectionné, on le désélectionne
-  if (selected.includes(id)) {
-    selected = selected.filter(s => s !== id);
+function toggle(id,el){
+  if(seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+  if(selected.includes(id)){
+    selected=selected.filter(s=>s!==id);
     el.classList.remove("selected");
   } else {
     selected.push(id);
     el.classList.add("selected");
   }
 }
-
 
 /* === Confirmation === */
 document.getElementById("confirm").onclick=()=>{
@@ -497,12 +305,6 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
-
-
-
-
-
-
 
 
 
