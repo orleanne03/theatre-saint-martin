@@ -211,6 +211,81 @@ button {
   animation: spin 1s linear infinite;
   margin: 0 auto 10px;
 }
+  /* === STYLE FAUTEUILS RÉALISTES === */
+.seat {
+  position: relative;
+  width: 42px;
+  height: 44px;
+  margin: 5px;
+  border-radius: 6px 6px 8px 8px;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom center;
+}
+
+/* Dossier (partie haute) */
+.seat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
+              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
+
+/* Assise (partie basse) */
+.seat::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: 0 0 8px 8px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+/* 🔴 Siège libre */
+.free {
+  background: linear-gradient(145deg, #c62828, #8e0000);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.free:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+}
+
+/* 🔵 Sélectionné */
+.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
+  transform: scale(1.1);
+}
+
+/* ⚫ Réservé */
+.reserved {
+  background: linear-gradient(145deg, #5d4037, #3e2723);
+  opacity: 0.8;
+  cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+/* 🟡 Strapontin */
+.strapontin {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.seat.strapontin.selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+  box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 @media(max-width:600px){
   .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
@@ -443,3 +518,4 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 </script>
 </body>
 </html>
+
