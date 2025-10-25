@@ -87,7 +87,8 @@ function startScanner() {
     config,
     onScanSuccess,
     onScanError
-  ).catch(err => {
+  )console.log("✅ Scanner démarré !");
+.catch(err => {
     document.getElementById("result").innerHTML =
       '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
   });
