@@ -185,9 +185,12 @@ function makeSeat(id, label, extra){
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
+
+  // ✅ Tous les sièges, y compris strapontins, peuvent être sélectionnés
   d.onclick = () => toggle(id, d);
   return d;
 }
+
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
@@ -305,6 +308,7 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
+
 
 
 
