@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎟️ Contrôle des billets – Théâtre Saint Martin</title>
+
+<!-- Librairie pour scanner les QR codes -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #f9f9f9, #e3f2fd);
+  margin: 0;
+  text-align: center;
+  color: #212121;
+}
+h1 {
+  color: #0d47a1;
+  margin: 20px 0;
+}
+#reader {
+  width: 300px;
+  margin: 20px auto;
+}
+#result {
+  margin-top: 20px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 400px;
+}
+.valid { color: #2e7d32; font-weight: bold; }
+.error { color: #d32f2f; font-weight: bold; }
+button {
+  margin-top: 15px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+}
+button:hover { background: #0d47a1; }
+</style>
+</head>
+<body>
+
+<h1>🎭 Théâtre Saint Martin</h1>
+<h3>Scanner le billet à l’entrée</h3>
+
+<div id="reader"></div>
+<div id="result">Scannez un QR code pour vérifier le billet.</div>
+
+<button onclick="window.location.href='index.html'">← Retour à la salle</button>
+
+<script>
+let html5QrcodeScanner;
+
+function startScanner() {
+  html5QrcodeScanner = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+  html5QrcodeScanner.start(
+    { facingMode: "environment" }, // Caméra arrière
+    config,
+    onScanSuccess,
+    onScanError
+  );
+}
+
+function onScanSuccess(decodedText) {
+  try {
+    const data = JSON.parse(decodedText);
+    const div = document.getElementById("result");
+    const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+
+    // Vérifie si déjà scanné
+    if (scanned.includes(data.email)) {
+      div.innerHTML = `
+        <p class="error">⚠️ Billet déjà validé !</p>
+        <p><b>Nom :</b> ${data.nom}</p>
+        <p><b>Email :</b> ${data.email}</p>
+        <p><b>Sièges :</b> ${data.sieges}</p>
+      `;
+      return;
+    }
+
+    // Marquer comme scanné
+    scanned.push(data.email);
+    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+
+    div.innerHTML = `
+      <p class="valid">✅ Billet valide</p>
+      <p><b>Nom :</b> ${data.nom}</p>
+      <p><b>Email :</b> ${data.email}</p>
+      <p><b>Téléphone :</b> ${data.tel}</p>
+      <p><b>Sièges :</b> ${data.sieges}</p>
+    `;
+  } catch (err) {
+    document.getElementById("result").innerHTML =
+      '<p class="error">❌ QR Code invalide</p>';
+  }
+}
+
+function onScanError(error) {
+  console.warn("Erreur de lecture :", error);
+}
+
+startScanner();
+</script>
+
+</body>
+</html>
