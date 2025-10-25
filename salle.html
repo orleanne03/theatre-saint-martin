@@ -65,6 +65,7 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
   <button id="admin">Mode Admin</button>
   <button id="reset" class="admin-only">Réinitialiser</button>
   <button id="export">Exporter CSV</button>
+  <button id="scanTicket" style="background:#8e24aa;">🎟️ Scanner un billet</button>
 </div>
 
 <div id="reservations">
@@ -288,6 +289,10 @@ function updateTable() {
 
 render();
 updateTable();
+  // === Bouton pour accéder au scanner ===
+document.getElementById("scanTicket").onclick = () => {
+  window.location.href = "scanner.html"; // adapte le nom du fichier si nécessaire
+};
 </script>
 
 
@@ -296,3 +301,4 @@ updateTable();
 
 </body>
 </html>
+
