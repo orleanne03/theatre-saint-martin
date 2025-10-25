@@ -13,7 +13,12 @@
 body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
 margin:0;text-align:center;color:#212121}
 h1{color:#0d47a1;margin:20px 0;font-size:1.8rem}
-.scene{background:#212121;color:#fff;width:80%;max-width:800px;margin:10px auto 20px;padding:10px;border-radius:8px;
+.scene {
+  text-align: center;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
 box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:14px}
 .legend div{display:flex;align-items:center;gap:5px}
@@ -40,7 +45,68 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
 #reservations table{width:100%;border-collapse:collapse;font-size:14px}
 #reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px}
 #reservations th{background:#1976d2;color:#fff;text-align:left}
-@media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}h1{font-size:1.4rem}}
+@media(max-width: 600px) {
+  h1 {
+    font-size: 1.3rem;
+    margin: 10px 0;
+  }
+
+  .hall-wrapper {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+  }
+
+  #hall {
+    padding: 10px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .row {
+    margin: 2px 0;
+  }
+
+  .row-label {
+    width: 20px;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+
+  .seat {
+    width: 26px;
+    height: 26px;
+    margin: 2px;
+    font-size: 10px;
+    border-radius: 5px;
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 15px 0;
+  }
+
+  button {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  #reservations {
+    width: 95%;
+    font-size: 13px;
+    padding: 6px;
+  }
+
+  #reservations table {
+    font-size: 12px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -314,5 +380,6 @@ document.getElementById("scanTicket").onclick = () => {
 
 </body>
 </html>
+
 
 
