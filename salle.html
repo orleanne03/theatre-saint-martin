@@ -10,7 +10,6 @@
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
-/* --- Design global --- */
 body {
   font-family: "Segoe UI", sans-serif;
   background: linear-gradient(180deg, #e8f0fe 0%, #ffffff 100%);
@@ -19,13 +18,13 @@ body {
   text-align: center;
 }
 
+/* --- entête --- */
 h1 {
   color: #0d47a1;
   margin: 25px 0 10px;
-  font-size: 2rem;
+  font-size: 1.9rem;
   font-weight: 700;
 }
-
 .scene {
   background: #212121;
   color: #fff;
@@ -39,37 +38,29 @@ h1 {
   letter-spacing: 2px;
 }
 
-/* --- Légende --- */
+/* --- légende --- */
 .legend {
   display: flex;
   justify-content: center;
-  gap: 20px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  gap: 15px;
   font-size: 14px;
+  margin-bottom: 10px;
 }
-.legend div { display: flex; align-items: center; gap: 6px; }
-.legend span {
-  width: 18px; height: 18px; border-radius: 3px; display: inline-block;
-}
-.free { background:#e0e0e0; }
-.selected { background:#64b5f6; }
-.reserved { background:#ef5350; }
-.strapontin { background:#ffd54f; }
+.legend span { width:18px; height:18px; border-radius:3px; display:inline-block; }
+.free{background:#e0e0e0}
+.selected{background:#64b5f6}
+.reserved{background:#ef5350}
+.strapontin{background:#ffd54f}
 
-/* --- Salle --- */
+/* --- plan --- */
 .hall-wrapper {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  margin: 0 auto;
-  width: 100%;
-  max-width: 900px;
-  overflow-x: auto;          /* ✅ permet le défilement horizontal */
-  overflow-y: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 10px;
-  -webkit-overflow-scrolling: touch; /* ✅ défilement fluide sur iOS */
-
+}
 #hall {
   display: flex;
   flex-direction: column;
@@ -78,51 +69,45 @@ h1 {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  width: max-content;        /* ✅ adapte la largeur au contenu */
-  min-width: 100%;           /* ✅ assure la largeur minimale */
+  width: max-content;
   scroll-behavior: smooth;
-
 }
-
 .row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 4px 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:4px 0;
 }
-
 .row-label {
-  width: 26px;
-  font-weight: 700;
+  width: 24px;
+  font-weight: bold;
   color: #0d47a1;
-  font-size: 15px;
-  text-align: center;
-  margin-right: 6px;
+  font-size: 14px;
+  margin-right:6px;
+  text-align:center;
 }
-
-/* --- Sièges --- */
 .seat {
   width: 32px;
   height: 32px;
   margin: 3px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
-  transition: transform 0.2s, box-shadow 0.3s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  cursor:pointer;
+  transition:transform .2s,box-shadow .3s;
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
-.seat:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,.3); }
-.free { background:#e0e0e0; }
-.selected { background:#64b5f6; color:#fff; }
-.reserved { background:#ef5350; color:#fff; }
-.strapontin { background:#ffd54f; }
+.seat:hover{transform:scale(1.1);box-shadow:0 2px 5px rgba(0,0,0,.3)}
+.free{background:#e0e0e0}
+.selected{background:#64b5f6;color:#fff}
+.reserved{background:#ef5350;color:#fff}
+.strapontin{background:#ffd54f}
 
-/* --- Boutons --- */
+/* --- boutons --- */
 .buttons {
-  margin: 25px 0;
+  margin: 25px 0 10px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -145,238 +130,104 @@ button:hover { transform: scale(1.05); }
 #export { background:#009688; }
 #scanTicket { background:#8e24aa; }
 
-/* --- Tableau des réservations --- */
+/* --- tableau --- */
 #reservations {
-  margin: 30px auto;
+  margin: 25px auto;
   width: 90%;
   max-width: 800px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,.15);
   padding: 15px;
-}
-#reservations h3 {
-  color:#0d47a1;
-  margin-bottom:10px;
-}
-#reservations table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
-#reservations th, #reservations td {
-  border-bottom:1px solid #ddd;
-  padding:8px;
   text-align:left;
 }
-#reservations th {
-  background:#1976d2;
-  color:#fff;
-}
+#reservations h3 { color:#0d47a1;margin-bottom:10px; }
+#reservations table { width:100%;border-collapse:collapse;font-size:14px; }
+#reservations th,#reservations td { border-bottom:1px solid #ddd;padding:6px; }
+#reservations th { background:#1976d2;color:#fff; }
 
-/* === Modale (popup) === */
+/* --- modale --- */
 .modal {
-  position: fixed;            /* ✅ superpose la fenêtre */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;              /* ✅ au-dessus de tout */
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,.5);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
 }
-
-.modal.hidden {
-  display: none;              /* ✅ cachée par défaut */
-}
-
+.modal.hidden{display:none}
 .modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  max-width: 90%;
-  box-shadow: 0 4px 12px rgba(0,0,0,.3);
-  animation: popupFade .3s ease;
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  width:300px;
+  max-width:90%;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+  animation:popupFade .3s ease;
 }
-
-@keyframes popupFade {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+.modal-content input {
+  width:90%;
+  margin:6px auto;
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:5px;
+  display:block;
 }
-
-
-/* --- Responsive --- */
-@media(max-width:600px){
-  #hall {
-    padding: 10px;
-    width: max-content;
-  }
-  .seat {
-    width: 28px;
-    height: 28px;
-    margin: 2px;
-    font-size: 10px;
-  }
-  .row-label {
-    font-size: 12px;
-    margin-right: 4px;
-  }
-}
-/* === SECTION BAS DE PAGE (BOUTONS + TABLEAU) === */
-
-footer {
-  background: #f5f8ff;
-  box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
-  border-top: 1px solid #dde3f7;
-  padding: 20px 10px 30px;
-  margin-top: 40px;
-  text-align: center;
-}
-
-.footer-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.footer-buttons button {
-  padding: 10px 18px;
-  border: none;
-  border-radius: 50px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  font-size: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: all 0.25s ease;
-}
-
-.footer-buttons button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-}
-
-#confirm { background:#1976d2; }
-#confirm:hover { background:#0d47a1; }
-#admin { background:#d32f2f; }
-#reset { background:#757575; }
-#export { background:#009688; }
-#scanTicket { background:#8e24aa; }
-
-#reservations {
-  background: white;
-  border-radius: 14px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-  margin: 20px auto;
-  width: 90%;
-  max-width: 800px;
-  padding: 16px;
-  text-align: left;
-}
-
-#reservations h3 {
-  margin-top: 0;
-  color: #0d47a1;
-  font-size: 1.1rem;
-  border-bottom: 2px solid #e3f2fd;
-  padding-bottom: 6px;
-}
-
-#reservations table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-#reservations th, #reservations td {
-  padding: 8px 6px;
-  border-bottom: 1px solid #eee;
-}
-
-#reservations th {
-  background: #1976d2;
-  color: white;
-  text-align: left;
-  font-weight: 600;
-}
+@keyframes popupFade{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 
 @media(max-width:600px){
-  .footer-buttons button {
-    font-size: 13px;
-    padding: 8px 12px;
-  }
-  footer {
-    padding: 15px 6px 25px;
-  }
+  h1{font-size:1.5rem}
+  .seat{width:26px;height:26px;font-size:9px;margin:2px}
+  .row-label{width:18px;font-size:12px;margin-right:3px}
+  .buttons{gap:6px}
+  button{font-size:13px;padding:8px 10px}
 }
-
 </style>
 </head>
-
 <body>
+
 <h1>🎭 Théâtre Saint Martin</h1>
 <div class="scene">SCÈNE</div>
 
 <div class="legend">
-  <div><span class="free"></span> Libre</div>
-  <div><span class="selected"></span> Sélectionné</div>
-  <div><span class="reserved"></span> Réservé</div>
-  <div><span class="strapontin"></span> Strapontin</div>
+  <div><span class="free"></span>Libre</div>
+  <div><span class="selected"></span>Sélectionné</div>
+  <div><span class="reserved"></span>Réservé</div>
+  <div><span class="strapontin"></span>Strapontin</div>
 </div>
 
-<div class="hall-wrapper">
-  <div id="hall"></div>
-</div>
+<div class="hall-wrapper"><div id="hall"></div></div>
 
+<!-- boutons -->
 <div class="buttons">
-  <button id="confirm">Confirmer</button>
-  <button id="admin">Mode Admin</button>
-  <button id="reset" class="admin-only">Réinitialiser</button>
-  <button id="export">Exporter CSV</button>
+  <button id="confirm">✅ Confirmer</button>
+  <button id="admin">🔐 Admin</button>
+  <button id="reset" class="admin-only">♻️ Réinitialiser</button>
+  <button id="export">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
 </div>
 
-<footer>
-  <div id="reservations">
-    <h3>📋 Liste des réservations</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Rangée</th>
-          <th>Siège</th>
-          <th>Nom</th>
-          <th>Email</th>
-          <th>Téléphone</th>
-        </tr>
-      </thead>
-      <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
-    </table>
-  </div>
+<!-- tableau -->
+<div id="reservations">
+  <h3>📋 Liste des réservations</h3>
+  <table>
+    <thead><tr><th>Rangée</th><th>Siège</th><th>Nom</th><th>Email</th><th>Téléphone</th></tr></thead>
+    <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
+  </table>
+</div>
 
-  <div class="footer-buttons">
-    <button id="confirm">✅ Confirmer</button>
-    <button id="admin">🔐 Admin</button>
-    <button id="reset" class="admin-only">♻️ Réinitialiser</button>
-    <button id="export">📤 Export CSV</button>
-    <button id="scanTicket">🎟️ Scanner un billet</button>
-  </div>
-</footer>
-
-
-<!-- Modale -->
+<!-- modale -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Informations de réservation</h3>
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
-    <div>
-      <button id="save">Valider</button>
-      <button id="close">Annuler</button>
+    <div style="margin-top:10px">
+      <button id="save" style="background:#1976d2">Valider</button>
+      <button id="close" style="background:#757575">Annuler</button>
     </div>
   </div>
 </div>
@@ -384,179 +235,155 @@ footer {
 <script>
 emailjs.init("2m3fNNkp36a2wCfZn");
 
-// --- Configuration des rangées ---
-const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
-const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
-let seats = JSON.parse(localStorage.getItem("seats") || "{}");
-let selected = [], admin = false;
+const rows=[...Array(19)].map((_,i)=>String.fromCharCode(65+i));
+const seatNums=[15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
+let seats=JSON.parse(localStorage.getItem("seats")||"{}");
+let selected=[],admin=false;
+const hall=document.getElementById("hall");
 
-const hall = document.getElementById("hall");
-
-// --- Génération du plan avec lettres de rangée ---
-rows.forEach(r => {
-  const row = document.createElement("div");
-  row.className = "row";
-  const label = document.createElement("div");
-  label.className = "row-label";
-  label.textContent = r;
+// plan avec lettres
+rows.forEach(r=>{
+  const row=document.createElement("div");
+  row.className="row";
+  const label=document.createElement("div");
+  label.className="row-label";
+  label.textContent=r;
   row.append(label);
-  row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
-  seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
-  row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+  row.append(makeSeat(`${r}-S15`,"S","strapontin"));
+  seatNums.forEach(n=>row.append(makeSeat(`${r}-${n}`,n)));
+  row.append(makeSeat(`${r}-S16`,"S","strapontin"));
   hall.append(row);
 });
-
-function makeSeat(id, label, extra) {
-  const d = document.createElement("div");
-  d.className = "seat " + (extra || "free");
-  d.dataset.id = id;
-  d.textContent = label;
-  d.title = seats[id] ? seats[id].name : "Siège libre";
-  if (seats[id]) d.classList.add("reserved");
-  d.onclick = () => toggle(id, d);
+function makeSeat(id,label,extra){
+  const d=document.createElement("div");
+  d.className="seat "+(extra||"free");
+  d.dataset.id=id;
+  d.textContent=label;
+  d.title=seats[id]?seats[id].name:"Siège libre";
+  if(seats[id])d.classList.add("reserved");
+  d.onclick=()=>toggle(id,d);
   return d;
 }
-
-function toggle(id, el) {
-  if (seats[id]) {
-    if (admin && confirm("Annuler la réservation de " + seats[id].name + " ?")) {
-      delete seats[id]; save(); render(); updateTable();
+function toggle(id,el){
+  if(seats[id]){
+    if(admin&&confirm("Annuler la réservation de "+seats[id].name+" ?")){
+      delete seats[id];save();render();updateTable();
     }
     return;
   }
-  if (selected.includes(id)) {
-    selected = selected.filter(s => s !== id);
+  if(selected.includes(id)){
+    selected=selected.filter(s=>s!==id);
     el.classList.remove("selected");
-  } else {
+  }else{
     selected.push(id);
     el.classList.add("selected");
   }
 }
-
-function save() { localStorage.setItem("seats", JSON.stringify(seats)); }
-function render() {
-  document.querySelectorAll(".seat").forEach(el => {
-    const id = el.dataset.id;
-    el.classList.remove("reserved", "selected");
-    if (seats[id]) el.classList.add("reserved");
-    el.title = seats[id] ? seats[id].name : "Siège libre";
+function save(){localStorage.setItem("seats",JSON.stringify(seats));}
+function render(){
+  document.querySelectorAll(".seat").forEach(el=>{
+    const id=el.dataset.id;
+    el.classList.remove("reserved","selected");
+    if(seats[id])el.classList.add("reserved");
+    el.title=seats[id]?seats[id].name:"Siège libre";
   });
 }
 
-// --- Modale réservation ---
-document.getElementById("confirm").onclick = () => {
-  if (!selected.length) return alert("Aucun siège sélectionné !");
+// modale
+document.getElementById("confirm").onclick=()=>{
+  if(!selected.length)return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
 };
-document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
+document.getElementById("close").onclick=()=>document.getElementById("modal").classList.add("hidden");
 
-document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim(),
-        email = document.getElementById("email").value.trim(),
-        phone = document.getElementById("phone").value.trim();
-  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
-  const u = { name, email, phone };
-  selected.forEach(id => seats[id] = u);
-  save(); selected = []; render(); updateTable();
+document.getElementById("save").onclick=async()=>{
+  const name=document.getElementById("name").value.trim(),
+        email=document.getElementById("email").value.trim(),
+        phone=document.getElementById("phone").value.trim();
+  if(!name||!email||!phone)return alert("Tous les champs sont requis.");
+  const u={name,email,phone};
+  selected.forEach(id=>seats[id]=u);
+  save();selected=[];render();updateTable();
   await sendEmail(u);
   document.getElementById("modal").classList.add("hidden");
   alert("Réservation confirmée et email envoyé !");
 };
 
-// --- EmailJS + QR Code ---
-async function sendEmail(user) {
-  const reservedSeats = Object.entries(seats)
-    .filter(([_, v]) => v.email === user.email)
-    .map(([id]) => id)
-    .join(", ");
-  const qrData = JSON.stringify({
-    nom: user.name, email: user.email, tel: user.phone, sieges: reservedSeats
-  });
-  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
-  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
-    to_name: user.name,
-    to_email: user.email,
-    seats: reservedSeats,
-    phone: user.phone,
-    qr_image: qrImage
+// email + QR
+async function sendEmail(user){
+  const reservedSeats=Object.entries(seats)
+    .filter(([_,v])=>v.email===user.email)
+    .map(([id])=>id).join(", ");
+  const qrData=JSON.stringify({nom:user.name,email:user.email,tel:user.phone,sieges:reservedSeats});
+  const qrImage=await QRCode.toDataURL(qrData,{width:180});
+  emailjs.send("service_91fpmi6","template_xzjnnc2",{
+    to_name:user.name,to_email:user.email,seats:reservedSeats,phone:user.phone,qr_image:qrImage
   })
-  .then(() => console.log("✅ Email envoyé"))
-  .catch(err => console.error("❌ Erreur EmailJS :", err));
+  .then(()=>console.log("✅ Email envoyé"))
+  .catch(err=>console.error("❌ Erreur EmailJS :",err));
 }
 
-// --- Mode admin ---
-const adminBtn = document.getElementById("admin");
-const resetBtn = document.getElementById("reset");
-adminBtn.textContent = "Activer le mode admin";
-resetBtn.style.display = "none";
-adminBtn.onclick = () => {
-  if (!admin) {
-    const p = prompt("Mot de passe admin :");
-    if (p === "admin123") {
-      admin = true;
-      alert("Mode administrateur activé.");
-      adminBtn.textContent = "Désactiver le mode admin";
-      adminBtn.style.background = "#1976d2";
-      resetBtn.style.display = "inline-block";
-    } else alert("Mot de passe incorrect.");
-  } else {
-    admin = false;
-    alert("Mode administrateur désactivé.");
-    adminBtn.textContent = "Activer le mode admin";
-    adminBtn.style.background = "#d32f2f";
-    resetBtn.style.display = "none";
+// admin
+const adminBtn=document.getElementById("admin"),resetBtn=document.getElementById("reset");
+adminBtn.textContent="Activer le mode admin";resetBtn.style.display="none";
+adminBtn.onclick=()=>{
+  if(!admin){
+    const p=prompt("Mot de passe admin :");
+    if(p==="admin123"){
+      admin=true;alert("Mode administrateur activé.");
+      adminBtn.textContent="Désactiver le mode admin";
+      adminBtn.style.background="#1976d2";
+      resetBtn.style.display="inline-block";
+    }else alert("Mot de passe incorrect.");
+  }else{
+    admin=false;alert("Mode administrateur désactivé.");
+    adminBtn.textContent="Activer le mode admin";
+    adminBtn.style.background="#d32f2f";
+    resetBtn.style.display="none";
   }
 };
-resetBtn.onclick = () => {
-  if (!admin) return alert("Vous devez être en mode administrateur.");
-  if (confirm("Voulez-vous vraiment réinitialiser toutes les réservations ?")) {
-    seats = {}; save(); render(); updateTable();
-    alert("✅ Toutes les réservations ont été effacées.");
+resetBtn.onclick=()=>{
+  if(!admin)return alert("Vous devez être en mode administrateur.");
+  if(confirm("Voulez-vous vraiment réinitialiser toutes les réservations ?")){
+    seats={};save();render();updateTable();alert("✅ Toutes les réservations ont été effacées.");
   }
 };
 
-// --- Export CSV ---
-document.getElementById("export").onclick = () => {
-  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
-  for (const [k, v] of Object.entries(seats)) {
-    const [r, s] = k.split("-");
-    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
+// export
+document.getElementById("export").onclick=()=>{
+  let csv="Rangée;Siège;Nom;Email;Téléphone\n";
+  for(const [k,v]of Object.entries(seats)){
+    const [r,s]=k.split("-");
+    csv+=`${r};${s};${v.name};${v.email};${v.phone}\n`;
   }
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "reservations.csv";
+  const blob=new Blob([csv],{type:"text/csv"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="reservations.csv";
   a.click();
 };
 
-// --- Tableau ---
-function updateTable() {
-  const tbody = document.getElementById("resBody");
-  tbody.innerHTML = "";
-  const entries = Object.entries(seats);
-  if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
+// tableau
+function updateTable(){
+  const tbody=document.getElementById("resBody");
+  tbody.innerHTML="";
+  const entries=Object.entries(seats);
+  if(!entries.length){
+    tbody.innerHTML='<tr><td colspan="5">Aucune réservation.</td></tr>';
     return;
   }
-  entries.forEach(([id, data]) => {
-    const [r, s] = id.split("-");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
+  entries.forEach(([id,data])=>{
+    const [r,s]=id.split("-");
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
     tbody.append(tr);
   });
 }
 
-// --- Bouton vers le scanner ---
-document.getElementById("scanTicket").onclick = () => {
-  window.location.href = "scanner.html";
-};
+// bouton scanner
+document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.html";
 
-render();
-updateTable();
+render();updateTable();
 </script>
 </body>
 </html>
-
-
-
-
