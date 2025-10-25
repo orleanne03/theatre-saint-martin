@@ -241,13 +241,14 @@ async function sendEmail(user) {
     .join(", ");
 
   const now = new Date().toISOString(); // Date et heure exactes ISO
-const qrData = JSON.stringify({
+const qrData = encodeURIComponent(JSON.stringify({
   nom: user.name,
   email: user.email,
   tel: user.phone,
   sieges: reservedSeats,
-  date_reservation: now
-});
+  date_reservation: new Date().toISOString()
+}));
+
 
 
 
@@ -349,6 +350,7 @@ updateTable();
 
 </body>
 </html>
+
 
 
 
