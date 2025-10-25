@@ -80,7 +80,7 @@ function startScanner() {
 function onScanSuccess(decodedText) {
   const now = Date.now();
   // Empêche plusieurs déclenchements du même QR en 3 secondes
-  if (decodedText === lastScanText && now - lastScanTime < 3000) {
+  if (decodedText === lastScanText && now - lastScanTime < 5000) {
     return;
   }
   lastScanText = decodedText;
