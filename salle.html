@@ -40,11 +40,28 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
 #reservations table{width:100%;border-collapse:collapse;font-size:14px}
 #reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px}
 #reservations th{background:#1976d2;color:#fff;text-align:left}
+  .btn-home {
+  background: #8e24aa;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.3s ease;
+}
+.btn-home:hover {
+  background: #6a1b9a;
+}
+
 @media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}h1{font-size:1.4rem}}
 </style>
 </head>
 <body>
 <h1>🎭 Théâtre Saint Martin</h1>
+<button id="homeButton" class="btn-home">🏠 Retour à l'accueil</button>
+
 <div class="scene">SCÈNE</div>
 
 <div class="legend">
@@ -288,6 +305,10 @@ function updateTable() {
 
 render();
 updateTable();
+  document.getElementById("homeButton").onclick = () => {
+  window.location.href = "index.html";
+};
+
 </script>
 
 
@@ -296,3 +317,4 @@ updateTable();
 
 </body>
 </html>
+
