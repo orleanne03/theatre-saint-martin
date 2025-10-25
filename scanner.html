@@ -1,67 +1,83 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎟️ Contrôle des billets – Théâtre Saint Martin</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎟️ Contrôle des billets — Théâtre Saint Martin</title>
 
-<!-- Librairie pour scanner les QR codes -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 body {
   font-family: "Segoe UI", sans-serif;
   background: linear-gradient(180deg, #f9f9f9, #e3f2fd);
-  margin: 0;
-  text-align: center;
   color: #212121;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+  transition: background-color 0.6s ease;
 }
-h1 {
-  color: #0d47a1;
-  margin: 20px 0;
-}
+h1 { color: #0d47a1; margin: 6px 0; }
 #reader {
-  width: 300px;
-  margin: 20px auto;
+  width: 320px;
+  margin: 12px auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 #result {
-  margin-top: 20px;
+  max-width: 720px;
+  margin: 18px auto;
   background: #fff;
-  padding: 15px;
+  padding: 14px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  width: 90%;
-  max-width: 400px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  text-align: left;
 }
-.valid { color: #2e7d32; font-weight: bold; }
-.error { color: #d32f2f; font-weight: bold; }
+.valid { color: #2e7d32; font-weight: 700; }
+.error { color: #d32f2f; font-weight: 700; }
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
 button {
-  margin-top: 15px;
-  padding: 10px 15px;
+  padding: 10px 14px;
+  border-radius: 8px;
   border: none;
-  border-radius: 6px;
-  background: #1976d2;
-  color: #fff;
   cursor: pointer;
-  font-size: 15px;
+  color: #fff;
 }
-button:hover { background: #0d47a1; }
+.btn-reset { background: #d32f2f; }
+.btn-home { background: #8e24aa; }
+small { display: block; margin-top: 8px; color: #666; }
+@media(max-width:420px){#reader{width:260px}}
 </style>
 </head>
 <body>
-
-<h1>🎭 Théâtre Saint Martin</h1>
-<h3>Scanner le billet à l’entrée</h3>
+<h1>🎭 Théâtre Saint Martin — Contrôle des billets</h1>
+<p>Scannez le QR code du billet pour vérifier sa validité.</p>
 
 <div id="reader"></div>
-<div id="result">Scannez un QR code pour vérifier le billet.</div>
 
-<button onclick="window.location.href='index.html'">← Retour à l'accueil</button>
+<div id="result">
+  <p>Scannez un QR code pour vérifier le billet.</p>
+</div>
+
+<div class="controls">
+  <button id="clearScans" class="btn-reset">♻️ Réinitialiser les scans</button>
+  <button id="gotoHome" class="btn-home">🏠 Retour à l'accueil</button>
+</div>
+<small>Chaque appareil garde sa propre liste de billets validés.</small>
 
 <script>
 let scanner;
 let lastScanText = "";
 let lastScanTime = 0;
+const beepOk = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
+const beepErr = new Audio("data:audio/wav;base64,UklGRpAAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
 
 function startScanner() {
   scanner = new Html5Qrcode("reader");
@@ -77,12 +93,14 @@ function startScanner() {
   });
 }
 
+function flash(color) {
+  document.body.style.backgroundColor = color;
+  setTimeout(() => (document.body.style.backgroundColor = ""), 500);
+}
+
 function onScanSuccess(decodedText) {
   const now = Date.now();
-  // Empêche plusieurs déclenchements du même QR en 3 secondes
-  if (decodedText === lastScanText && now - lastScanTime < 5000) {
-    return;
-  }
+  if (decodedText === lastScanText && now - lastScanTime < 3000) return;
   lastScanText = decodedText;
   lastScanTime = now;
 
@@ -97,30 +115,31 @@ function onScanSuccess(decodedText) {
         <p><b>Nom :</b> ${data.nom || "—"}</p>
         <p><b>Email :</b> ${data.email || "—"}</p>
         <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-        <p><b>Date :</b> ${data.date_reservation || "—"}</p>
-      `;
+        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
+      flash("#ffebee");
+      beepErr.play();
       return;
     }
 
     scanned.push(decodedText);
     localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-
     out.innerHTML = `
       <p class="valid">✅ Billet valide</p>
       <p><b>Nom :</b> ${data.nom || "—"}</p>
       <p><b>Email :</b> ${data.email || "—"}</p>
       <p><b>Téléphone :</b> ${data.tel || "—"}</p>
       <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-      <p><b>Date :</b> ${data.date_reservation || "—"}</p>
-    `;
+      <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
+    flash("#e8f5e9");
+    beepOk.play();
   } catch (err) {
     out.innerHTML = '<p class="error">❌ QR Code invalide</p>';
+    flash("#ffebee");
+    beepErr.play();
   }
 }
 
-function onScanError(error) {
-  // on ignore les erreurs silencieuses
-}
+function onScanError() { /* ignore */ }
 
 document.getElementById("clearScans").onclick = () => {
   if (!confirm("Effacer la liste des billets scannés sur cet appareil ?")) return;
@@ -135,7 +154,5 @@ document.getElementById("gotoHome").onclick = () => {
 
 window.addEventListener("load", startScanner);
 </script>
-
-
 </body>
 </html>
