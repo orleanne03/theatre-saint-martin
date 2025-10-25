@@ -212,13 +212,15 @@ async function sendEmail(user) {
     .map(([id]) => id)
     .join(", ");
 
-  const qrData = JSON.stringify({
-  id: Date.now() + "-" + Math.random().toString(36).substring(2, 8), // identifiant unique
+  const now = new Date().toISOString(); // Date et heure exactes ISO
+const qrData = JSON.stringify({
   nom: user.name,
   email: user.email,
   tel: user.phone,
-  sieges: reservedSeats
+  sieges: reservedSeats,
+  date_reservation: now
 });
+
 
 
   const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
@@ -319,5 +321,6 @@ updateTable();
 
 </body>
 </html>
+
 
 
