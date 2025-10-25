@@ -14,22 +14,30 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+  // ⚙️ Mets ici ta vraie configuration Firebase
   const firebaseConfig = {
-  apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
-  authDomain: "theatre-saint-martin.firebaseapp.com",
-  projectId: "theatre-saint-martin",
-  storageBucket: "theatre-saint-martin.firebasestorage.app",
-  messagingSenderId: "416838692467",
-  appId: "1:416838692467:web:677e8dafe82831af5dc406"
-};
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.firebaseio.com",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // ✅ Ces lignes rendent TOUTES les fonctions disponibles globalement
   window._firebaseDB = db;
   window._firebaseRef = ref;
   window._firebaseSet = set;
   window._firebaseOnValue = onValue;
+
+  // Petit log utile
+  console.log("🔥 Firebase initialisé :", db);
 </script>
+
 
 <style>
 body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
@@ -274,3 +282,4 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 </script>
 </body>
 </html>
+
