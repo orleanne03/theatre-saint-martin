@@ -5,18 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎟️ Scanner — Théâtre Saint Martin</title>
 
-<!-- Librairies -->
+<!-- Librairie -->
 <script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 
 <style>
   body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
   h1{color:#0d47a1;margin:6px 0}
   #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-  .panel{max-width:840px;margin:16px auto;background:#fff;padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:left}
+  .panel{max-width:640px;margin:16px auto;background:#fff;padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:left}
   pre{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;padding:8px;border-radius:6px;overflow:auto}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
-  .col{flex:1 1 260px;min-width:260px}
   .ok{color:#2e7d32;font-weight:700;margin:0}
   .err{color:#d32f2f;font-weight:700;margin:0}
   button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
@@ -34,33 +31,16 @@
   <div id="reader"></div>
 
   <div class="panel">
-    <div class="row">
-      <div class="col">
-        <h3>📥 Lu (brut)</h3>
-        <pre id="raw">—</pre>
-      </div>
-      <div class="col">
-        <h3>🔓 Décodé (URL-decoded)</h3>
-        <pre id="decoded">—</pre>
-      </div>
-      <div class="col">
-        <h3>🧾 JSON interprété</h3>
-        <pre id="json">—</pre>
-      </div>
-    </div>
+    <h3>📥 Lu (brut)</h3>
+    <pre id="raw">—</pre>
+
     <p id="status">Prêt à scanner.</p>
     <p id="counter">Billets scannés : 0</p>
+
     <div>
       <button id="resetScans" class="danger">♻️ Réinitialiser les scans</button>
       <button id="gotoHome" class="violet">🏠 Accueil</button>
-      <button id="showTestQR" class="btn">🧪 Afficher un QR de test</button>
     </div>
-  </div>
-
-  <div class="panel" id="testArea" style="display:none">
-    <h3>🧪 QR de test (ouvre cette page sur un autre appareil pour le scanner)</h3>
-    <canvas id="testQR" style="margin:8px auto;display:block"></canvas>
-    <pre id="testPayload"></pre>
   </div>
 
 <script>
@@ -69,24 +49,12 @@ let lastScanText = "";
 let lastScanTime = 0;
 
 const rawEl = document.getElementById("raw");
-const decEl = document.getElementById("decoded");
-const jsonEl = document.getElementById("json");
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 
 function updateCounter(){
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   counterEl.textContent = "Billets scannés : " + scanned.length;
-}
-
-function safeUrlDecode(s){
-  try{
-    // On ne decodeURIComponent que si on voit des %XX et que ça ne semble pas déjà être du JSON
-    if (/%[0-9A-Fa-f]{2}/.test(s) && !s.trim().startsWith("{")) {
-      return decodeURIComponent(s);
-    }
-  }catch(e){}
-  return s;
 }
 
 function startScanner(){
@@ -116,23 +84,8 @@ function onScanSuccess(text){
 
   rawEl.textContent = text;
 
-  const decoded = safeUrlDecode(text);
-  decEl.textContent = decoded;
-
-  // Uniqueness: on enregistre la chaîne brute (ce que la caméra a lu)
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   const already = scanned.includes(text);
-
-  // JSON try
-  let obj=null, jsonOk=false;
-  try{ obj = JSON.parse(decoded); jsonOk=true; }
-  catch(e){ jsonOk=false; }
-
-  if (jsonOk) {
-    jsonEl.textContent = JSON.stringify(obj, null, 2);
-  } else {
-    jsonEl.textContent = "— (pas un JSON valide)";
-  }
 
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
@@ -143,9 +96,7 @@ function onScanSuccess(text){
   localStorage.setItem("scannedTickets", JSON.stringify(scanned));
   updateCounter();
 
-  statusEl.innerHTML = jsonOk
-    ? "<span class='ok'>✅ Billet valide</span>"
-    : "<span class='ok'>ℹ️ Lu, mais pas du JSON (affiché ci-dessus)</span>";
+  statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
 }
 
 function onScanError(){ /* silencieux */ }
@@ -159,20 +110,6 @@ document.getElementById("resetScans").onclick = ()=>{
   }
 };
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
-
-// Génération d’un QR de test (ta chaîne encodée réelle)
-document.getElementById("showTestQR").onclick = ()=>{
-  const testArea = document.getElementById("testArea");
-  testArea.style.display = "block";
-  // >> Remplace par une autre charge si tu veux tester autre chose
-  const payload = "%7B%22nom%22%3A%22Bebe%22%2C%22email%22%3A%22nellylac%40gmail.com%22%2C%22tel%22%3A%220987654321%22%2C%22sieges%22%3A%22S-16%22%2C%22date_reservation%22%3A%222025-10-25T18%3A17%3A32.788Z%22%7D";
-  document.getElementById("testPayload").textContent = payload + "\n\nDécodé :\n" + safeUrlDecode(payload);
-  const canvas = document.getElementById("testQR");
-  // Génère un QR grand et lisible
-  QRCode.toCanvas(canvas, payload, { width: 300, margin: 1 }, (err)=> {
-    if (err) console.error(err);
-  });
-};
 
 window.addEventListener("load", startScanner);
 </script>
