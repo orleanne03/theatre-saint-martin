@@ -40,16 +40,6 @@
 
 
 <style>
-  #hall {
-  opacity: 0;
-  transform: scale(0.98);
-  transition: opacity 0.8s ease, transform 0.6s ease;
-}
-#hall.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
 body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
 margin:0;text-align:center;color:#212121}
 h1{color:#0d47a1;margin:20px 0;font-size:1.8rem;display:flex;justify-content:center;align-items:center;gap:8px}
@@ -89,18 +79,6 @@ display:flex;justify-content:center;align-items:center;z-index:9999;transition:o
 #loader.hidden{opacity:0;pointer-events:none}
 .loader-content{text-align:center;color:#0d47a1;font-weight:600;font-size:1.1rem}
 .spinner{width:40px;height:40px;border:4px solid #bbdefb;border-top:4px solid #1976d2;border-radius:50%;
-         /* === Animation d'apparition fluide === */
-#hall {
-  opacity: 0;
-  transform: scale(0.98);
-  transition: opacity 0.8s ease, transform 0.6s ease;
-}
-
-#hall.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
 animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}.row-label{font-size:12px;margin-right:4px}h1{font-size:1.5rem}}
 </style>
@@ -213,20 +191,21 @@ function makeSeat(id, label, extra){
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
-/* === Connexion Firebase === */
-const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
   render();
   updateTable();
-
-  // 🪄 Fait apparaître la salle après chargement
-  setTimeout(() => {
-    loader.classList.add("hidden");
-    hall.classList.add("visible");
-  }, 400);
+  setTimeout(() => loader.classList.add("hidden"), 400);
 });
 
+function save(){ set(seatsRef, seats); }
+
+function render(){
+  document.querySelectorAll(".seat").forEach(el=>{
+    const id = el.dataset.id;
+    el.classList.remove("reserved","selected");
+    if(seats[id]) el.classList.add("reserved");
+  });
 }
 
 /* === Sélection sièges === */
@@ -326,8 +305,6 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
-
-
 
 
 
