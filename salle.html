@@ -61,11 +61,14 @@ h1 {
 .hall-wrapper {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   margin: 0 auto;
-  width: 90%;
+  width: 100%;
   max-width: 900px;
-  overflow-x: auto;
-}
+  overflow-x: auto;          /* ✅ permet le défilement horizontal */
+  overflow-y: hidden;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch; /* ✅ défilement fluide sur iOS */
 
 #hall {
   display: flex;
@@ -75,8 +78,11 @@ h1 {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  width: 100%;
+  width: max-content;        /* ✅ adapte la largeur au contenu */
+  min-width: 100%;           /* ✅ assure la largeur minimale */
   scroll-behavior: smooth;
+  overflow-x: auto;
+width: max-content;
 }
 
 .row {
@@ -197,13 +203,22 @@ button:hover { transform: scale(1.05); }
 
 /* --- Responsive --- */
 @media(max-width:600px){
-  h1 { font-size:1.5rem; }
-  .seat { width:26px; height:26px; font-size:9px; margin:2px; }
-  .row-label { width:20px; font-size:12px; margin-right:4px; }
-  .buttons { gap:6px; }
-  button { font-size:13px; padding:8px 10px; }
-  #reservations { font-size:13px; padding:10px; }
+  #hall {
+    padding: 10px;
+    width: max-content;
+  }
+  .seat {
+    width: 28px;
+    height: 28px;
+    margin: 2px;
+    font-size: 10px;
+  }
+  .row-label {
+    font-size: 12px;
+    margin-right: 4px;
+  }
 }
+
 </style>
 </head>
 
@@ -427,3 +442,4 @@ updateTable();
 </script>
 </body>
 </html>
+
