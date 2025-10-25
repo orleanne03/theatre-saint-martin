@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🎟️ Contrôle des billets — Théâtre Saint Martin</title>
+<title>🎭 Scanner — Théâtre Saint Martin</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -63,28 +63,25 @@ small { display: block; margin-top: 8px; color: #666; }
 </head>
 <body>
 <h1>🎭 Théâtre Saint Martin — Contrôle des billets</h1>
-<p>Alignez le QR code dans le carré pour vérifier la validité du billet.</p>
+<p>Scannez le QR code du billet pour vérifier son contenu.</p>
 
 <div id="reader"></div>
 
 <div id="result">
-  <p>Scannez un QR code pour vérifier le billet.</p>
+  <p>Scannez un QR code pour voir les informations.</p>
 </div>
 
 <div id="counter">Billets scannés : 0</div>
 
 <div class="controls">
-  <button id="clearScans" class="btn-reset">♻️ Réinitialiser les scans</button>
-  <button id="gotoHome" class="btn-home">🏠 Retour à l'accueil</button>
+  <button id="clearScans" class="btn-reset">♻️ Réinitialiser</button>
+  <button id="gotoHome" class="btn-home">🏠 Accueil</button>
 </div>
-<small>Chaque appareil garde sa propre liste de billets validés.</small>
 
 <script>
 let scanner;
 let lastScanText = "";
 let lastScanTime = 0;
-const beepOk = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
-const beepErr = new Audio("data:audio/wav;base64,UklGRpAAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
 
 function updateCounter() {
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
@@ -93,41 +90,25 @@ function updateCounter() {
 }
 
 function startScanner() {
-  try {
-    scanner = new Html5Qrcode("reader");
+  scanner = new Html5Qrcode("reader");
 
-    const config = {
-      fps: 10,
-      qrbox: (viewfinderWidth, viewfinderHeight) => {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const boxSize = Math.floor(minEdge * 0.8);
-        return { width: boxSize, height: boxSize };
-      }
-    };
+  const config = {
+    fps: 10,
+    qrbox: (w, h) => {
+      const s = Math.floor(Math.min(w, h) * 0.8);
+      return { width: s, height: s };
+    }
+  };
 
-    scanner.start(
-      { facingMode: "environment" },
-      config,
-      onScanSuccess,
-      onScanError
-    )
+  scanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanError)
     .then(() => console.log("✅ Caméra démarrée"))
     .catch(err => {
       document.getElementById("result").innerHTML =
-        '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
-      console.error("Erreur caméra :", err);
+        "<p class='error'>Impossible d'accéder à la caméra.</p>";
+      console.error(err);
     });
 
-  } catch (error) {
-    console.error("Erreur au démarrage du scanner :", error);
-  }
-
   updateCounter();
-}
-
-function flash(color) {
-  document.body.style.backgroundColor = color;
-  setTimeout(() => (document.body.style.backgroundColor = ""), 500);
 }
 
 function onScanSuccess(decodedText) {
@@ -137,55 +118,31 @@ function onScanSuccess(decodedText) {
   lastScanTime = now;
 
   const out = document.getElementById("result");
-  try {
-    // ✅ décodage correct du texte encodé
-    const decoded = decodeURIComponent(decodedText);
-    const data = JSON.parse(decoded);
-    const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
 
-    if (scanned.includes(decodedText)) {
-      out.innerHTML = `
-        <p class="error">⚠️ Billet déjà validé !</p>
-        <p><b>Nom :</b> ${data.nom || "—"}</p>
-        <p><b>Email :</b> ${data.email || "—"}</p>
-        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
-      flash("#ffebee");
-      beepErr.play();
-      return;
-    }
-
-    scanned.push(decodedText);
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-    updateCounter();
-
-    out.innerHTML = `
-      <p class="valid">✅ Billet valide</p>
-      <p><b>Nom :</b> ${data.nom || "—"}</p>
-      <p><b>Email :</b> ${data.email || "—"}</p>
-      <p><b>Téléphone :</b> ${data.tel || "—"}</p>
-      <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-      <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
-    flash("#e8f5e9");
-    beepOk.play();
-  } catch (err) {
-    console.error("Erreur décodage QR :", err, decodedText);
-    out.innerHTML = '<p class="error">❌ QR Code invalide (format non reconnu)</p>';
-    flash("#ffebee");
-    beepErr.play();
+  if (scanned.includes(decodedText)) {
+    out.innerHTML = `<p class="error">⚠️ Billet déjà validé</p><pre>${decodedText}</pre>`;
+    return;
   }
+
+  scanned.push(decodedText);
+  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+  updateCounter();
+
+  // 🔹 Affiche le contenu brut du QR, décodé si besoin
+  const decoded = decodeURIComponent(decodedText);
+  out.innerHTML = `<p class="valid">✅ Billet valide</p><pre>${decoded}</pre>`;
 }
 
-function onScanError(error) {
-  // Ignore les erreurs mineures
-}
+function onScanError(error) {}
 
 document.getElementById("clearScans").onclick = () => {
-  if (!confirm("Effacer la liste des billets scannés sur cet appareil ?")) return;
-  localStorage.removeItem("scannedTickets");
-  document.getElementById("result").innerHTML =
-    "<p>Liste des scans effacée. Prêt à scanner.</p>";
-  updateCounter();
+  if (confirm("Effacer la liste des billets scannés ?")) {
+    localStorage.removeItem("scannedTickets");
+    document.getElementById("result").innerHTML =
+      "<p>Liste effacée. Prêt à scanner.</p>";
+    updateCounter();
+  }
 };
 
 document.getElementById("gotoHome").onclick = () => {
