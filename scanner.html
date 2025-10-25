@@ -77,8 +77,6 @@ function onScanSuccess(decodedText) {
   try {
     const data = JSON.parse(decodedText);
     const div = document.getElementById("result");
-
-    // On enregistre le billet scanné en utilisant le QR complet (chaîne entière)
     const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
 
     if (scanned.includes(decodedText)) {
@@ -87,11 +85,11 @@ function onScanSuccess(decodedText) {
         <p><b>Nom :</b> ${data.nom}</p>
         <p><b>Email :</b> ${data.email}</p>
         <p><b>Sièges :</b> ${data.sieges}</p>
+        <p><b>Date de réservation :</b> ${data.date_reservation || "Non spécifiée"}</p>
       `;
       return;
     }
 
-    // Nouveau billet → on l’enregistre
     scanned.push(decodedText);
     localStorage.setItem("scannedTickets", JSON.stringify(scanned));
 
@@ -101,12 +99,14 @@ function onScanSuccess(decodedText) {
       <p><b>Email :</b> ${data.email}</p>
       <p><b>Téléphone :</b> ${data.tel}</p>
       <p><b>Sièges :</b> ${data.sieges}</p>
+      <p><b>Date de réservation :</b> ${data.date_reservation || "Non spécifiée"}</p>
     `;
   } catch (err) {
     document.getElementById("result").innerHTML =
       '<p class="error">❌ QR Code invalide</p>';
   }
 }
+
 
 function onScanError(error) {
   console.warn("Erreur de lecture :", error);
