@@ -41,6 +41,7 @@
 
 <script>
 let scanner;
+let scanning = false; // état du scanner
 let lastScanText = "";
 let lastScanTime = 0;
 
@@ -52,8 +53,11 @@ function updateCounter(){
   counterEl.textContent = "Billets scannés : " + scanned.length;
 }
 
-function startScanner(){
+async function startScanner(){
+  if (scanning) return;
+  scanning = true;
   scanner = new Html5Qrcode("reader");
+
   const config = {
     fps: 10,
     qrbox: (vw, vh) => {
@@ -62,20 +66,31 @@ function startScanner(){
       return { width: size, height: size };
     }
   };
-  scanner.start(
-    { facingMode: "environment" },
-    config,
-    onScanSuccess,
-    () => {} // erreur silencieuse
-  ).then(() => console.log("✅ Caméra démarrée"))
-   .catch(err => { statusEl.innerHTML = "<span class='err'>Impossible d'accéder à la caméra : "+err+"</span>"; });
-  updateCounter();
+
+  try {
+    await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+    console.log("✅ Caméra démarrée");
+    updateCounter();
+  } catch (err) {
+    statusEl.innerHTML = "<span class='err'>Impossible d'accéder à la caméra : "+err+"</span>";
+  }
 }
 
-function onScanSuccess(text){
+async function stopScanner(){
+  if (!scanner) return;
+  try {
+    await scanner.stop();
+    scanning = false;
+    console.log("⏸️ Scanner en pause");
+  } catch(e){ console.error(e); }
+}
+
+async function onScanSuccess(text){
   const now = Date.now();
-  if (text === lastScanText && now - lastScanTime < 3000) return; // anti-double trigger
+  if (text === lastScanText && now - lastScanTime < 3000) return; // anti double instantané
   lastScanText = text; lastScanTime = now;
+
+  await stopScanner(); // on stoppe le scanner immédiatement
 
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   const already = scanned.includes(text);
@@ -83,18 +98,22 @@ function onScanSuccess(text){
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
     flash("red");
-    return;
+  } else {
+    scanned.push(text);
+    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+    updateCounter();
+    statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
+    flash("lime");
   }
 
-  scanned.push(text);
-  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-  updateCounter();
-
-  statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
-  flash("lime");
+  // ⏱️ Attendre 5 secondes avant de relancer le scanner
+  setTimeout(() => {
+    statusEl.textContent = "Prêt à scanner le prochain billet...";
+    startScanner();
+  }, 5000);
 }
 
-// effet flash visuel (vert/rouge)
+// effet flash visuel
 function flash(color) {
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
