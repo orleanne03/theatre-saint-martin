@@ -188,14 +188,15 @@ rows.forEach(r => {
   hall.append(row);
 });
 
-function makeSeat(id, label, extra) {
+function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
-  d.onclick = () => toggle(id, d); // ✅ Tous les sièges sont cliquables
+  d.onclick = () => toggle(id, d);
   return d;
 }
+
 
 
 
@@ -322,6 +323,7 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
+
 
 
 
