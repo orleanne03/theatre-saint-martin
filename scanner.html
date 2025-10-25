@@ -66,7 +66,7 @@ function startScanner() {
   const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
   html5QrcodeScanner.start(
-    { facingMode: "environment" }, // Caméra arrière
+    { facingMode: "environment" },
     config,
     onScanSuccess,
     onScanError
@@ -77,10 +77,11 @@ function onScanSuccess(decodedText) {
   try {
     const data = JSON.parse(decodedText);
     const div = document.getElementById("result");
+
+    // On enregistre le billet scanné en utilisant le QR complet (chaîne entière)
     const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
 
-    // Vérifie si déjà scanné
-    if (scanned.includes(data.email)) {
+    if (scanned.includes(decodedText)) {
       div.innerHTML = `
         <p class="error">⚠️ Billet déjà validé !</p>
         <p><b>Nom :</b> ${data.nom}</p>
@@ -90,8 +91,8 @@ function onScanSuccess(decodedText) {
       return;
     }
 
-    // Marquer comme scanné
-    scanned.push(data.email);
+    // Nouveau billet → on l’enregistre
+    scanned.push(decodedText);
     localStorage.setItem("scannedTickets", JSON.stringify(scanned));
 
     div.innerHTML = `
@@ -113,6 +114,7 @@ function onScanError(error) {
 
 startScanner();
 </script>
+
 
 </body>
 </html>
