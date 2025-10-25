@@ -10,124 +10,216 @@
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
-body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
-margin:0;text-align:center;color:#212121}
-h1{color:#0d47a1;margin:20px 0;font-size:1.8rem}
-.scene {
+/* --- Design global --- */
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #e8f0fe 0%, #ffffff 100%);
+  margin: 0;
+  color: #212121;
   text-align: center;
-  letter-spacing: 2px;
-  font-weight: bold;
 }
 
-box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:14px}
-.legend div{display:flex;align-items:center;gap:5px}
-.legend span{width:18px;height:18px;border-radius:3px;display:inline-block}
-.free{background:#e0e0e0}.selected{background:#64b5f6}.reserved{background:#ef5350}.strapontin{background:#ffd54f}
-.hall-wrapper{display:flex;justify-content:center;align-items:flex-start;gap:15px;margin:0 auto;width:90%;max-width:900px}
-.aisle{width:30px;background:transparent}
-#hall{display:flex;flex-direction:column;align-items:center;background:#fff;border-radius:10px;padding:15px;
-#hall {
+h1 {
+  color: #0d47a1;
+  margin: 25px 0 10px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.scene {
+  background: #212121;
+  color: #fff;
+  width: 80%;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* --- Légende --- */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.legend div { display: flex; align-items: center; gap: 6px; }
+.legend span {
+  width: 18px; height: 18px; border-radius: 3px; display: inline-block;
+}
+.free { background:#e0e0e0; }
+.selected { background:#64b5f6; }
+.reserved { background:#ef5350; }
+.strapontin { background:#ffd54f; }
+
+/* --- Salle --- */
+.hall-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  width: 90%;
+  max-width: 900px;
   overflow-x: auto;
+}
+
+#hall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.15);
+  width: 100%;
   scroll-behavior: smooth;
 }
-box-shadow:0 3px 10px rgba(0,0,0,.15);width:100%}
-.row{display:flex;justify-content:center;flex-wrap:wrap;margin:4px 0}
-.seat{width:32px;height:32px;margin:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-font-size:11px;cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.seat:hover{transform:scale(1.1)}
-.free{background:#e0e0e0}.selected{background:#64b5f6;color:#fff}.reserved{background:#ef5350;color:#fff}.strapontin{background:#ffd54f}
-.buttons{margin:20px 0}
-button{margin:5px;padding:8px 14px;border:none;border-radius:6px;background:#1976d2;color:#fff;cursor:pointer;transition:.3s;font-size:14px}
-button:hover{background:#0d47a1}button.admin-only{background:#d32f2f}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:10}
-.modal.hidden{display:none}
-.modal-content{background:#fff;padding:20px;border-radius:10px;width:300px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.modal-content input{width:90%;margin:6px auto;padding:8px;border:1px solid #ccc;border-radius:5px;display:block}
-#reservations{margin:20px auto;width:90%;max-width:800px;background:#fff;border-radius:8px;
-box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
-#reservations table{width:100%;border-collapse:collapse;font-size:14px}
-#reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px}
-#reservations th{background:#1976d2;color:#fff;text-align:left}
-@media(max-width: 600px) {
-  h1 {
-    font-size: 1.3rem;
-    margin: 10px 0;
-  }
 
-  .hall-wrapper {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 10px;
-  }
-
-  #hall {
-    padding: 10px;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-  }
-
-  .row {
-    margin: 2px 0;
-  }
-
-  .row-label {
-    width: 20px;
-    font-size: 12px;
-    margin-right: 4px;
-  }
-
-  .seat {
-    width: 26px;
-    height: 26px;
-    margin: 2px;
-    font-size: 10px;
-    border-radius: 5px;
-  }
-
-  .buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin: 15px 0;
-  }
-
-  button {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-
-  #reservations {
-    width: 95%;
-    font-size: 13px;
-    padding: 6px;
-  }
-
-  #reservations table {
-    font-size: 12px;
-  }
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 4px 0;
 }
 
+.row-label {
+  width: 26px;
+  font-weight: 700;
+  color: #0d47a1;
+  font-size: 15px;
+  text-align: center;
+  margin-right: 6px;
+}
+
+/* --- Sièges --- */
+.seat {
+  width: 32px;
+  height: 32px;
+  margin: 3px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: transform 0.2s, box-shadow 0.3s;
+}
+.seat:hover { transform: scale(1.1); box-shadow: 0 2px 5px rgba(0,0,0,.3); }
+.free { background:#e0e0e0; }
+.selected { background:#64b5f6; color:#fff; }
+.reserved { background:#ef5350; color:#fff; }
+.strapontin { background:#ffd54f; }
+
+/* --- Boutons --- */
+.buttons {
+  margin: 25px 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .3s, transform .2s;
+}
+button:hover { transform: scale(1.05); }
+#confirm { background:#1976d2; }
+#confirm:hover { background:#0d47a1; }
+#admin { background:#d32f2f; }
+#reset { background:#757575; }
+#export { background:#009688; }
+#scanTicket { background:#8e24aa; }
+
+/* --- Tableau des réservations --- */
+#reservations {
+  margin: 30px auto;
+  width: 90%;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  padding: 15px;
+}
+#reservations h3 {
+  color:#0d47a1;
+  margin-bottom:10px;
+}
+#reservations table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+#reservations th, #reservations td {
+  border-bottom:1px solid #ddd;
+  padding:8px;
+  text-align:left;
+}
+#reservations th {
+  background:#1976d2;
+  color:#fff;
+}
+
+/* --- Modale --- */
+.modal {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,.5);
+  display:flex; justify-content:center; align-items:center;
+  z-index:10;
+}
+.modal.hidden { display:none; }
+.modal-content {
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  width:300px;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+.modal-content input {
+  width:90%;
+  margin:6px auto;
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:5px;
+  display:block;
+}
+
+/* --- Responsive --- */
+@media(max-width:600px){
+  h1 { font-size:1.5rem; }
+  .seat { width:26px; height:26px; font-size:9px; margin:2px; }
+  .row-label { width:20px; font-size:12px; margin-right:4px; }
+  .buttons { gap:6px; }
+  button { font-size:13px; padding:8px 10px; }
+  #reservations { font-size:13px; padding:10px; }
+}
 </style>
 </head>
+
 <body>
 <h1>🎭 Théâtre Saint Martin</h1>
 <div class="scene">SCÈNE</div>
 
 <div class="legend">
-  <div><span class="free"></span>Libre</div>
-  <div><span class="selected"></span>Sélectionné</div>
-  <div><span class="reserved"></span>Réservé</div>
-  <div><span class="strapontin"></span>Strapontin</div>
+  <div><span class="free"></span> Libre</div>
+  <div><span class="selected"></span> Sélectionné</div>
+  <div><span class="reserved"></span> Réservé</div>
+  <div><span class="strapontin"></span> Strapontin</div>
 </div>
 
 <div class="hall-wrapper">
-  <div class="aisle"></div>
   <div id="hall"></div>
-  <div class="aisle"></div>
 </div>
 
 <div class="buttons">
@@ -135,7 +227,7 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
   <button id="admin">Mode Admin</button>
   <button id="reset" class="admin-only">Réinitialiser</button>
   <button id="export">Exporter CSV</button>
-  <button id="scanTicket" style="background:#8e24aa;">🎟️ Scanner un billet</button>
+  <button id="scanTicket">🎟️ Scanner un billet</button>
 </div>
 
 <div id="reservations">
@@ -146,6 +238,7 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
   </table>
 </div>
 
+<!-- Modale -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Informations de réservation</h3>
@@ -162,53 +255,25 @@ box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
 <script>
 emailjs.init("2m3fNNkp36a2wCfZn");
 
+// --- Configuration des rangées ---
 const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
 const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 let seats = JSON.parse(localStorage.getItem("seats") || "{}");
 let selected = [], admin = false;
 
 const hall = document.getElementById("hall");
-const resetBtn = document.getElementById("reset");
-const adminBtn = document.getElementById("admin");
 
-// === Création du badge admin ===
-const adminBadge = document.createElement("div");
-adminBadge.textContent = "🔓 Admin actif";
-Object.assign(adminBadge.style, {
-  position: "fixed",
-  top: "10px",
-  right: "10px",
-  background: "#d32f2f",
-  color: "#fff",
-  padding: "6px 12px",
-  borderRadius: "20px",
-  fontSize: "14px",
-  boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
-  display: "none",
-  transition: "opacity 0.3s ease"
-});
-document.body.append(adminBadge);
-
-// === Génération du plan de salle avec lettres de rangée ===
+// --- Génération du plan avec lettres de rangée ---
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
-
-  // Lettre de rangée (à gauche)
   const label = document.createElement("div");
   label.className = "row-label";
   label.textContent = r;
   row.append(label);
-
-  // Strapontin gauche
   row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
-
-  // Sièges numérotés
   seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
-
-  // Strapontin droit
   row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
-
   hall.append(row);
 });
 
@@ -240,7 +305,6 @@ function toggle(id, el) {
 }
 
 function save() { localStorage.setItem("seats", JSON.stringify(seats)); }
-
 function render() {
   document.querySelectorAll(".seat").forEach(el => {
     const id = el.dataset.id;
@@ -250,20 +314,18 @@ function render() {
   });
 }
 
-// === Modale de réservation ===
+// --- Modale réservation ---
 document.getElementById("confirm").onclick = () => {
   if (!selected.length) return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
 };
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
 
-// === Validation réservation ===
 document.getElementById("save").onclick = async () => {
   const name = document.getElementById("name").value.trim(),
         email = document.getElementById("email").value.trim(),
         phone = document.getElementById("phone").value.trim();
   if (!name || !email || !phone) return alert("Tous les champs sont requis.");
-
   const u = { name, email, phone };
   selected.forEach(id => seats[id] = u);
   save(); selected = []; render(); updateTable();
@@ -272,22 +334,16 @@ document.getElementById("save").onclick = async () => {
   alert("Réservation confirmée et email envoyé !");
 };
 
-// === Envoi EmailJS avec QR Code ===
+// --- EmailJS + QR Code ---
 async function sendEmail(user) {
   const reservedSeats = Object.entries(seats)
     .filter(([_, v]) => v.email === user.email)
     .map(([id]) => id)
     .join(", ");
-
   const qrData = JSON.stringify({
-    nom: user.name,
-    email: user.email,
-    tel: user.phone,
-    sieges: reservedSeats
+    nom: user.name, email: user.email, tel: user.phone, sieges: reservedSeats
   });
-
   const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
-
   emailjs.send("service_91fpmi6", "template_xzjnnc2", {
     to_name: user.name,
     to_email: user.email,
@@ -299,11 +355,11 @@ async function sendEmail(user) {
   .catch(err => console.error("❌ Erreur EmailJS :", err));
 }
 
-// === Mode administrateur ===
+// --- Mode admin ---
+const adminBtn = document.getElementById("admin");
+const resetBtn = document.getElementById("reset");
 adminBtn.textContent = "Activer le mode admin";
-adminBtn.style.background = "#d32f2f"; // Rouge par défaut
-resetBtn.style.display = "none"; // Caché par défaut
-
+resetBtn.style.display = "none";
 adminBtn.onclick = () => {
   if (!admin) {
     const p = prompt("Mot de passe admin :");
@@ -311,35 +367,26 @@ adminBtn.onclick = () => {
       admin = true;
       alert("Mode administrateur activé.");
       adminBtn.textContent = "Désactiver le mode admin";
-      adminBtn.style.background = "#1976d2"; // Bleu quand actif
+      adminBtn.style.background = "#1976d2";
       resetBtn.style.display = "inline-block";
-      adminBadge.style.display = "block";
-      adminBadge.style.opacity = "1";
-    } else {
-      alert("Mot de passe incorrect.");
-    }
+    } else alert("Mot de passe incorrect.");
   } else {
     admin = false;
     alert("Mode administrateur désactivé.");
     adminBtn.textContent = "Activer le mode admin";
-    adminBtn.style.background = "#d32f2f"; // Re-devient rouge
+    adminBtn.style.background = "#d32f2f";
     resetBtn.style.display = "none";
-    adminBadge.style.opacity = "0";
-    setTimeout(() => adminBadge.style.display = "none", 300);
   }
 };
-
-// === Réinitialisation sécurisée ===
 resetBtn.onclick = () => {
   if (!admin) return alert("Vous devez être en mode administrateur.");
   if (confirm("Voulez-vous vraiment réinitialiser toutes les réservations ?")) {
-    seats = {};
-    save(); render(); updateTable();
+    seats = {}; save(); render(); updateTable();
     alert("✅ Toutes les réservations ont été effacées.");
   }
 };
 
-// === Export CSV ===
+// --- Export CSV ---
 document.getElementById("export").onclick = () => {
   let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
   for (const [k, v] of Object.entries(seats)) {
@@ -353,7 +400,7 @@ document.getElementById("export").onclick = () => {
   a.click();
 };
 
-// === Tableau dynamique ===
+// --- Tableau ---
 function updateTable() {
   const tbody = document.getElementById("resBody");
   tbody.innerHTML = "";
@@ -370,21 +417,13 @@ function updateTable() {
   });
 }
 
+// --- Bouton vers le scanner ---
+document.getElementById("scanTicket").onclick = () => {
+  window.location.href = "scanner.html";
+};
+
 render();
 updateTable();
-  // === Bouton pour accéder au scanner ===
-document.getElementById("scanTicket").onclick = () => {
-  window.location.href = "scanner.html"; // adapte le nom du fichier si nécessaire
-};
 </script>
-
-
-
-
-
 </body>
 </html>
-
-
-
-
