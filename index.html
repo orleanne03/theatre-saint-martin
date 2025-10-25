@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎭 Théâtre Saint Martin – Réservations</title>
+
+<!-- Librairies -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<style>
+body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+margin:0;text-align:center;color:#212121}
+h1{color:#0d47a1;margin:20px 0;font-size:1.8rem}
+.scene{background:#212121;color:#fff;width:80%;max-width:800px;margin:10px auto 20px;padding:10px;border-radius:8px;
+box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:14px}
+.legend div{display:flex;align-items:center;gap:5px}
+.legend span{width:18px;height:18px;border-radius:3px;display:inline-block}
+.free{background:#e0e0e0}.selected{background:#64b5f6}.reserved{background:#ef5350}.strapontin{background:#ffd54f}
+.hall-wrapper{display:flex;justify-content:center;align-items:flex-start;gap:15px;margin:0 auto;width:90%;max-width:900px}
+.aisle{width:30px;background:transparent}
+#hall{display:flex;flex-direction:column;align-items:center;background:#fff;border-radius:10px;padding:15px;
+box-shadow:0 3px 10px rgba(0,0,0,.15);width:100%}
+.row{display:flex;justify-content:center;flex-wrap:wrap;margin:4px 0}
+.seat{width:32px;height:32px;margin:3px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+font-size:11px;cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.seat:hover{transform:scale(1.1)}
+.free{background:#e0e0e0}.selected{background:#64b5f6;color:#fff}.reserved{background:#ef5350;color:#fff}.strapontin{background:#ffd54f}
+.buttons{margin:20px 0}
+button{margin:5px;padding:8px 14px;border:none;border-radius:6px;background:#1976d2;color:#fff;cursor:pointer;transition:.3s;font-size:14px}
+button:hover{background:#0d47a1}button.admin-only{background:#d32f2f}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:10}
+.modal.hidden{display:none}
+.modal-content{background:#fff;padding:20px;border-radius:10px;width:300px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.modal-content input{width:90%;margin:6px auto;padding:8px;border:1px solid #ccc;border-radius:5px;display:block}
+#reservations{margin:20px auto;width:90%;max-width:800px;background:#fff;border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,.15);padding:10px}
+#reservations table{width:100%;border-collapse:collapse;font-size:14px}
+#reservations th,#reservations td{border-bottom:1px solid #ddd;padding:6px}
+#reservations th{background:#1976d2;color:#fff;text-align:left}
+@media(max-width:600px){.seat{width:26px;height:26px;font-size:9px;margin:2px}h1{font-size:1.4rem}}
+</style>
+</head>
+<body>
+<h1>🎭 Théâtre Saint Martin</h1>
+<div class="scene">SCÈNE</div>
+
+<div class="legend">
+  <div><span class="free"></span>Libre</div>
+  <div><span class="selected"></span>Sélectionné</div>
+  <div><span class="reserved"></span>Réservé</div>
+  <div><span class="strapontin"></span>Strapontin</div>
+</div>
+
+<div class="hall-wrapper">
+  <div class="aisle"></div>
+  <div id="hall"></div>
+  <div class="aisle"></div>
+</div>
+
+<div class="buttons">
+  <button id="confirm">Confirmer</button>
+  <button id="admin">Mode Admin</button>
+  <button id="reset" class="admin-only">Réinitialiser</button>
+  <button id="export">Exporter CSV</button>
+</div>
+
+<div id="reservations">
+  <h3>📋 Liste des réservations</h3>
+  <table>
+    <thead><tr><th>Rangée</th><th>Siège</th><th>Nom</th><th>Email</th><th>Téléphone</th></tr></thead>
+    <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
+  </table>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Informations de réservation</h3>
+    <input id="name" placeholder="Nom complet">
+    <input id="email" placeholder="Adresse email">
+    <input id="phone" placeholder="Téléphone">
+    <div>
+      <button id="save">Valider</button>
+      <button id="close">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+emailjs.init("2m3fNNkp36a2wCfZn");
+
+const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
+const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
+let seats = JSON.parse(localStorage.getItem("seats") || "{}");
+let selected = [], admin = false;
+
+const hall = document.getElementById("hall");
+const resetBtn = document.getElementById("reset");
+const adminBtn = document.getElementById("admin");
+
+// === Création du badge admin ===
+const adminBadge = document.createElement("div");
+adminBadge.textContent = "🔓 Admin actif";
+Object.assign(adminBadge.style, {
+  position: "fixed",
+  top: "10px",
+  right: "10px",
+  background: "#d32f2f",
+  color: "#fff",
+  padding: "6px 12px",
+  borderRadius: "20px",
+  fontSize: "14px",
+  boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+  display: "none",
+  transition: "opacity 0.3s ease"
+});
+document.body.append(adminBadge);
+
+// === Génération du plan de salle ===
+rows.forEach(r => {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
+  seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
+  row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+  hall.append(row);
+});
+
+function makeSeat(id, label, extra) {
+  const d = document.createElement("div");
+  d.className = "seat " + (extra || "free");
+  d.dataset.id = id;
+  d.textContent = label;
+  d.title = seats[id] ? seats[id].name : "Siège libre";
+  if (seats[id]) d.classList.add("reserved");
+  d.onclick = () => toggle(id, d);
+  return d;
+}
+
+function toggle(id, el) {
+  if (seats[id]) {
+    if (admin && confirm("Annuler la réservation de " + seats[id].name + " ?")) {
+      delete seats[id]; save(); render(); updateTable();
+    }
+    return;
+  }
+  if (selected.includes(id)) {
+    selected = selected.filter(s => s !== id);
+    el.classList.remove("selected");
+  } else {
+    selected.push(id);
+    el.classList.add("selected");
+  }
+}
+
+function save() { localStorage.setItem("seats", JSON.stringify(seats)); }
+
+function render() {
+  document.querySelectorAll(".seat").forEach(el => {
+    const id = el.dataset.id;
+    el.classList.remove("reserved", "selected");
+    if (seats[id]) el.classList.add("reserved");
+    el.title = seats[id] ? seats[id].name : "Siège libre";
+  });
+}
+
+// === Modale de réservation ===
+document.getElementById("confirm").onclick = () => {
+  if (!selected.length) return alert("Aucun siège sélectionné !");
+  document.getElementById("modal").classList.remove("hidden");
+};
+document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
+
+// === Validation réservation ===
+document.getElementById("save").onclick = async () => {
+  const name = document.getElementById("name").value.trim(),
+        email = document.getElementById("email").value.trim(),
+        phone = document.getElementById("phone").value.trim();
+  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
+
+  const u = { name, email, phone };
+  selected.forEach(id => seats[id] = u);
+  save(); selected = []; render(); updateTable();
+  await sendEmail(u);
+  document.getElementById("modal").classList.add("hidden");
+  alert("Réservation confirmée et email envoyé !");
+};
+
+// === Envoi EmailJS avec QR Code ===
+async function sendEmail(user) {
+  const reservedSeats = Object.entries(seats)
+    .filter(([_, v]) => v.email === user.email)
+    .map(([id]) => id)
+    .join(", ");
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    tel: user.phone,
+    sieges: reservedSeats
+  });
+
+  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
+
+  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
+    to_name: user.name,
+    to_email: user.email,
+    seats: reservedSeats,
+    phone: user.phone,
+    qr_image: qrImage
+  })
+  .then(() => console.log("✅ Email envoyé"))
+  .catch(err => console.error("❌ Erreur EmailJS :", err));
+}
+
+// === Mode administrateur ===
+adminBtn.textContent = "Activer le mode admin";
+adminBtn.style.background = "#d32f2f"; // Rouge par défaut
+resetBtn.style.display = "none"; // Caché par défaut
+
+adminBtn.onclick = () => {
+  if (!admin) {
+    const p = prompt("Mot de passe admin :");
+    if (p === "admin123") {
+      admin = true;
+      alert("Mode administrateur activé.");
+      adminBtn.textContent = "Désactiver le mode admin";
+      adminBtn.style.background = "#1976d2"; // Bleu quand actif
+      resetBtn.style.display = "inline-block";
+      adminBadge.style.display = "block";
+      adminBadge.style.opacity = "1";
+    } else {
+      alert("Mot de passe incorrect.");
+    }
+  } else {
+    admin = false;
+    alert("Mode administrateur désactivé.");
+    adminBtn.textContent = "Activer le mode admin";
+    adminBtn.style.background = "#d32f2f"; // Re-devient rouge
+    resetBtn.style.display = "none";
+    adminBadge.style.opacity = "0";
+    setTimeout(() => adminBadge.style.display = "none", 300);
+  }
+};
+
+// === Réinitialisation sécurisée ===
+resetBtn.onclick = () => {
+  if (!admin) return alert("Vous devez être en mode administrateur.");
+  if (confirm("Voulez-vous vraiment réinitialiser toutes les réservations ?")) {
+    seats = {};
+    save(); render(); updateTable();
+    alert("✅ Toutes les réservations ont été effacées.");
+  }
+};
+
+// === Export CSV ===
+document.getElementById("export").onclick = () => {
+  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
+  for (const [k, v] of Object.entries(seats)) {
+    const [r, s] = k.split("-");
+    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
+  }
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "reservations.csv";
+  a.click();
+};
+
+// === Tableau dynamique ===
+function updateTable() {
+  const tbody = document.getElementById("resBody");
+  tbody.innerHTML = "";
+  const entries = Object.entries(seats);
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
+    return;
+  }
+  entries.forEach(([id, data]) => {
+    const [r, s] = id.split("-");
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
+    tbody.append(tr);
+  });
+}
+
+render();
+updateTable();
+</script>
+
+
+
+
+
+</body>
+</html>
