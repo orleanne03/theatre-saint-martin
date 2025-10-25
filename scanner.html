@@ -74,117 +74,75 @@ small { display: block; margin-top: 8px; color: #666; }
 
 <script>
 let scanner;
-let lastScanText = "";
-let lastScanTime = 0;
-const beepOk = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
-const beepErr = new Audio("data:audio/wav;base64,UklGRpAAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
 
 function startScanner() {
-  scanner = new Html5Qrcode("reader");
+  try {
+    scanner = new Html5Qrcode("reader");
 
-  // ✅ QRbox adaptatif (responsive)
-  const config = {
-    fps: 10,
-    qrbox: function(viewfinderWidth, viewfinderHeight) {
-      // prend la plus petite dimension (largeur/hauteur)
-      const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-      // carré de 80 % de la plus petite dimension
-      const boxSize = Math.floor(minEdge * 0.8);
-      return { width: boxSize, height: boxSize };
-    }
-  };
+    const config = {
+      fps: 10,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const boxSize = Math.floor(minEdge * 0.8);
+        return { width: boxSize, height: boxSize };
+      }
+    };
 
-  scanner.start(
-    { facingMode: "environment" },
-    config,
-    onScanSuccess,
-    onScanError
-  )
-  .then(() => {
-    console.log("✅ Scanner démarré !");
-  })
-  .catch(err => {
-    document.getElementById("result").innerHTML =
-      '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
-    console.error("Erreur caméra :", err);
-  });
-}
+    scanner.start(
+      { facingMode: "environment" },
+      config,
+      onScanSuccess,
+      onScanError
+    )
+    .then(() => console.log("✅ Caméra démarrée"))
+    .catch(err => {
+      document.getElementById("result").innerHTML =
+        '<p class="error">Impossible d\'accéder à la caméra : ' + err + '</p>';
+      console.error("Erreur caméra :", err);
+    });
 
- 
-
-}
-
-function flash(color) {
-  document.body.style.backgroundColor = color;
-  setTimeout(() => (document.body.style.backgroundColor = ""), 500);
-}
-
-function onScanSuccess(decodedText) {
-  const now = Date.now();
-
-  // Si le même code revient dans les 3 s, on l'ignore.
-  if (decodedText === lastScanText && now - lastScanTime < 3000) {
-    return;
+  } catch (error) {
+    console.error("Erreur au démarrage du scanner :", error);
   }
+}
 
-  // On met à jour les valeurs pour ce nouveau code
-  lastScanText = decodedText;
-  lastScanTime = now;
+// ✅ Fonction appelée à chaque QR détecté
+function onScanSuccess(decodedText) {
+  console.log("🎯 QR détecté :", decodedText);
 
   const out = document.getElementById("result");
-
   try {
     const data = JSON.parse(decodedText);
-    const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
-
-    // 🔹 Permet de rescanner un nouveau billet même après 3 s
-    if (!scanned.includes(decodedText)) {
-      scanned.push(decodedText);
-      localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-      updateCounter();
-
-      out.innerHTML = `
-        <p class="valid">✅ Billet valide</p>
-        <p><b>Nom :</b> ${data.nom || "—"}</p>
-        <p><b>Email :</b> ${data.email || "—"}</p>
-        <p><b>Téléphone :</b> ${data.tel || "—"}</p>
-        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
-      flash("#e8f5e9");
-      beepOk.play();
-    } else {
-      out.innerHTML = `
-        <p class="error">⚠️ Billet déjà validé !</p>
-        <p><b>Nom :</b> ${data.nom || "—"}</p>
-        <p><b>Email :</b> ${data.email || "—"}</p>
-        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
-      flash("#ffebee");
-      beepErr.play();
-    }
-  } catch (err) {
-    console.error("Erreur QR :", err);
+    out.innerHTML = `
+      <p class="valid">✅ Billet valide</p>
+      <p><b>Nom :</b> ${data.nom || "—"}</p>
+      <p><b>Email :</b> ${data.email || "—"}</p>
+      <p><b>Téléphone :</b> ${data.tel || "—"}</p>
+      <p><b>Sièges :</b> ${data.sieges || "—"}</p>
+      <p><b>Date :</b> ${data.date_reservation || "—"}</p>
+    `;
+  } catch (e) {
     out.innerHTML = '<p class="error">❌ QR Code invalide</p>';
-    flash("#ffebee");
-    beepErr.play();
   }
 }
 
+// ✅ Erreurs du scanner ignorées
+function onScanError(error) {
+  // Pas d'affichage d'erreur continue pour éviter le spam dans la console
+}
 
-function onScanError() { /* ignore */ }
+// ✅ Bouton retour à l'accueil
+window.addEventListener("load", () => {
+  const homeBtn = document.getElementById("gotoHome");
+  if (homeBtn) {
+    homeBtn.onclick = () => {
+      window.location.href = "index.html";
+    };
+  }
 
-document.getElementById("clearScans").onclick = () => {
-  if (!confirm("Effacer la liste des billets scannés sur cet appareil ?")) return;
-  localStorage.removeItem("scannedTickets");
-  document.getElementById("result").innerHTML =
-    "<p>Liste des scans effacée. Prêt à scanner.</p>";
-};
-
-document.getElementById("gotoHome").onclick = () => {
-  window.location.href = "index.html";
-};
-
-window.addEventListener("load", startScanner);
+  startScanner();
+});
 </script>
+
 </body>
 </html>
