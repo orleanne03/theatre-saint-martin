@@ -53,18 +53,25 @@ button {
 .btn-reset { background: #d32f2f; }
 .btn-home { background: #8e24aa; }
 small { display: block; margin-top: 8px; color: #666; }
+#counter {
+  margin-top: 10px;
+  font-weight: bold;
+  color: #0d47a1;
+}
 @media(max-width:420px){#reader{width:260px}}
 </style>
 </head>
 <body>
 <h1>🎭 Théâtre Saint Martin — Contrôle des billets</h1>
-<p>Scannez le QR code du billet pour vérifier sa validité.</p>
+<p>Alignez le QR code dans le carré pour vérifier la validité du billet.</p>
 
 <div id="reader"></div>
 
 <div id="result">
   <p>Scannez un QR code pour vérifier le billet.</p>
 </div>
+
+<div id="counter">Billets scannés : 0</div>
 
 <div class="controls">
   <button id="clearScans" class="btn-reset">♻️ Réinitialiser les scans</button>
@@ -74,6 +81,16 @@ small { display: block; margin-top: 8px; color: #666; }
 
 <script>
 let scanner;
+let lastScanText = "";
+let lastScanTime = 0;
+const beepOk = new Audio("data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
+const beepErr = new Audio("data:audio/wav;base64,UklGRpAAAABXQVZFZm10IBAAAAABAAEAIlYAAB9AAACABAAZGF0YQAAAAA=");
+
+function updateCounter() {
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  document.getElementById("counter").textContent =
+    "Billets scannés : " + scanned.length;
+}
 
 function startScanner() {
   try {
@@ -104,15 +121,43 @@ function startScanner() {
   } catch (error) {
     console.error("Erreur au démarrage du scanner :", error);
   }
+
+  updateCounter();
 }
 
-// ✅ Fonction appelée à chaque QR détecté
+function flash(color) {
+  document.body.style.backgroundColor = color;
+  setTimeout(() => (document.body.style.backgroundColor = ""), 500);
+}
+
 function onScanSuccess(decodedText) {
-  console.log("🎯 QR détecté :", decodedText);
+  const now = Date.now();
+  if (decodedText === lastScanText && now - lastScanTime < 3000) return;
+  lastScanText = decodedText;
+  lastScanTime = now;
 
   const out = document.getElementById("result");
   try {
-    const data = JSON.parse(decodeURIComponent(decodedText));
+    // ✅ décodage correct du texte encodé
+    const decoded = decodeURIComponent(decodedText);
+    const data = JSON.parse(decoded);
+    const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+
+    if (scanned.includes(decodedText)) {
+      out.innerHTML = `
+        <p class="error">⚠️ Billet déjà validé !</p>
+        <p><b>Nom :</b> ${data.nom || "—"}</p>
+        <p><b>Email :</b> ${data.email || "—"}</p>
+        <p><b>Sièges :</b> ${data.sieges || "—"}</p>
+        <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
+      flash("#ffebee");
+      beepErr.play();
+      return;
+    }
+
+    scanned.push(decodedText);
+    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+    updateCounter();
 
     out.innerHTML = `
       <p class="valid">✅ Billet valide</p>
@@ -120,30 +165,34 @@ function onScanSuccess(decodedText) {
       <p><b>Email :</b> ${data.email || "—"}</p>
       <p><b>Téléphone :</b> ${data.tel || "—"}</p>
       <p><b>Sièges :</b> ${data.sieges || "—"}</p>
-      <p><b>Date :</b> ${data.date_reservation || "—"}</p>
-    `;
-  } catch (e) {
-    out.innerHTML = '<p class="error">❌ QR Code invalide</p>';
+      <p><b>Date :</b> ${data.date_reservation || "—"}</p>`;
+    flash("#e8f5e9");
+    beepOk.play();
+  } catch (err) {
+    console.error("Erreur décodage QR :", err, decodedText);
+    out.innerHTML = '<p class="error">❌ QR Code invalide (format non reconnu)</p>';
+    flash("#ffebee");
+    beepErr.play();
   }
 }
 
-// ✅ Erreurs du scanner ignorées
 function onScanError(error) {
-  // Pas d'affichage d'erreur continue pour éviter le spam dans la console
+  // Ignore les erreurs mineures
 }
 
-// ✅ Bouton retour à l'accueil
-window.addEventListener("load", () => {
-  const homeBtn = document.getElementById("gotoHome");
-  if (homeBtn) {
-    homeBtn.onclick = () => {
-      window.location.href = "index.html";
-    };
-  }
+document.getElementById("clearScans").onclick = () => {
+  if (!confirm("Effacer la liste des billets scannés sur cet appareil ?")) return;
+  localStorage.removeItem("scannedTickets");
+  document.getElementById("result").innerHTML =
+    "<p>Liste des scans effacée. Prêt à scanner.</p>";
+  updateCounter();
+};
 
-  startScanner();
-});
+document.getElementById("gotoHome").onclick = () => {
+  window.location.href = "index.html";
+};
+
+window.addEventListener("load", startScanner);
 </script>
-
 </body>
 </html>
