@@ -185,9 +185,20 @@ function makeSeat(id, label, extra){
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
+
+  // 🔒 Si c’est un strapontin, il est non réservable
+  if (extra === "strapontin") {
+    d.style.opacity = "0.7";
+    d.style.cursor = "not-allowed";
+    d.title = "Strapontin non réservable";
+    return d; // on ne lui ajoute pas d'événement clic
+  }
+
+  // 🎟️ Sinon, siège normal cliquable
   d.onclick = () => toggle(id, d);
   return d;
 }
+
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
@@ -305,6 +316,7 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
+
 
 
 
