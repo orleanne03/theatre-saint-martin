@@ -139,17 +139,21 @@ animation:spin 1s linear infinite;margin:0 auto 10px}@keyframes spin{to{transfor
   </div>
 </div>
 
-<script>
-/* === EmailJS === */
+<script type="module">
+/* === Attente que Firebase soit prêt === */
+await new Promise(resolve => {
+  const check = () => window._firebaseRef ? resolve() : setTimeout(check, 100);
+  check();
+});
+
+/* === Initialisations globales === */
 emailjs.init("2m3fNNkp36a2wCfZn");
 
-/* === Firebase global === */
 const db = window._firebaseDB;
 const ref = window._firebaseRef;
 const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 
-/* === Variables === */
 let seats = {}, selected = [], admin = false;
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
@@ -163,13 +167,16 @@ const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
+
   const label = document.createElement("div");
   label.className = "row-label";
   label.textContent = r;
   row.append(label);
+
   row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
   seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
   row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+
   hall.append(row);
 });
 
@@ -178,27 +185,32 @@ function makeSeat(id, label, extra){
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
   d.textContent = label;
-  d.onclick = ()=>toggle(id,d);
+  d.onclick = () => toggle(id, d);
   return d;
 }
 
-/* === Firebase synchro === */
-const seatsRef = ref(db,"seats");
-onValue(seatsRef,snapshot=>{
-  seats = snapshot.val()||{};
+/* === Connexion Firebase === */
+const seatsRef = ref(db, "seats");
+onValue(seatsRef, snapshot => {
+  seats = snapshot.val() || {};
   render(); updateTable();
-  setTimeout(()=>loader.classList.add("hidden"),400);
+  setTimeout(() => loader.classList.add("hidden"), 400);
 });
 
-function save(){ set(seatsRef,seats); }
+/* === Fonctions principales === */
+function save(){ set(seatsRef, seats); }
 
 function render(){
   document.querySelectorAll(".seat").forEach(el=>{
-    const id=el.dataset.id;
+    const id = el.dataset.id;
     el.classList.remove("reserved","selected");
     if(seats[id]) el.classList.add("reserved");
   });
 }
+
+/* (le reste de ton script continue ici : sélection, modale, admin, export, etc.) */
+</script>
+
 
 /* === Sélection sièges === */
 function toggle(id,el){
@@ -282,4 +294,5 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 </script>
 </body>
 </html>
+
 
