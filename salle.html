@@ -1,62 +1,40 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🎟️ Réservation — Théâtre Saint Martin</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🎭 Théâtre Saint Martin — Réservation</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 <style>
-body {
-  font-family:"Segoe UI",sans-serif;
-  background:linear-gradient(180deg,#f3f4f6,#e3f2fd);
-  color:#212121;
-  margin:0;
-  padding:20px;
-  text-align:center;
-}
-h1{color:#0d47a1;margin-bottom:6px}
-#seats {
-  display:grid;
-  grid-template-columns:repeat(16,32px);
-  gap:6px;
-  justify-content:center;
-  margin:20px auto;
-}
-.seat {
-  width:32px;height:32px;
-  border-radius:6px;
-  background:#e0e0e0;
-  cursor:pointer;
-  transition:background .3s;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;
-}
-.seat:hover{background:#90caf9}
-.seat.reserved{background:#c62828;color:#fff;cursor:not-allowed}
-.seat.selected{background:#1565c0;color:#fff}
-#legend{display:flex;gap:12px;justify-content:center;margin:12px 0}
-.legend-item{display:flex;align-items:center;gap:6px}
-.legend-color{width:20px;height:20px;border-radius:4px}
-#modal {
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;
-  z-index:9999;touch-action:none;
-}
-#modalContent {
-  background:#fff;padding:20px;border-radius:10px;width:300px;
-  text-align:left;box-shadow:0 4px 12px rgba(0,0,0,.3);
-}
-input{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:1px solid #ccc}
-button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;color:#fff;margin:6px}
-.btn-reserve{background:#1976d2}
-.btn-close{background:#757575}
-#qrZone{margin-top:20px}
-@media(max-width:500px){#seats{grid-template-columns:repeat(8,32px)}}
+body{font-family:"Segoe UI",sans-serif;background:linear-gradient(180deg,#f3f4f6,#e3f2fd);color:#212121;margin:0;padding:20px;text-align:center;}
+h1{color:#0d47a1;margin-bottom:6px;}
+#seats{display:grid;grid-template-columns:repeat(16,32px);gap:6px;justify-content:center;margin:20px auto;}
+.seat{width:32px;height:32px;border-radius:6px;background:#e0e0e0;cursor:pointer;transition:background .3s;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.seat:hover{background:#90caf9;}
+.seat.reserved{background:#c62828;color:#fff;cursor:not-allowed;}
+.seat.selected{background:#1565c0;color:#fff;}
+#legend{display:flex;gap:12px;justify-content:center;margin:12px 0;}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.legend-color{width:20px;height:20px;border-radius:4px;}
+#modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999;touch-action:none;}
+#modalContent{background:#fff;padding:20px;border-radius:10px;width:300px;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+input{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:1px solid #ccc;}
+button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;color:#fff;margin:6px;}
+.btn-reserve{background:#1976d2;}
+.btn-close{background:#757575;}
+.btn-admin{background:#d32f2f;}
+.btn-export{background:#388e3c;}
+#qrZone{margin-top:20px;}
+#adminPanel{margin-top:30px;}
+@media(max-width:500px){#seats{grid-template-columns:repeat(8,32px);}}
+table{border-collapse:collapse;width:100%;max-width:800px;margin:20px auto;}
+th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;font-size:13px;}
+th{background:#e3f2fd;}
 </style>
 </head>
 <body>
 <h1>🎭 Théâtre Saint Martin</h1>
-<h3>Réservez vos sièges</h3>
+<h3>Réservation des sièges</h3>
 
 <div id="legend">
   <div class="legend-item"><div class="legend-color" style="background:#e0e0e0"></div>Libre</div>
@@ -67,6 +45,7 @@ button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;color:#fff
 <div id="seats"></div>
 
 <button class="btn-reserve" onclick="openModal()">Réserver</button>
+<button class="btn-admin" onclick="toggleAdmin()">Activer le mode admin</button>
 
 <div id="modal">
   <div id="modalContent">
@@ -74,7 +53,7 @@ button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;color:#fff
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
-    <div style="text-align:right;margin-top:10px">
+    <div style="text-align:right;margin-top:10px;">
       <button class="btn-close" onclick="closeModal()">Annuler</button>
       <button class="btn-reserve" onclick="confirmReservation()">Confirmer</button>
     </div>
@@ -84,6 +63,16 @@ button{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;color:#fff
 <div id="qrZone">
   <h3>🎟️ Votre billet</h3>
   <img id="qrPreview" width="200">
+</div>
+
+<div id="adminPanel" style="display:none;">
+  <h3>🧾 Panneau administrateur</h3>
+  <button class="btn-export" onclick="exportCSV()">📤 Export CSV</button>
+  <button class="btn-admin" onclick="resetAll()">♻️ Réinitialiser la salle</button>
+  <table id="resTable">
+    <thead><tr><th>Nom</th><th>Email</th><th>Téléphone</th><th>Sièges</th><th>Date</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
@@ -131,11 +120,7 @@ function confirmReservation(){
   const email=document.getElementById("email").value.trim();
   const phone=document.getElementById("phone").value.trim();
   if(!name||!email){alert("Nom et email obligatoires.");return;}
-  const reservation={
-    nom:name,email:email,tel:phone,
-    sieges:selectedSeats.join(", "),
-    date_reservation:new Date().toISOString()
-  };
+  const reservation={nom:name,email:email,tel:phone,sieges:selectedSeats.join(", "),date_reservation:new Date().toISOString()};
   saveReservation(reservation);
   generateQR(reservation);
   alert("Réservation enregistrée !");
@@ -148,9 +133,10 @@ function saveReservation(r){
   localStorage.setItem("reservations",JSON.stringify(all));
   for(const s of selectedSeats){
     const el=document.querySelector(`[data-id='${s}']`);
-    if(el){el.classList.remove("selected");el.classList.add("reserved");}
+    if(el){el.classList.remove("selected");el.classList.add("reserved");el.title=r.nom;}
   }
   selectedSeats=[];
+  refreshTable();
 }
 
 function loadReservations(){
@@ -158,16 +144,59 @@ function loadReservations(){
   for(const r of all){
     for(const s of r.sieges.split(", ")){
       const el=document.querySelector(`[data-id='${s}']`);
-      if(el)el.classList.add("reserved");
+      if(el){el.classList.add("reserved");el.title=r.nom;}
     }
   }
+  refreshTable();
 }
 
 function generateQR(data){
-  const qrData=encodeURIComponent(JSON.stringify(data)); // compatible scanner
+  const qrData=encodeURIComponent(JSON.stringify(data)); // encodage compatible scanner
   QRCode.toDataURL(qrData,{width:300,margin:1})
     .then(url=>{document.getElementById("qrPreview").src=url;})
     .catch(err=>console.error(err));
+}
+
+function toggleAdmin(){
+  const pass=prompt("Mot de passe administrateur :");
+  if(pass==="admin123"){
+    document.getElementById("adminPanel").style.display="block";
+    alert("Mode administrateur activé.");
+  } else alert("Mot de passe incorrect.");
+}
+
+function refreshTable(){
+  const tbody=document.querySelector("#resTable tbody");
+  tbody.innerHTML="";
+  const all=JSON.parse(localStorage.getItem("reservations")||"[]");
+  for(const r of all){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${r.nom}</td><td>${r.email}</td><td>${r.tel}</td><td>${r.sieges}</td><td>${new Date(r.date_reservation).toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function exportCSV(){
+  const all=JSON.parse(localStorage.getItem("reservations")||"[]");
+  if(!all.length){alert("Aucune réservation.");return;}
+  let csv="Nom,Email,Téléphone,Sièges,Date\n";
+  for(const r of all){
+    csv+=`"${r.nom}","${r.email}","${r.tel}","${r.sieges}","${r.date_reservation}"\n`;
+  }
+  const blob=new Blob([csv],{type:"text/csv"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="reservations.csv";a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetAll(){
+  if(confirm("Supprimer toutes les réservations ?")){
+    localStorage.removeItem("reservations");
+    renderSeats();
+    document.getElementById("qrPreview").src="";
+    refreshTable();
+  }
 }
 
 window.onload=renderSeats;
