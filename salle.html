@@ -219,16 +219,23 @@ function render(){
 }
 
 /* === Sélection sièges === */
-function toggle(id,el){
-  if(seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
-  if(selected.includes(id)){
-    selected=selected.filter(s=>s!==id);
+function toggle(id, el) {
+  // Si le siège est déjà réservé, on bloque
+  if (seats[id]) {
+    alert("⚠️ Ce siège est déjà réservé !");
+    return;
+  }
+
+  // Si le siège est déjà sélectionné, on le désélectionne
+  if (selected.includes(id)) {
+    selected = selected.filter(s => s !== id);
     el.classList.remove("selected");
   } else {
     selected.push(id);
     el.classList.add("selected");
   }
 }
+
 
 /* === Confirmation === */
 document.getElementById("confirm").onclick=()=>{
@@ -315,6 +322,7 @@ document.getElementById("scanTicket").onclick=()=>window.location.href="scanner.
 
 </body>
 </html>
+
 
 
 
