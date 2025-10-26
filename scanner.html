@@ -21,7 +21,7 @@
   #counter{font-weight:700;color:#0d47a1}
   #details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
   #newScanBtn{display:none;margin-top:10px;}
-  #resetScanBtn{background:#f57c00;} 
+  #resetScanBtn{background:#f57c00;}
   #resetScanBtn:hover{background:#e65100;}
   @media(max-width:420px){#reader{width:260px}}
 </style>
@@ -164,16 +164,23 @@ newScanBtn.onclick = () => {
 // bouton "Accueil"
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
 
-// === ♻️ Bouton "Réinitialiser les billets scannés" ===
+// === ♻️ Bouton "Réinitialiser les billets scannés" (protégé par mot de passe admin) ===
 const resetScanBtn = document.getElementById("resetScanBtn");
 if (resetScanBtn) {
   resetScanBtn.onclick = () => {
-    if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
-      localStorage.removeItem("scannedTickets");
-      updateCounter();
-      detailsEl.style.display = "none";
-      statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
-      newScanBtn.style.display = "none";
+    const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
+    if (pwd === "admin123") { // 🔑 change ici ton mot de passe admin
+      if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
+        localStorage.removeItem("scannedTickets");
+        updateCounter();
+        detailsEl.style.display = "none";
+        statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
+        newScanBtn.style.display = "none";
+        flash("lime");
+      }
+    } else if (pwd !== null) {
+      alert("❌ Mot de passe incorrect.");
+      flash("red");
     }
   };
 }
