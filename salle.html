@@ -80,32 +80,44 @@ h1 {
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
+/* === Conteneur principal === */
 .hall-wrapper {
-  display: block;                   /* ✅ on revient à block pour laisser le scroll natif complet */
+  display: block;
   width: 100%;
-  overflow-x: scroll;               /* pas auto → force le scroll dans les deux sens */
+  overflow-x: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pinch-zoom pan-x pan-y;
   padding: 10px 0;
   box-sizing: border-box;
   background: transparent;
-  text-align: center;               /* ✅ centre le #hall horizontalement sans bloquer le scroll */
+  text-align: center;  /* ✅ centre par défaut */
 }
 
-
-
-
+/* === Bloc des sièges === */
 #hall {
-  display: flex;
+  display: inline-flex;             /* ✅ permet le centrage avec text-align: center */
   flex-direction: column;
   align-items: center;
-  width: max-content;
   background: #fff;
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
+  transition: transform 0.2s ease;
 }
+
+/* === 🌐 Correction responsive : sur mobile, on désactive le centrage pour garder le scroll complet === */
+@media (max-width: 768px) {
+  .hall-wrapper {
+    text-align: left;              /* ✅ permet le scroll total (gauche et droite) */
+    padding-left: 10px;
+  }
+  #hall {
+    display: flex;                 /* ✅ comportement normal sans centrage forcé */
+    width: max-content;
+  }
+}
+
 
 
 
@@ -680,6 +692,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
