@@ -514,6 +514,20 @@ input.paid-toggle {
 .seat.strapontin.paid {
   background: linear-gradient(145deg, #7cb342, #558b2f);
 }
+/* === Ligne "Paiement reçu" === */
+.paid-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 12px 5px;
+  font-weight: 500;
+}
+
+.paid-line input[type="checkbox"] {
+  transform: scale(1.3);
+  cursor: pointer;
+  margin-right: 8px; /* espace léger avec le bord droit */
+}
 
 </style>
 </head>
@@ -584,10 +598,10 @@ input.paid-toggle {
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
 
-    <label style="display:flex;align-items:center;gap:6px;margin:8px 0 12px 5px;">
-      <input type="checkbox" id="paid" />
-      Paiement reçu
-    </label>
+    <div class="paid-line">
+  <span>💰 Paiement reçu</span>
+  <input type="checkbox" id="paid" />
+</div>
 
     <div>
       <button id="save">Valider</button>
@@ -1080,6 +1094,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
