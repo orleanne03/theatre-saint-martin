@@ -293,6 +293,53 @@ button {
   .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
   .row-label { font-size: 12px; margin-right: 4px; }
   h1 { font-size: 1.5rem; }
+  /* === 🌟 VISUEL AMÉLIORÉ POUR LE MODE ADMIN === */
+
+/* Fond légèrement doré pour signaler le mode admin */
+body.admin {
+  background: radial-gradient(circle at center, #fff8e1, #ffe082);
+  transition: background 0.5s ease;
+}
+
+/* Aura dorée autour de tous les sièges réservés */
+.admin .seat.reserved {
+  box-shadow: 0 0 10px 3px rgba(255,215,0,0.7),
+              inset 0 2px 4px rgba(0,0,0,0.3);
+  animation: pulseGold 1.5s infinite alternate;
+}
+
+/* Animation douce (pulsation dorée) */
+@keyframes pulseGold {
+  from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
+  to   { box-shadow: 0 0 14px 5px rgba(255,215,0,0.9); }
+}
+
+/* Curseur et effet au survol des sièges réservés */
+.admin .seat.reserved:hover {
+  cursor: pointer;
+  transform: scale(1.12);
+  filter: brightness(1.15);
+}
+
+/* Petite étiquette visuelle "Mode Admin" fixe */
+#adminBanner {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(90deg, #ffb300, #f57c00);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: none;
+}
+body.admin #adminBanner {
+  display: block;
+}
+
 }
 </style>
 </head>
@@ -550,9 +597,11 @@ function updateTable() {
 /* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
 </script>
+<div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
 
 </body>
 </html>
+
 
 
 
