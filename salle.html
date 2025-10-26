@@ -470,12 +470,6 @@ body.admin #adminBanner {
     font-size: 13px;
   }
 }
-#downloadGuide {
-  background: #1976d2;
-}
-#downloadGuide:hover {
-  background: #0d47a1;
-}
 
 </style>
 </head>
@@ -508,7 +502,6 @@ body.admin #adminBanner {
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
-  <button id="downloadGuide" class="violet">📄 AIDE </button>
 </div>
 
 <div id="reservations">
@@ -787,25 +780,9 @@ window.addEventListener("load", () => {
 
 /* === 🔁 Réajuste lors d’un redimensionnement ou d’une rotation d’écran === */
 window.addEventListener("resize", autoFitHall);
-/* === 📄 Télécharger le mode d'emploi PDF === */
-const guideBtn = document.getElementById("downloadGuide");
-if (guideBtn) {
-  guideBtn.onclick = () => {
-    const link = document.createElement("a");
-    link.href = "Theatre_Saint_Martin_Mode_d_emploi_final.pdf"; // 🔗 Chemin vers ton fichier PDF
-    /* === 📄 Télécharger / ouvrir le mode d'emploi PDF === */
-const guideBtn = document.getElementById("downloadGuide");
-if (guideBtn) {
-  guideBtn.onclick = () => {
-    // Ouvre dans un nouvel onglet (compatible PC & mobile)
-    window.open("mode_emploi.pdf", "_blank");
-  };
-}
-
-  };
-}
 
 </script>
+ <script>
 <script>
 
 
@@ -874,11 +851,6 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
-
-
-
-
-
 
 
 
