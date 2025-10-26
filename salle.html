@@ -134,21 +134,17 @@ h1 {
   min-width: 18px;
 }
 .seat {
-  width: 34px;
-  height: 34px;
-  margin: 4px;
-  border-radius: 6px;
-  display: flex;                 /* ✅ pour centrer parfaitement le texte */
-  justify-content: center;       /* centre horizontalement */
-  align-items: center;           /* centre verticalement */
-  font-size: 0.95em;             /* ✅ texte presque plein */
-  font-weight: 700;              /* ✅ plus lisible */
-  color: #fff;                   /* ✅ blanc sur fond coloré */
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  position: relative;
+  font-size: 1em;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  text-align: center;
 }
+.seat.free, .seat.selected, .seat.reserved, .seat.strapontin {
+  color: #fff;  /* blanc */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3); /* contraste sur fond clair ou foncé */
+}
+
 
 /* 🔧 Pour que le texte s’adapte automatiquement à la taille du siège */
 @media (max-width: 600px) {
@@ -705,6 +701,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
