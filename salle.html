@@ -536,17 +536,22 @@ adminBtn.onclick = () => {
     const p = prompt("Mot de passe admin :");
     if (p === "admin123") {
       admin = true;
-      alert("Mode admin activé 🛠️");
+      alert("✅ Mode admin activé");
       resetBtn.style.display = "inline-block";
       document.body.classList.add("admin");
-    } else alert("Mot de passe incorrect.");
+      adminBtn.textContent = "🚪 Sortir du mode admin";
+    } else {
+      alert("❌ Mot de passe incorrect.");
+    }
   } else {
     admin = false;
-    alert("Mode admin désactivé");
+    alert("👋 Mode admin désactivé");
     resetBtn.style.display = "none";
     document.body.classList.remove("admin");
+    adminBtn.textContent = "🔐 Admin";
   }
 };
+
 
 /* === Réinitialiser toute la salle === */
 resetBtn.onclick = () => {
@@ -601,6 +606,7 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 
 </body>
 </html>
+
 
 
 
