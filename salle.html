@@ -52,6 +52,13 @@ h1 {
   align-items: center;
   gap: 8px;
 }
+  #legend-paid {
+  background: #f1f8e9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
 .scene {
   background: #212121;
   color: #fff;
@@ -529,12 +536,22 @@ body.admin #adminBanner {
 </div>
 
 <div id="reservations">
-  <h3>📋 Liste des réservations</h3>
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+    <h3>📋 Liste des réservations</h3>
+    <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+      <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
+      <span>Client ayant payé</span>
+    </div>
+  </div>
+
   <table>
-    <thead><tr><th>Rangee</th><th>Siege</th><th>Nom</th><th>Email</th><th>Tel</th></tr></thead>
+    <thead>
+      <tr><th>Rangée</th><th>Siège</th><th>Nom</th><th>Email</th><th>Téléphone</th></tr>
+    </thead>
     <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
   </table>
 </div>
+
 
 <div id="modal" class="modal hidden">
   <div class="modal-content">
@@ -989,6 +1006,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
