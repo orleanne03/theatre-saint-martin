@@ -81,19 +81,18 @@ h1 {
 .seat.strapontin.selected { background: #82b1ff !important; }
 
 .hall-wrapper {
-  display: flex;
-  justify-content: center;       /* ✅ centre horizontalement */
-  align-items: flex-start;       /* ou center pour centrer aussi verticalement */
+  display: block;                   /* ✅ on revient à block pour laisser le scroll natif complet */
   width: 100%;
-  min-height: 70vh;              /* garde un bon équilibre visuel sur grand écran */
-  overflow-x: auto;
+  overflow-x: scroll;               /* pas auto → force le scroll dans les deux sens */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pinch-zoom pan-x pan-y;
-  padding: 10px;
+  padding: 10px 0;
   box-sizing: border-box;
   background: transparent;
+  text-align: center;               /* ✅ centre le #hall horizontalement sans bloquer le scroll */
 }
+
 
 
 
@@ -681,6 +680,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
