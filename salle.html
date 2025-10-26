@@ -80,20 +80,18 @@ h1 {
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
-/* === CONTENEUR DE LA SALLE === */
 .hall-wrapper {
+  display: block;
   width: 100%;
-  height: calc(100vh - 200px); /* laisse de la place pour les boutons */
-  overflow: auto;              /* scroll libre horizontal + vertical */
-  -webkit-overflow-scrolling: touch;
-  touch-action: pinch-zoom pan-x pan-y; /* ✅ pinch + scroll */
+  overflow-x: auto;                 /* scroll horizontal natif */
+  overflow-y: auto;                 /* scroll vertical natif */
+  -webkit-overflow-scrolling: touch;/* fluide iOS */
+  touch-action: pinch-zoom pan-x pan-y; /* ✅ autorise zoom + défilement */
   padding: 10px;
   box-sizing: border-box;
   background: transparent;
-  scroll-behavior: smooth;
 }
 
-/* === SALLE === */
 #hall {
   display: flex;
   flex-direction: column;
@@ -103,10 +101,7 @@ h1 {
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  transform-origin: top left;
-  transition: transform 0.3s ease;
 }
-
 
 
 
@@ -348,12 +343,6 @@ body.admin #adminBanner {
 }
 
 }
-  /* === ÉCHELLE AUTO ADAPTATIVE === */
-#hall {
-  transform-origin: top left;
-  transition: transform 0.3s ease;
-}
-
 </style>
 </head>
 
@@ -681,65 +670,12 @@ wrapper.addEventListener("touchend", e => {
 });
 </script>
 
-<script>
-/* === ADAPTATION AUTO + CENTRAGE === */
-window.addEventListener("load", () => {
-  const hall = document.getElementById("hall");
-  const wrapper = document.querySelector(".hall-wrapper");
-
-  // Taille réelle du plan et de la zone visible
-  const hallWidth = hall.scrollWidth;
-  const hallHeight = hall.scrollHeight;
-  const wrapWidth = wrapper.clientWidth;
-  const wrapHeight = wrapper.clientHeight;
-
-  // Calcul du facteur d'échelle pour tout faire tenir
-  const scaleX = wrapWidth / hallWidth;
-  const scaleY = wrapHeight / hallHeight;
-  const scale = Math.min(scaleX, scaleY, 1); // ne jamais agrandir
-
-  // Application de l'échelle
-  hall.style.transform = `scale(${scale})`;
-
-  // Centrage horizontal + vertical automatique
-  const scrollLeft = (hallWidth * scale - wrapWidth) / 2;
-  const scrollTop = (hallHeight * scale - wrapHeight) / 2;
-
-  wrapper.scrollLeft = scrollLeft > 0 ? scrollLeft : 0;
-  wrapper.scrollTop = scrollTop > 0 ? scrollTop : 0;
-});
-</script>
-<script>
-/* === Ajuste l'échelle initiale sans bloquer le scroll === */
-window.addEventListener("load", () => {
-  const hall = document.getElementById("hall");
-  const wrapper = document.querySelector(".hall-wrapper");
-
-  // tailles visibles / réelles
-  const hallWidth = hall.scrollWidth;
-  const hallHeight = hall.scrollHeight;
-  const wrapWidth = wrapper.clientWidth;
-  const wrapHeight = wrapper.clientHeight;
-
-  // échelle de départ (on réduit seulement si nécessaire)
-  const scale = Math.min(wrapWidth / hallWidth, wrapHeight / hallHeight, 1);
-  hall.style.transform = `scale(${scale})`;
-
-  // recentrage horizontal uniquement
-  wrapper.scrollLeft = (hallWidth * scale - wrapWidth) / 2;
-});
-</script>
-
 
 
 <div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
 
 </body>
 </html>
-
-
-
-
 
 
 
