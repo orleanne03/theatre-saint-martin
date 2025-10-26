@@ -371,6 +371,7 @@ const loader = document.getElementById("loader");
 const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
 const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 
+/* === Génération du plan === */
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
@@ -396,6 +397,7 @@ function makeSeat(id, label, extra){
   return d;
 }
 
+/* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
@@ -406,26 +408,43 @@ onValue(seatsRef, snapshot => {
 
 function save(){ set(seatsRef, seats); }
 
+/* === Rendu visuel === */
 function render() {
   document.querySelectorAll(".seat").forEach(el => {
     const id = el.dataset.id;
     const wasStrap = el.classList.contains("strapontin");
     el.className = "seat";
     if (wasStrap) el.classList.add("strapontin");
-
     if (seats[id]) el.classList.add("reserved");
     else if (selected.includes(id)) el.classList.add("selected");
     else el.classList.add("free");
   });
 }
 
+/* === Clic sur un siège === */
 function toggle(id, el) {
+  // 🧰 Si admin : peut libérer un siège réservé
+  if (admin && seats[id]) {
+    if (confirm(`🔓 Libérer le siège ${id} ?`)) {
+      delete seats[id];
+      save();
+      render();
+      alert(`✅ Siège ${id} libéré.`);
+    }
+    return;
+  }
+
+  // Si non admin : clic sur un siège réservé => bloqué
   if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+
+  // Sélection / désélection classique
   if (selected.includes(id)) selected = selected.filter(s => s !== id);
   else selected.push(id);
+
   render();
 }
 
+/* === Confirmation réservation === */
 document.getElementById("confirm").onclick = () => {
   if (!selected.length) return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
@@ -437,6 +456,7 @@ document.getElementById("save").onclick = async () => {
   const email = document.getElementById("email").value.trim();
   const phone = document.getElementById("phone").value.trim();
   if (!name || !email || !phone) return alert("Tous les champs sont requis.");
+
   const user = { name, email, phone };
   selected.forEach(id => { if (!seats[id]) seats[id] = user; });
   save();
@@ -446,6 +466,7 @@ document.getElementById("save").onclick = async () => {
   alert("✅ Réservation confirmée et email envoyé !");
 };
 
+/* === Email + QR === */
 async function sendEmail(user) {
   const reservedSeats = Object.entries(seats)
     .filter(([_, v]) => v.email === user.email)
@@ -462,26 +483,35 @@ async function sendEmail(user) {
   }).then(() => console.log("✅ Email envoyé")).catch(err => console.error("❌ Erreur EmailJS :", err));
 }
 
+/* === Admin Mode === */
 adminBtn.onclick = () => {
   if (!admin) {
     const p = prompt("Mot de passe admin :");
     if (p === "admin123") {
       admin = true;
-      alert("Mode admin activé");
+      alert("Mode admin activé 🛠️");
       resetBtn.style.display = "inline-block";
+      document.body.classList.add("admin");
     } else alert("Mot de passe incorrect.");
   } else {
     admin = false;
     alert("Mode admin désactivé");
     resetBtn.style.display = "none";
+    document.body.classList.remove("admin");
   }
 };
 
+/* === Réinitialiser toute la salle === */
 resetBtn.onclick = () => {
   if (!admin) return alert("Activez le mode admin.");
-  if (confirm("Effacer toutes les réservations ?")) { seats = {}; save(); alert("✅ Réinitialisation complète."); }
+  if (confirm("Effacer toutes les réservations ?")) {
+    seats = {};
+    save();
+    alert("✅ Réinitialisation complète.");
+  }
 };
 
+/* === Export CSV === */
 document.getElementById("export").onclick = () => {
   let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
   for (const [k, v] of Object.entries(seats)) {
@@ -495,6 +525,7 @@ document.getElementById("export").onclick = () => {
   a.click();
 };
 
+/* === Mise à jour du tableau === */
 function updateTable() {
   const tbody = document.getElementById("resBody");
   tbody.innerHTML = "";
@@ -516,10 +547,13 @@ function updateTable() {
   });
 }
 
+/* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
 </script>
+
 </body>
 </html>
+
 
 
 
