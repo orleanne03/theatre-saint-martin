@@ -778,6 +778,7 @@ adminBtn.onclick = () => {
       admin = true;
       alert("✅ Mode admin activé");
 
+
       // Boutons visibles en mode admin
       resetBtn.style.display = "inline-block";
       document.getElementById("export").style.display = "inline-block";
@@ -789,6 +790,7 @@ adminBtn.onclick = () => {
       // Visuel et état
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
+      updateTable(); // ✅ force le tableau à se recréer avec les cases actives
     } else {
       alert("❌ Mot de passe incorrect.");
     }
@@ -807,6 +809,7 @@ adminBtn.onclick = () => {
     // Visuel et état
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
+    updateTable(); // ✅ réaffiche le tableau en mode lecture seule
   }
 };
 
@@ -876,10 +879,9 @@ function updateTable() {
     const [r, s] = id.split("-");
     const tr = document.createElement("tr");
 
-    // ✅ Style visuel pour payé
+    // ✅ ligne verte si payé
     if (data.paid) tr.style.backgroundColor = "#c8e6c9";
 
-    // ✅ Ligne du tableau avec la colonne “Payé”
     tr.innerHTML = `
       <td>${r}</td>
       <td>${s}</td>
@@ -887,12 +889,29 @@ function updateTable() {
       <td>${data.email}</td>
       <td>${data.phone}</td>
       <td>
-        <input type="checkbox" class="paid-toggle" data-id="${id}" ${data.paid ? "checked" : ""} ${admin ? "" : "disabled"}>
+        <input type="checkbox" class="paid-toggle" data-id="${id}" ${data.paid ? "checked" : ""}>
       </td>
     `;
 
     tbody.appendChild(tr);
   });
+
+  // 🧠 Après création du tableau, on gère les cases à cocher
+  document.querySelectorAll(".paid-toggle").forEach(cb => {
+    if (!admin) cb.disabled = true; // désactive si pas admin
+
+    cb.addEventListener("change", e => {
+      if (!admin) return; // sécurité
+      const id = e.target.dataset.id;
+      if (!seats[id]) return;
+
+      seats[id].paid = e.target.checked;
+      save(); // 🔥 met à jour Firebase
+      updateTable(); // 🔁 rafraîchit visuel
+    });
+  });
+}
+
 
   // 🧠 Activation de la mise à jour en mode admin
   document.querySelectorAll(".paid-toggle").forEach(cb => {
@@ -1034,6 +1053,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
