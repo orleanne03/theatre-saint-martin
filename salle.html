@@ -653,20 +653,59 @@ document.getElementById("confirm").onclick = () => {
 };
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
 
+/* === 🧹 Fonction utilitaire : formatage du numéro de téléphone === */
+function formatPhone(input) {
+  // Supprime tout caractère non numérique
+  let digits = input.replace(/\D/g, "");
+
+  // Si commence par +33 ou 0033 → convertir en 0
+  if (digits.startsWith("33")) digits = "0" + digits.slice(2);
+  if (digits.startsWith("0033")) digits = "0" + digits.slice(4);
+
+  // Tronque à 10 chiffres
+  digits = digits.slice(0, 10);
+
+  // Regroupe en blocs de deux chiffres
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+
+/* === 🧠 Formattage en direct pendant la saisie === */
+document.getElementById("name").addEventListener("input", e => {
+  e.target.value = e.target.value.toUpperCase(); // 🔠 nom en MAJ
+});
+document.getElementById("email").addEventListener("input", e => {
+  e.target.value = e.target.value.toLowerCase(); // 🔡 email en minuscules
+});
+document.getElementById("phone").addEventListener("input", e => {
+  e.target.value = formatPhone(e.target.value);  // 📱 numéro formaté
+});
+
+/* === 💾 Validation et enregistrement de la réservation === */
 document.getElementById("save").onclick = async () => {
   const name = document.getElementById("name").value.trim().toUpperCase();
   const email = document.getElementById("email").value.trim().toLowerCase();
-  const phone = document.getElementById("phone").value.trim();
-  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
+  const phone = formatPhone(document.getElementById("phone").value.trim());
+
+  if (!name || !email || !phone) {
+    return alert("Tous les champs sont requis.");
+  }
 
   const user = { name, email, phone };
-  selected.forEach(id => { if (!seats[id]) seats[id] = user; });
-  save();
-  await sendEmail(user);
+
+  // Enregistre les sièges choisis
+  selected.forEach(id => { 
+    if (!seats[id]) seats[id] = user; 
+  });
+
+  save(); // 🔥 envoie dans Firebase
+  await sendEmail(user); // 💌 envoie email avec QR
   selected = [];
+
+  // Ferme la modale et confirme
   document.getElementById("modal").classList.add("hidden");
   alert("✅ Réservation confirmée et email envoyé !");
 };
+
 
 /* === Email + QR === */
 async function sendEmail(user) {
@@ -928,6 +967,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
