@@ -499,6 +499,10 @@ body.admin #adminBanner {
   background-color: #e3f2fd;
   transition: background-color 0.3s;
 }
+input.paid-toggle {
+  transform: scale(1.2);
+  cursor: pointer;
+}
 
 </style>
 </head>
@@ -546,8 +550,16 @@ body.admin #adminBanner {
 
   <table>
     <thead>
-      <tr><th>Rangée</th><th>Siège</th><th>Nom</th><th>Email</th><th>Téléphone</th></tr>
-    </thead>
+  <tr>
+    <th>Rangée</th>
+    <th>Siège</th>
+    <th>Nom</th>
+    <th>Email</th>
+    <th>Téléphone</th>
+    <th>💰 Payé</th>
+  </tr>
+</thead>
+
     <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
   </table>
 </div>
@@ -856,29 +868,45 @@ function updateTable() {
   tbody.innerHTML = "";
   const entries = Object.entries(seats || {});
   if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Aucune réservation.</td></tr>';
     return;
   }
+
   entries.forEach(([id, data]) => {
-  const [r, s] = id.split("-");
-  const tr = document.createElement("tr");
+    const [r, s] = id.split("-");
+    const tr = document.createElement("tr");
 
-  tr.innerHTML = `
-    <td>${r}</td>
-    <td>${s}</td>
-    <td>${data.name}</td>
-    <td>${data.email}</td>
-    <td>${data.phone}</td>`;
+    // ✅ Style visuel pour payé
+    if (data.paid) tr.style.backgroundColor = "#c8e6c9";
 
-  // 💰 Si payé, ligne verte
-  if (data.paid) {
-    tr.style.backgroundColor = "#c8e6c9"; // vert pâle
-  }
+    // ✅ Ligne du tableau avec la colonne “Payé”
+    tr.innerHTML = `
+      <td>${r}</td>
+      <td>${s}</td>
+      <td>${data.name}</td>
+      <td>${data.email}</td>
+      <td>${data.phone}</td>
+      <td>
+        <input type="checkbox" class="paid-toggle" data-id="${id}" ${data.paid ? "checked" : ""} ${admin ? "" : "disabled"}>
+      </td>
+    `;
 
-  tbody.appendChild(tr);
-});
+    tbody.appendChild(tr);
+  });
 
+  // 🧠 Activation de la mise à jour en mode admin
+  document.querySelectorAll(".paid-toggle").forEach(cb => {
+    cb.addEventListener("change", e => {
+      if (!admin) return; // sécurité
+      const id = e.target.dataset.id;
+      if (!seats[id]) return;
+      seats[id].paid = e.target.checked;
+      save();
+      updateTable(); // rafraîchit visuel
+    });
+  });
 }
+
 
 /* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
@@ -1006,6 +1034,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
