@@ -449,6 +449,28 @@ body.admin #adminBanner {
 }
 
 }
+  /* === Ajustement de l'espacement sur mobile === */
+@media (max-width: 768px) {
+  .hall-wrapper {
+    margin-bottom: 10px !important;   /* Réduit l'espace sous le plan */
+  }
+
+  #hall {
+    margin-bottom: 0 !important;      /* Supprime tout espace interne inutile */
+  }
+
+  .buttons {
+    margin-top: 5px !important;       /* Rapproche les boutons de la salle */
+    margin-bottom: 10px;
+  }
+
+  /* Optionnel : rendre les boutons un peu plus compacts sur mobile */
+  .buttons button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
 </style>
 </head>
 
@@ -829,6 +851,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
