@@ -670,12 +670,33 @@ wrapper.addEventListener("touchend", e => {
 });
 </script>
 
+<script>
+/* === Ajuste l'échelle initiale sans bloquer le scroll === */
+window.addEventListener("load", () => {
+  const hall = document.getElementById("hall");
+  const wrapper = document.querySelector(".hall-wrapper");
+
+  // tailles visibles / réelles
+  const hallWidth = hall.scrollWidth;
+  const hallHeight = hall.scrollHeight;
+  const wrapWidth = wrapper.clientWidth;
+  const wrapHeight = wrapper.clientHeight;
+
+  // échelle de départ (on réduit seulement si nécessaire)
+  const scale = Math.min(wrapWidth / hallWidth, wrapHeight / hallHeight, 1);
+  hall.style.transform = `scale(${scale})`;
+
+  // recentrage horizontal uniquement
+  wrapper.scrollLeft = (hallWidth * scale - wrapWidth) / 2;
+});
+</script>
 
 
 <div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
 
 </body>
 </html>
+
 
 
 
