@@ -688,6 +688,10 @@ button:active {
   border-left: 6px solid #e91e63;
 }
 
+.paid-toggle-client {
+  transform: scale(1.2);
+  cursor: pointer;
+}
 
 </style>
 </head>
@@ -1107,16 +1111,48 @@ function updateTable() {
       .join("");
 
     content.innerHTML = `
-      ${emailsHTML}
-      <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-      <div class="seat-list">
-        ${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}
-      </div>
-    `;
+  ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
+  <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
+
+  <label style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
+    💰 Paiement reçu
+    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.paid ? "checked" : ""}>
+  </label>
+
+  <div class="seat-list">
+    ${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}
+  </div>
+`;
+
 
     div.append(header, content);
     container.append(div);
   }
+  // 🎯 Gestion des changements de statut payé/non payé
+document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+  cb.addEventListener("change", e => {
+    if (!admin) {
+      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+      e.target.checked = !e.target.checked;
+      return;
+    }
+
+    const clientName = e.target.dataset.name;
+    const isPaid = e.target.checked;
+
+    // 🔄 Met à jour tous les sièges de cette personne
+    for (const [id, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        seats[id].paid = isPaid;
+      }
+    }
+
+    save(); // 🔥 Enregistre dans Firebase
+    updateTable(); // 🔁 Rafraîchit la vue
+    render(); // 🎨 Met à jour les couleurs des sièges
+  });
+});
+
 }
 
 
@@ -1264,6 +1300,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
