@@ -201,7 +201,6 @@ let seats = {}, selected = [], admin = false;
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
-const loader = document.getElementById("loader");
 
 // ✅ Cacher le bouton Réinitialiser au chargement
 resetBtn.style.display = "none";
@@ -235,20 +234,50 @@ function makeSeat(id, label, extra){
   return d;
 }
 
-/* === Connexion Firebase === */
+/* === Fonctions manquantes === */
+function toggle(id, el) {
+  if (admin && seats[id]) {
+    if (confirm(`🔓 Libérer le siège ${id} ?`)) {
+      delete seats[id];
+      set(ref(db, "seats"), seats);
+      render();
+      alert(`✅ Siège ${id} libéré.`);
+    }
+    return;
+  }
+  if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+  if (selected.includes(id)) selected = selected.filter(s => s !== id);
+  else selected.push(id);
+  render();
+}
+
+function render() {
+  document.querySelectorAll(".seat").forEach(el => {
+    const id = el.dataset.id;
+    const wasStrap = el.classList.contains("strapontin");
+    el.className = "seat";
+    if (wasStrap) el.classList.add("strapontin");
+    if (seats[id]) el.classList.add("reserved");
+    else if (selected.includes(id)) el.classList.add("selected");
+    else el.classList.add("free");
+  });
+}
+
+/* === Firebase === */
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
+  render();
 });
 
-/* === Admin Mode === */
+/* === Mode Admin === */
 adminBtn.onclick = () => {
   if (!admin) {
     const p = prompt("Mot de passe admin :");
     if (p === "admin123") {
       admin = true;
       alert("✅ Mode admin activé");
-      resetBtn.style.display = "inline-block"; // ✅ visible en admin
+      resetBtn.style.display = "inline-block"; // visible
       document.getElementById("export").style.display = "inline-block";
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
@@ -258,7 +287,7 @@ adminBtn.onclick = () => {
   } else {
     admin = false;
     alert("👋 Mode admin désactivé");
-    resetBtn.style.display = "none"; // ✅ caché quand on quitte le mode admin
+    resetBtn.style.display = "none"; // caché
     document.getElementById("export").style.display = "none";
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
@@ -269,7 +298,7 @@ adminBtn.onclick = () => {
 const guideBtn = document.getElementById("downloadGuide");
 if (guideBtn) {
   guideBtn.onclick = () => {
-    window.open("mode_emploi.pdf", "_blank"); // compatible PC & mobile
+    window.open("mode_emploi.pdf", "_blank"); // Compatible PC & mobile
   };
 }
 </script>
