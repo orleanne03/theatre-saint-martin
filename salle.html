@@ -793,13 +793,19 @@ if (guideBtn) {
   guideBtn.onclick = () => {
     const link = document.createElement("a");
     link.href = "Theatre_Saint_Martin_Mode_d_emploi_final.pdf"; // 🔗 Chemin vers ton fichier PDF
-    link.download = "Mode_d_emploi_Theatre_Saint_Martin.pdf";
-    link.click();
+    /* === 📄 Télécharger / ouvrir le mode d'emploi PDF === */
+const guideBtn = document.getElementById("downloadGuide");
+if (guideBtn) {
+  guideBtn.onclick = () => {
+    // Ouvre dans un nouvel onglet (compatible PC & mobile)
+    window.open("mode_emploi.pdf", "_blank");
+  };
+}
+
   };
 }
 
 </script>
- <script>
 <script>
 
 
@@ -868,6 +874,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
