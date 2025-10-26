@@ -370,7 +370,7 @@ body.admin #adminBanner {
   <button id="confirm">✅ Confirmer</button>
   <button id="admin">🔐 Admin</button>
   <button id="reset">♻️ Réinitialiser</button>
-  <button id="export">📤 Export CSV</button>
+  <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
 </div>
 
@@ -538,6 +538,7 @@ adminBtn.onclick = () => {
       admin = true;
       alert("✅ Mode admin activé");
       resetBtn.style.display = "inline-block";
+      document.getElementById("export").style.display = "inline-block"; // 🔥 affiche Export CSV
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
     } else {
@@ -547,10 +548,12 @@ adminBtn.onclick = () => {
     admin = false;
     alert("👋 Mode admin désactivé");
     resetBtn.style.display = "none";
+    document.getElementById("export").style.display = "none"; // 🔥 cache Export CSV
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
   }
 };
+
 
 
 /* === Réinitialiser toute la salle === */
@@ -606,6 +609,7 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 
 </body>
 </html>
+
 
 
 
