@@ -223,12 +223,12 @@ h1 {
   box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
 /* 💚 Siège réservé et payé */
+/* 💚 Légende Payé */
 .paid {
   background: linear-gradient(145deg, #43a047, #2e7d32);
-  color: #fff;
-  box-shadow: 0 0 8px rgba(67, 160, 71, 0.6);
-  cursor: not-allowed;
+  box-shadow: 0 0 4px rgba(67,160,71,0.6);
 }
+
 
 
 /* 🟡 Strapontin */
@@ -534,6 +534,7 @@ input.paid-toggle {
   <div><span class="selected"></span>Sélectionné</div>
   <div><span class="reserved"></span>Réservé</div>
   <div><span class="strapontin"></span>Strapontin</div>
+  <div><span class="paid"></span>Payé</div> <!-- 💚 ajouté -->
 </div>
 
 <div class="hall-wrapper">
@@ -1079,6 +1080,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
