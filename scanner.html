@@ -21,6 +21,8 @@
   #counter{font-weight:700;color:#0d47a1}
   #details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
   #newScanBtn{display:none;margin-top:10px;}
+  #resetScanBtn{background:#f57c00;} 
+  #resetScanBtn:hover{background:#e65100;}
   @media(max-width:420px){#reader{width:260px}}
 </style>
 </head>
@@ -36,6 +38,7 @@
     <div id="details" style="display:none;"></div>
 
     <button id="newScanBtn" class="green">🎬 Nouveau scan</button>
+    <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
     <button id="gotoHome" class="violet">🏠 Accueil</button>
   </div>
 
@@ -158,8 +161,22 @@ newScanBtn.onclick = () => {
   startScanner();
 };
 
-// bouton Accueil
+// bouton "Accueil"
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
+
+// === ♻️ Bouton "Réinitialiser les billets scannés" ===
+const resetScanBtn = document.getElementById("resetScanBtn");
+if (resetScanBtn) {
+  resetScanBtn.onclick = () => {
+    if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
+      localStorage.removeItem("scannedTickets");
+      updateCounter();
+      detailsEl.style.display = "none";
+      statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
+      newScanBtn.style.display = "none";
+    }
+  };
+}
 
 window.addEventListener("load", startScanner);
 </script>
