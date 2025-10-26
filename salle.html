@@ -47,10 +47,6 @@ h1 {
   color: #0d47a1;
   margin: 20px 0;
   font-size: 1.8rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
 }
 .scene {
   background: #212121;
@@ -80,7 +76,6 @@ h1 {
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
-/* === Conteneur principal === */
 .hall-wrapper {
   display: block;
   width: 100%;
@@ -88,39 +83,20 @@ h1 {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pinch-zoom pan-x pan-y;
-  padding: 10px 0;
+  padding: 10px;
   box-sizing: border-box;
-  background: transparent;
-  text-align: center;  /* ✅ centre par défaut */
 }
 
-/* === Bloc des sièges === */
 #hall {
-  display: inline-flex;             /* ✅ permet le centrage avec text-align: center */
+  display: flex;
   flex-direction: column;
   align-items: center;
+  width: max-content;
   background: #fff;
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  transition: transform 0.2s ease;
 }
-
-/* === 🌐 Correction responsive : sur mobile, on désactive le centrage pour garder le scroll complet === */
-@media (max-width: 768px) {
-  .hall-wrapper {
-    text-align: left;              /* ✅ permet le scroll total (gauche et droite) */
-    padding-left: 10px;
-  }
-  #hall {
-    display: flex;                 /* ✅ comportement normal sans centrage forcé */
-    width: max-content;
-  }
-}
-
-
-
-
 .row {
   display: flex;
   justify-content: center;
@@ -128,115 +104,21 @@ h1 {
   flex-wrap: nowrap;
   margin: 4px 0;
 }
-.row-label {
-  font-weight: 600;
-  margin-right: 8px;
-  min-width: 18px;
-}
-/* === STYLE DES SIÈGES (RÉALISTES + CENTRÉS) === */
+.row-label { font-weight: 600; margin-right: 8px; min-width: 18px; }
 .seat {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  margin: 4px;
-  border-radius: 6px 6px 8px 8px;
+  width: 32px;
+  height: 32px;
+  margin: 3px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
   cursor: pointer;
-  display: inline-block;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  transform-origin: bottom center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  font-weight: 700;
-  color: #fff;
+  transition: .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
-
-/* ✅ Texte centré parfaitement au milieu du siège */
-.seat span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  text-align: center;
-  font-size: 0.95em;
-  line-height: 1;
-  pointer-events: none;
-}
-
-/* === Effets du dossier et de l’assise === */
-.seat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60%;
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
-              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
-  pointer-events: none;
-}
-
-.seat::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  border-radius: 0 0 8px 8px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-  pointer-events: none;
-}
-
-/* === ÉTATS DES SIÈGES === */
-
-/* 🔴 Libre */
-.free {
-  background: linear-gradient(145deg, #c62828, #8e0000);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
-}
-.free:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
-}
-
-/* 🔵 Sélectionné */
-.selected {
-  background: linear-gradient(145deg, #1565c0, #0d47a1);
-  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
-  transform: scale(1.1);
-}
-
-/* ⚫ Réservé */
-.reserved {
-  background: linear-gradient(145deg, #7c787773, #3e272300);
-  opacity: 0.8;
-  cursor: not-allowed;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
-}
-
-/* 🟡 Strapontin */
-.strapontin {
-  background: linear-gradient(145deg, #f9a825, #f57f17);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-}
-.seat.strapontin.selected {
-  background: linear-gradient(145deg, #ffca28, #fbc02d);
-  box-shadow: 0 0 10px rgba(255,193,7,0.6);
-}
-
-/* === Ajustement Mobile === */
-@media (max-width: 600px) {
-  .seat {
-    width: 26px;
-    height: 26px;
-    margin: 2px;
-  }
-  .seat span {
-    font-size: 12px;
-  }
-}
+.seat:hover { transform: scale(1.1); }
 
 .buttons {
   margin: 20px 0;
@@ -260,6 +142,7 @@ button {
 #reset { background: #455a64; } #reset:hover { background: #263238; }
 #export { background: #009688; } #export:hover { background: #00695c; }
 #scanTicket { background: #8e24aa; } #scanTicket:hover { background: #6a1b9a; }
+#downloadGuide { background: #1976d2; } #downloadGuide:hover { background: #0d47a1; }
 
 #reservations {
   margin: 20px auto;
@@ -270,224 +153,14 @@ button {
   box-shadow: 0 2px 6px rgba(0,0,0,.15);
   padding: 10px;
 }
-#reservations h3 {
-  text-align: left;
-  margin: 10px;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-#reservations table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-#reservations th, #reservations td {
-  border-bottom: 1px solid #ddd;
-  padding: 6px;
-  text-align: left;
-}
+#reservations h3 { text-align: left; margin: 10px; font-size: 1.1rem; }
+#reservations table { width: 100%; border-collapse: collapse; font-size: 14px; }
+#reservations th, #reservations td { border-bottom: 1px solid #ddd; padding: 6px; text-align: left; }
 #reservations th { background: #1976d2; color: #fff; }
-
-.modal {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,.5); display: flex; justify-content: center; align-items: center; z-index: 10;
-}
-.modal.hidden { display: none; }
-.modal-content {
-  background: #fff; padding: 20px; border-radius: 10px; width: 300px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.3);
-}
-.modal-content input {
-  width: 90%; margin: 6px auto; padding: 8px; border: 1px solid #ccc;
-  border-radius: 5px; display: block;
-}
-#loader {
-  position: fixed; inset: 0;
-  background: linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 9999; transition: opacity .4s ease;
-}
-#loader.hidden { opacity: 0; pointer-events: none; }
-.loader-content { text-align: center; color: #0d47a1; font-weight: 600; font-size: 1.1rem; }
-.spinner {
-  width: 40px; height: 40px;
-  border: 4px solid #bbdefb;
-  border-top: 4px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
-}
-  /* === STYLE FAUTEUILS RÉALISTES === */
-.seat {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  margin: 4px;
-  border-radius: 6px 6px 8px 8px;
-  cursor: pointer;
-  display: inline-block;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  transform-origin: bottom center;
-}
-
-/* Dossier (partie haute) */
-.seat::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60%;
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
-              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
-  pointer-events: none;
-}
-
-/* Assise (partie basse) */
-.seat::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  border-radius: 0 0 8px 8px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-  pointer-events: none;
-}
-
-/* 🔴 Siège libre */
-.free {
-  background: linear-gradient(145deg, #c62828, #8e0000);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
-  color: #fff; /* texte blanc */
-}
-.free:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
-}
-
-/* 🔵 Sélectionné */
-.selected {
-  background: linear-gradient(145deg, #1565c0, #0d47a1);
-  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
-  transform: scale(1.1);
-  color: #fff; /* texte blanc */
-}
-
-/* ⚫ Réservé */
-.reserved {
-  background: linear-gradient(145deg, #7c787773, #3e272300);
-  opacity: 0.8;
-  cursor: not-allowed;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
-}
-
-/* 🟡 Strapontin */
-.strapontin {
-  background: linear-gradient(145deg, #f9a825, #f57f17);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-}
-.seat.strapontin.selected {
-  background: linear-gradient(145deg, #ffca28, #fbc02d);
-  box-shadow: 0 0 10px rgba(255,193,7,0.6);
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-@media(max-width:600px){
-  .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
-  .row-label { font-size: 12px; margin-right: 4px; }
-  h1 { font-size: 1.5rem; }
-  /* === 🌟 VISUEL AMÉLIORÉ POUR LE MODE ADMIN === */
-
-/* Fond légèrement doré pour signaler le mode admin */
-body.admin {
-  background: radial-gradient(circle at center, #fff8e1, #ffe082);
-  transition: background 0.5s ease;
-}
-
-/* Aura dorée autour de tous les sièges réservés */
-.admin .seat.reserved {
-  box-shadow: 0 0 10px 3px rgba(255,215,0,0.7),
-              inset 0 2px 4px rgba(0,0,0,0.3);
-  animation: pulseGold 1.5s infinite alternate;
-}
-
-/* Animation douce (pulsation dorée) */
-@keyframes pulseGold {
-  from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
-  to   { box-shadow: 0 0 14px 5px rgba(255,215,0,0.9); }
-}
-
-/* Curseur et effet au survol des sièges réservés */
-.admin .seat.reserved:hover {
-  cursor: pointer;
-  transform: scale(1.12);
-  filter: brightness(1.15);
-}
-
-/* Petite étiquette visuelle "Mode Admin" fixe */
-#adminBanner {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background: linear-gradient(90deg, #ffb300, #f57c00);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  z-index: 10000;
-  display: none;
-}
-body.admin #adminBanner {
-  display: block;
-}
-
-}
-  /* === Ajustement de l'espacement sur mobile === */
-@media (max-width: 768px) {
-  .hall-wrapper {
-    margin-bottom: 10px !important;   /* Réduit l'espace sous le plan */
-  }
-
-  #hall {
-    margin-bottom: 0 !important;      /* Supprime tout espace interne inutile */
-  }
-
-  .buttons {
-    margin-top: 5px !important;       /* Rapproche les boutons de la salle */
-    margin-bottom: 10px;
-  }
-
-  /* Optionnel : rendre les boutons un peu plus compacts sur mobile */
-  .buttons button {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-}
-#downloadGuide {
-  background: #1976d2;
-}
-#downloadGuide:hover {
-  background: #0d47a1;
-}
-
 </style>
 </head>
 
 <body>
-<div id="loader">
-  <div class="loader-content">
-    <div class="spinner"></div>
-    <p>Chargement de la salle…</p>
-  </div>
-</div>
-
 <h1>🎭 Théâtre Saint Martin</h1>
 <div class="scene">SCÈNE</div>
 
@@ -508,29 +181,7 @@ body.admin #adminBanner {
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
-  <button id="downloadGuide" class="violet">📄 AIDE </button>
-</div>
-
-<div id="reservations">
-  <h3>📋 Liste des réservations</h3>
-  <table>
-    <thead><tr><th>Rangée</th><th>Siège</th><th>Nom</th><th>Email</th><th>Téléphone</th></tr></thead>
-    <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
-  </table>
-</div>
-
-<!-- Modale -->
-<div id="modal" class="modal hidden">
-  <div class="modal-content">
-    <h3>Informations de réservation</h3>
-    <input id="name" placeholder="Nom complet">
-    <input id="email" placeholder="Adresse email">
-    <input id="phone" placeholder="Téléphone">
-    <div>
-      <button id="save">Valider</button>
-      <button id="close">Annuler</button>
-    </div>
-  </div>
+  <button id="downloadGuide" class="violet">📄 AIDE</button>
 </div>
 
 <script type="module">
@@ -551,6 +202,9 @@ const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
 const loader = document.getElementById("loader");
+
+// ✅ Cacher le bouton Réinitialiser au chargement
+resetBtn.style.display = "none";
 
 const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
 const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
@@ -576,101 +230,16 @@ function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
-
-  const labelSpan = document.createElement("span");
-  labelSpan.textContent = label;
-  d.appendChild(labelSpan);
-
+  d.textContent = label;
   d.onclick = () => toggle(id, d);
   return d;
 }
-
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
-  render();
-  updateTable();
-  setTimeout(() => loader.classList.add("hidden"), 400);
 });
-
-function save(){ set(seatsRef, seats); }
-
-/* === Rendu visuel === */
-function render() {
-  document.querySelectorAll(".seat").forEach(el => {
-    const id = el.dataset.id;
-    const wasStrap = el.classList.contains("strapontin");
-    el.className = "seat";
-    if (wasStrap) el.classList.add("strapontin");
-    if (seats[id]) el.classList.add("reserved");
-    else if (selected.includes(id)) el.classList.add("selected");
-    else el.classList.add("free");
-  });
-}
-
-/* === Clic sur un siège === */
-function toggle(id, el) {
-  // 🧰 Si admin : peut libérer un siège réservé
-  if (admin && seats[id]) {
-    if (confirm(`🔓 Libérer le siège ${id} ?`)) {
-      delete seats[id];
-      save();
-      render();
-      alert(`✅ Siège ${id} libéré.`);
-    }
-    return;
-  }
-
-  // Si non admin : clic sur un siège réservé => bloqué
-  if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
-
-  // Sélection / désélection classique
-  if (selected.includes(id)) selected = selected.filter(s => s !== id);
-  else selected.push(id);
-
-  render();
-}
-
-/* === Confirmation réservation === */
-document.getElementById("confirm").onclick = () => {
-  if (!selected.length) return alert("Aucun siège sélectionné !");
-  document.getElementById("modal").classList.remove("hidden");
-};
-document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
-
-document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
-
-  const user = { name, email, phone };
-  selected.forEach(id => { if (!seats[id]) seats[id] = user; });
-  save();
-  await sendEmail(user);
-  selected = [];
-  document.getElementById("modal").classList.add("hidden");
-  alert("✅ Réservation confirmée et email envoyé !");
-};
-
-/* === Email + QR === */
-async function sendEmail(user) {
-  const reservedSeats = Object.entries(seats)
-    .filter(([_, v]) => v.email === user.email)
-    .map(([id]) => id)
-    .join(", ");
-  const qrData = JSON.stringify({ nom: user.name, email: user.email, tel: user.phone, sieges: reservedSeats });
-  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
-  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
-    to_name: user.name,
-    to_email: user.email,
-    seats: reservedSeats,
-    phone: user.phone,
-    qr_image: qrImage
-  }).then(() => console.log("✅ Email envoyé")).catch(err => console.error("❌ Erreur EmailJS :", err));
-}
 
 /* === Admin Mode === */
 adminBtn.onclick = () => {
@@ -679,8 +248,8 @@ adminBtn.onclick = () => {
     if (p === "admin123") {
       admin = true;
       alert("✅ Mode admin activé");
-      resetBtn.style.display = "inline-block";
-      document.getElementById("export").style.display = "inline-block"; // 🔥 affiche Export CSV
+      resetBtn.style.display = "inline-block"; // ✅ visible en admin
+      document.getElementById("export").style.display = "inline-block";
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
     } else {
@@ -689,221 +258,20 @@ adminBtn.onclick = () => {
   } else {
     admin = false;
     alert("👋 Mode admin désactivé");
-    resetBtn.style.display = "none";
-    document.getElementById("export").style.display = "none"; // 🔥 cache Export CSV
+    resetBtn.style.display = "none"; // ✅ caché quand on quitte le mode admin
+    document.getElementById("export").style.display = "none";
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
   }
 };
 
-
-
-/* === Réinitialiser toute la salle === */
-resetBtn.onclick = () => {
-  if (!admin) return alert("Activez le mode admin.");
-  if (confirm("Effacer toutes les réservations ?")) {
-    seats = {};
-    save();
-    alert("✅ Réinitialisation complète.");
-  }
-};
-
-/* === Export CSV === */
-document.getElementById("export").onclick = () => {
-  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
-  for (const [k, v] of Object.entries(seats)) {
-    const [r, s] = k.split("-");
-    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
-  }
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "reservations.csv";
-  a.click();
-};
-
-/* === Mise à jour du tableau === */
-function updateTable() {
-  const tbody = document.getElementById("resBody");
-  tbody.innerHTML = "";
-  const entries = Object.entries(seats || {});
-  if (!entries.length) {
-    tbody.innerHTML = '<tr><td colspan="5">Aucune réservation.</td></tr>';
-    return;
-  }
-  entries.forEach(([id, data]) => {
-    const [r, s] = id.split("-");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r}</td>
-      <td>${s}</td>
-      <td>${data.name}</td>
-      <td>${data.email}</td>
-      <td>${data.phone}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* === Scanner billets === */
-document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
-  /* === 🧭 Ajustement automatique du zoom sur mobile === */
-function autoFitHall() {
-  const hall = document.getElementById("hall");
-  const wrapper = document.querySelector(".hall-wrapper");
-
-  if (!hall || !wrapper) return;
-
-  // ✅ Seulement sur mobile
-  if (window.innerWidth <= 768) {
-    const hallWidth = hall.scrollWidth;
-    const wrapperWidth = wrapper.clientWidth;
-
-    if (hallWidth > wrapperWidth) {
-      const scale = wrapperWidth / hallWidth;
-
-      // applique l'échelle et garde le centrage
-      hall.style.transform = `scale(${scale})`;
-      hall.style.transformOrigin = "top center";
-      hall.dataset.autoScaled = "true";
-    }
-  } else {
-    // ✅ Sur PC, on remet à la taille normale
-    if (hall.dataset.autoScaled === "true") {
-      hall.style.transform = "";
-      hall.style.transformOrigin = "";
-      delete hall.dataset.autoScaled;
-    }
-  }
-}
-
-/* === 🪄 Centrage automatique du plan à l’ouverture === */
-window.addEventListener("load", () => {
-  autoFitHall();
-  const wrapper = document.querySelector(".hall-wrapper");
-  if (wrapper) {
-    wrapper.scrollLeft = (wrapper.scrollWidth - wrapper.clientWidth) / 2;
-  }
-});
-
-/* === 🔁 Réajuste lors d’un redimensionnement ou d’une rotation d’écran === */
-window.addEventListener("resize", autoFitHall);
-/* === 📄 Télécharger le mode d'emploi PDF === */
+/* === Bouton PDF === */
 const guideBtn = document.getElementById("downloadGuide");
 if (guideBtn) {
   guideBtn.onclick = () => {
-    const link = document.createElement("a");
-    link.href = "Theatre_Saint_Martin_Mode_d_emploi_final.pdf"; // 🔗 Chemin vers ton fichier PDF
-    /* === 📄 Télécharger / ouvrir le mode d'emploi PDF === */
-const guideBtn = document.getElementById("downloadGuide");
-if (guideBtn) {
-  guideBtn.onclick = () => {
-    // Ouvre dans un nouvel onglet (compatible PC & mobile)
-    window.open("mode_emploi.pdf", "_blank");
+    window.open("mode_emploi.pdf", "_blank"); // compatible PC & mobile
   };
 }
-
-  };
-}
-
 </script>
-<script>
-
-
-/* 🔧 Fonction pour limiter le déplacement */
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-wrapper.addEventListener("touchstart", e => {
-  if (e.touches.length === 2) {
-    // début du pinch
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    lastDist = Math.hypot(dx, dy);
-  } else if (e.touches.length === 1) {
-    // début du drag
-    isDragging = true;
-    startX = e.touches[0].clientX - lastX;
-    startY = e.touches[0].clientY - lastY;
-  }
-});
-
-wrapper.addEventListener("touchmove", e => {
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    // pinch zoom
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const dist = Math.hypot(dx, dy);
-    if (lastDist) {
-      const delta = dist / lastDist;
-      scale = Math.min(3, Math.max(0.6, scale * delta));
-      hall.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
-    }
-    lastDist = dist;
-  } else if (isDragging && e.touches.length === 1) {
-    e.preventDefault();
-
-    // dimensions du conteneur et du contenu
-    const rectWrapper = wrapper.getBoundingClientRect();
-    const rectHall = hall.getBoundingClientRect();
-
-    const maxOffsetX = Math.max(0, (rectHall.width * scale - rectWrapper.width) / 2);
-    const maxOffsetY = Math.max(0, (rectHall.height * scale - rectWrapper.height) / 2);
-
-    const x = e.touches[0].clientX - startX;
-    const y = e.touches[0].clientY - startY;
-
-    // limitation du déplacement
-    lastX = clamp(x, -maxOffsetX, maxOffsetX);
-    lastY = clamp(y, -maxOffsetY, maxOffsetY);
-
-    hall.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
-  }
-});
-
-wrapper.addEventListener("touchend", e => {
-  if (e.touches.length < 2) lastDist = 0;
-  if (e.touches.length === 0) isDragging = false;
-});
-</script>
-
-
-
-<div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
