@@ -606,8 +606,8 @@ button:active {
 }
 
 .accordion-header {
-  background: #b7d7f1; /* 💙 bleu plus doux */
-  color: #322f2f;
+  background: #6fb572; /* 💙 bleu plus doux */
+  color: #fff;
   padding: 10px 14px;
   cursor: pointer;
   display: flex;
@@ -657,6 +657,26 @@ button:active {
 
 .accordion-content p {
   margin: 4px 0;
+}
+/* === Couleur différente si non payé === */
+.accordion-header.paid {
+  background: #6fb572; /* 💙 bleu doux */
+}
+
+.accordion-header.unpaid {
+  background: #f8bbd0; /* 🌸 rose clair */
+  color: #212121;
+}
+
+.accordion-header.unpaid:hover {
+  background: #f48fb1;
+}
+.accordion-header.paid {
+  border-left: 6px solid #1e88e5;
+}
+
+.accordion-header.unpaid {
+  border-left: 6px solid #e91e63;
 }
 
 
@@ -1037,28 +1057,31 @@ function updateTable() {
     return;
   }
 
-  // 🔹 Grouper par NOM (et non plus par email)
+  // 🔹 Grouper par NOM
   const grouped = {};
   for (const [id, data] of entries) {
     const key = data.name || "Inconnu";
-    if (!grouped[key]) grouped[key] = { ...data, seats: [], emails: new Set() };
+    if (!grouped[key]) grouped[key] = { ...data, seats: [], emails: new Set(), paid: data.paid };
     grouped[key].seats.push(id);
     grouped[key].emails.add(data.email || "N/A");
+
+    // Si au moins un siège est payé, on garde paid = true
+    if (data.paid) grouped[key].paid = true;
   }
 
-  // 🔹 Trier les groupes par nom (ordre alphabétique français)
+  // 🔹 Tri alphabétique
   const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
     (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
   );
 
-  // 🔹 Créer un accordéon par personne
+  // 🔹 Création des accordéons
   for (const [name, info] of sorted) {
     const div = document.createElement("div");
     div.className = "accordion";
 
-    // 💠 En-tête
+    // ✅ couleur selon statut de paiement
     const header = document.createElement("div");
-    header.className = "accordion-header";
+    header.className = `accordion-header ${info.paid ? "paid" : "unpaid"}`;
     header.innerHTML = `
       <div>
         👤 ${name}
@@ -1067,7 +1090,6 @@ function updateTable() {
     `;
     header.onclick = () => div.classList.toggle("open");
 
-    // 💠 Contenu
     const content = document.createElement("div");
     content.className = "accordion-content";
 
@@ -1087,6 +1109,7 @@ function updateTable() {
     container.append(div);
   }
 }
+
 
 
 
@@ -1232,6 +1255,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
