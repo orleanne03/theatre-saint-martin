@@ -717,6 +717,48 @@ function updateTable() {
 
 /* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
+  /* === 🧭 Ajustement automatique du zoom sur mobile === */
+function autoFitHall() {
+  const hall = document.getElementById("hall");
+  const wrapper = document.querySelector(".hall-wrapper");
+
+  if (!hall || !wrapper) return;
+
+  // ✅ Seulement sur mobile
+  if (window.innerWidth <= 768) {
+    const hallWidth = hall.scrollWidth;
+    const wrapperWidth = wrapper.clientWidth;
+
+    if (hallWidth > wrapperWidth) {
+      const scale = wrapperWidth / hallWidth;
+
+      // applique l'échelle et garde le centrage
+      hall.style.transform = `scale(${scale})`;
+      hall.style.transformOrigin = "top center";
+      hall.dataset.autoScaled = "true";
+    }
+  } else {
+    // ✅ Sur PC, on remet à la taille normale
+    if (hall.dataset.autoScaled === "true") {
+      hall.style.transform = "";
+      hall.style.transformOrigin = "";
+      delete hall.dataset.autoScaled;
+    }
+  }
+}
+
+/* === 🪄 Centrage automatique du plan à l’ouverture === */
+window.addEventListener("load", () => {
+  autoFitHall();
+  const wrapper = document.querySelector(".hall-wrapper");
+  if (wrapper) {
+    wrapper.scrollLeft = (wrapper.scrollWidth - wrapper.clientWidth) / 2;
+  }
+});
+
+/* === 🔁 Réajuste lors d’un redimensionnement ou d’une rotation d’écran === */
+window.addEventListener("resize", autoFitHall);
+
 </script>
  <script>
 <script>
@@ -787,6 +829,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
