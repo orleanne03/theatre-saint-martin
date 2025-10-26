@@ -470,6 +470,12 @@ body.admin #adminBanner {
     font-size: 13px;
   }
 }
+#info {
+  background: #1976d2;
+}
+#info:hover {
+  background: #0d47a1;
+}
 
 </style>
 </head>
@@ -502,6 +508,8 @@ body.admin #adminBanner {
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
+    <button id="info">ℹ️ Info</button>
+
 </div>
 
 <div id="reservations">
@@ -739,6 +747,11 @@ function updateTable() {
 
 /* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
+  // === ℹ️ Bouton Info : ouvre le PDF du mode d'emploi ===
+document.getElementById("info").onclick = () => {
+  window.open("mode_emploi.pdf", "_blank");
+};
+
   /* === 🧭 Ajustement automatique du zoom sur mobile === */
 function autoFitHall() {
   const hall = document.getElementById("hall");
@@ -851,6 +864,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
