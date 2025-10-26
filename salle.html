@@ -80,29 +80,27 @@ h1 {
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
-/* === CONTENEUR DE LA SALLE === */
 .hall-wrapper {
-  position: relative;
+  display: block;
   width: 100%;
-  height: 100%;
-  overflow: hidden;                    /* on gère le scroll manuellement */
-  -webkit-overflow-scrolling: touch;
-  touch-action: none;                  /* requis pour capturer le pinch */
+  overflow-x: auto;                 /* scroll horizontal natif */
+  overflow-y: auto;                 /* scroll vertical natif */
+  -webkit-overflow-scrolling: touch;/* fluide iOS */
+  touch-action: pinch-zoom pan-x pan-y; /* ✅ autorise zoom + défilement */
+  padding: 10px;
+  box-sizing: border-box;
   background: transparent;
 }
 
-/* === SALLE === */
 #hall {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: max-content;
   background: #fff;
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  transform-origin: 0 0;
-  transition: transform 0.1s linear;
-  min-width: max-content;
 }
 
 
@@ -611,15 +609,7 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 </script>
  <script>
 <script>
-/* === ZOOM + DÉPLACEMENT TACTILE AVEC LIMITES === */
-const wrapper = document.querySelector(".hall-wrapper");
-const hall = document.getElementById("hall");
 
-let scale = 1;
-let lastDist = 0;
-let startX = 0, startY = 0;
-let lastX = 0, lastY = 0;
-let isDragging = false;
 
 /* 🔧 Fonction pour limiter le déplacement */
 function clamp(value, min, max) {
@@ -686,6 +676,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
