@@ -654,8 +654,8 @@ document.getElementById("confirm").onclick = () => {
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
 
 document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const name = document.getElementById("name").value.trim().toUpperCase();
+  const email = document.getElementById("email").value.trim().toLowerCase();
   const phone = document.getElementById("phone").value.trim();
   if (!name || !email || !phone) return alert("Tous les champs sont requis.");
 
@@ -876,6 +876,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
