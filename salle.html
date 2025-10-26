@@ -82,30 +82,32 @@ h1 {
 
 /* === CONTENEUR DE LA SALLE === */
 .hall-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
+  display: block;
   width: 100%;
-  overflow-x: auto;               /* ✅ Active le défilement horizontal */
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;  /* ✅ Rend le scroll fluide sur iOS */
-  padding: 10px 0;
-  scroll-behavior: smooth;        /* ✅ Défilement doux */
-  touch-action: pan-x;            /* ✅ Permet de faire glisser horizontalement au doigt */
+  max-width: 100%;
+  overflow-x: auto;                /* ✅ scroll horizontal */
+  overflow-y: auto;                /* ✅ scroll vertical si nécessaire */
+  -webkit-overflow-scrolling: touch;  /* ✅ fluide sur iPhone/iPad */
+  touch-action: pan-x pan-y;       /* ✅ glissement au doigt */
+  padding: 10px;
   box-sizing: border-box;
+  scroll-behavior: smooth;
+  background: transparent;
 }
-/* === SCÈNE === */
+
+/* === SALLE === */
 #hall {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: max-content;              /* ✅ s’adapte à la largeur réelle du contenu */
+  margin: 0 auto;
   background: #fff;
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  width: max-content;             /* ✅ S’adapte à la largeur réelle de la salle */
-  min-width: 100%;
 }
+
 .row {
   display: flex;
   justify-content: center;
@@ -612,6 +614,7 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 
 </body>
 </html>
+
 
 
 
