@@ -805,6 +805,13 @@ window.addEventListener("load", () => {
 
 /* === 🔁 Réajuste lors d’un redimensionnement ou d’une rotation d’écran === */
 window.addEventListener("resize", autoFitHall);
+// === 🧹 Forcer l'état initial (au chargement de la page) ===
+window.addEventListener("DOMContentLoaded", () => {
+  resetBtn.style.display = "none";
+  document.getElementById("export").style.display = "none";
+  document.body.classList.remove("admin");
+  adminBtn.textContent = "🔐 Admin";
+});
 
 </script>
  <script>
@@ -876,6 +883,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
