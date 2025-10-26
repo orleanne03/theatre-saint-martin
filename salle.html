@@ -1086,7 +1086,7 @@ function updateTable() {
       <div>
         👤 ${name}
       </div>
-      <div>${info.paid ? "💰 Payé" : "❌ Non payé"}</div>
+      <div>${info.paid ? "💰 Payé" : "❌"}</div>
     `;
     header.onclick = () => div.classList.toggle("open");
 
@@ -1255,6 +1255,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
