@@ -488,6 +488,10 @@ body.admin #adminBanner {
   cursor: not-allowed;
   box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
+#reservations tr:hover {
+  background-color: #e3f2fd;
+  transition: background-color 0.3s;
+}
 
 </style>
 </head>
@@ -532,19 +536,25 @@ body.admin #adminBanner {
   </table>
 </div>
 
-<!-- Modale -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Informations de réservation</h3>
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
+
+    <label style="display:flex;align-items:center;gap:6px;margin:8px 0 12px 5px;">
+      <input type="checkbox" id="paid" />
+      💰 Paiement reçu
+    </label>
+
     <div>
       <button id="save">Valider</button>
       <button id="close">Annuler</button>
     </div>
   </div>
 </div>
+
 
 <script type="module">
 await new Promise(resolve => {
@@ -652,6 +662,7 @@ document.getElementById("confirm").onclick = () => {
   document.getElementById("modal").classList.remove("hidden");
 };
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
+document.getElementById("paid").checked = false;
 
 /* === 🧹 Fonction utilitaire : formatage du numéro de téléphone === */
 function formatPhone(input) {
@@ -690,12 +701,15 @@ document.getElementById("save").onclick = async () => {
     return alert("Tous les champs sont requis.");
   }
 
-  const user = { name, email, phone };
+  const paid = document.getElementById("paid").checked; // 💰 récupère le statut
 
-  // Enregistre les sièges choisis
-  selected.forEach(id => { 
-    if (!seats[id]) seats[id] = user; 
-  });
+const user = { name, email, phone, paid };
+
+// Enregistre les sièges choisis
+selected.forEach(id => { 
+  if (!seats[id]) seats[id] = user; 
+});
+
 
   save(); // 🔥 envoie dans Firebase
   await sendEmail(user); // 💌 envoie email avec QR
@@ -829,16 +843,24 @@ function updateTable() {
     return;
   }
   entries.forEach(([id, data]) => {
-    const [r, s] = id.split("-");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r}</td>
-      <td>${s}</td>
-      <td>${data.name}</td>
-      <td>${data.email}</td>
-      <td>${data.phone}</td>`;
-    tbody.appendChild(tr);
-  });
+  const [r, s] = id.split("-");
+  const tr = document.createElement("tr");
+
+  tr.innerHTML = `
+    <td>${r}</td>
+    <td>${s}</td>
+    <td>${data.name}</td>
+    <td>${data.email}</td>
+    <td>${data.phone}</td>`;
+
+  // 💰 Si payé, ligne verte
+  if (data.paid) {
+    tr.style.backgroundColor = "#c8e6c9"; // vert pâle
+  }
+
+  tbody.appendChild(tr);
+});
+
 }
 
 /* === Scanner billets === */
@@ -967,6 +989,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
