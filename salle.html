@@ -80,18 +80,21 @@ h1 {
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
+/* === CONTENEUR DE LA SALLE === */
 .hall-wrapper {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
-  margin: 0 auto;
   width: 100%;
-  max-width: 900px;
-  overflow-x: auto;
+  overflow-x: auto;               /* ✅ Active le défilement horizontal */
   overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;  /* ✅ Rend le scroll fluide sur iOS */
+  padding: 10px 0;
+  scroll-behavior: smooth;        /* ✅ Défilement doux */
+  touch-action: pan-x;            /* ✅ Permet de faire glisser horizontalement au doigt */
+  box-sizing: border-box;
 }
+/* === SCÈNE === */
 #hall {
   display: flex;
   flex-direction: column;
@@ -100,7 +103,7 @@ h1 {
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
-  width: max-content;
+  width: max-content;             /* ✅ S’adapte à la largeur réelle de la salle */
   min-width: 100%;
 }
 .row {
@@ -609,6 +612,7 @@ document.getElementById("scanTicket").onclick = () => window.location.href = "sc
 
 </body>
 </html>
+
 
 
 
