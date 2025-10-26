@@ -685,15 +685,26 @@ async function sendEmail(user) {
   }).then(() => console.log("✅ Email envoyé")).catch(err => console.error("❌ Erreur EmailJS :", err));
 }
 
-/* === Admin Mode === */
+/* === Mode Admin === */
 adminBtn.onclick = () => {
+  const scanBtn = document.getElementById("scanTicket");
+  const infoBtn = document.getElementById("info");
+
   if (!admin) {
     const p = prompt("Mot de passe admin :");
     if (p === "admin123") {
       admin = true;
       alert("✅ Mode admin activé");
+
+      // Boutons visibles en mode admin
       resetBtn.style.display = "inline-block";
-      document.getElementById("export").style.display = "inline-block"; // 🔥 affiche Export CSV
+      document.getElementById("export").style.display = "inline-block";
+
+      // Boutons masqués en mode admin
+      scanBtn.style.display = "none";
+      infoBtn.style.display = "none";
+
+      // Visuel et état
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
     } else {
@@ -702,12 +713,33 @@ adminBtn.onclick = () => {
   } else {
     admin = false;
     alert("👋 Mode admin désactivé");
+
+    // Boutons masqués hors admin
     resetBtn.style.display = "none";
-    document.getElementById("export").style.display = "none"; // 🔥 cache Export CSV
+    document.getElementById("export").style.display = "none";
+
+    // Boutons visibles hors admin
+    scanBtn.style.display = "inline-block";
+    infoBtn.style.display = "inline-block";
+
+    // Visuel et état
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
   }
 };
+
+/* === 🧹 État initial au chargement de la page === */
+window.addEventListener("DOMContentLoaded", () => {
+  resetBtn.style.display = "none";
+  document.getElementById("export").style.display = "none";
+  document.body.classList.remove("admin");
+  adminBtn.textContent = "🔐 Admin";
+
+  // Toujours visibles au démarrage
+  document.getElementById("scanTicket").style.display = "inline-block";
+  document.getElementById("info").style.display = "inline-block";
+});
+
 
 
 
@@ -883,6 +915,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
