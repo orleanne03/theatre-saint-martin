@@ -753,19 +753,31 @@ resetBtn.onclick = () => {
   }
 };
 
-/* === Export CSV === */
+/* === Export CSV amélioré === */
 document.getElementById("export").onclick = () => {
-  let csv = "Rangée;Siège;Nom;Email;Téléphone\n";
-  for (const [k, v] of Object.entries(seats)) {
+  const entries = Object.entries(seats)
+    .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
+
+  const now = new Date().toLocaleString("fr-FR");
+  let csv = `Export des réservations – Théâtre Saint Martin (${now})\n\n`;
+  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE\n";
+
+  for (const [k, v] of entries) {
     const [r, s] = k.split("-");
     csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
   }
-  const blob = new Blob([csv], { type: "text/csv" });
+
+  csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
+
+  // ✅ Encodage UTF-8 avec BOM pour compatibilité Excel
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "reservations.csv";
+  a.download = `reservations_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 };
+
 
 /* === Mise à jour du tableau === */
 function updateTable() {
@@ -915,6 +927,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
