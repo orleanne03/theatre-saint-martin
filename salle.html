@@ -133,29 +133,110 @@ h1 {
   margin-right: 8px;
   min-width: 18px;
 }
+/* === STYLE DES SIÈGES (RÉALISTES + CENTRÉS) === */
 .seat {
-  font-size: 1em;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  margin: 4px;
+  border-radius: 6px 6px 8px 8px;
+  cursor: pointer;
+  display: inline-block;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ✅ Texte centré parfaitement au milieu du siège */
+.seat span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
   text-align: center;
-}
-.seat.free, .seat.selected, .seat.reserved, .seat.strapontin {
-  color: #fff;  /* blanc */
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3); /* contraste sur fond clair ou foncé */
+  font-size: 0.95em;
+  line-height: 1;
+  pointer-events: none;
 }
 
+/* === Effets du dossier et de l’assise === */
+.seat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
+              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
 
-/* 🔧 Pour que le texte s’adapte automatiquement à la taille du siège */
+.seat::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: 0 0 8px 8px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+/* === ÉTATS DES SIÈGES === */
+
+/* 🔴 Libre */
+.free {
+  background: linear-gradient(145deg, #c62828, #8e0000);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+.free:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+}
+
+/* 🔵 Sélectionné */
+.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
+  transform: scale(1.1);
+}
+
+/* ⚫ Réservé */
+.reserved {
+  background: linear-gradient(145deg, #7c787773, #3e272300);
+  opacity: 0.8;
+  cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+/* 🟡 Strapontin */
+.strapontin {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.seat.strapontin.selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+  box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
+/* === Ajustement Mobile === */
 @media (max-width: 600px) {
   .seat {
     width: 26px;
     height: 26px;
-    font-size: 0.8em;           /* un peu plus petit sur mobile */
+    margin: 2px;
+  }
+  .seat span {
+    font-size: 0.8em;
   }
 }
-
-.seat:hover { transform: scale(1.1); }
 
 .buttons {
   margin: 20px 0;
@@ -466,10 +547,15 @@ function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
-  d.textContent = label;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = label;
+  d.appendChild(labelSpan);
+
   d.onclick = () => toggle(id, d);
   return d;
 }
+
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
@@ -701,6 +787,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
