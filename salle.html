@@ -222,6 +222,14 @@ h1 {
   cursor: not-allowed;
   box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
+/* 💚 Siège réservé et payé */
+.paid {
+  background: linear-gradient(145deg, #43a047, #2e7d32);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(67, 160, 71, 0.6);
+  cursor: not-allowed;
+}
+
 
 /* 🟡 Strapontin */
 .strapontin {
@@ -503,6 +511,9 @@ input.paid-toggle {
   transform: scale(1.2);
   cursor: pointer;
 }
+.seat.strapontin.paid {
+  background: linear-gradient(145deg, #7cb342, #558b2f);
+}
 
 </style>
 </head>
@@ -656,11 +667,27 @@ function render() {
     const wasStrap = el.classList.contains("strapontin");
     el.className = "seat";
     if (wasStrap) el.classList.add("strapontin");
-    if (seats[id]) el.classList.add("reserved");
-    else if (selected.includes(id)) el.classList.add("selected");
-    else el.classList.add("free");
+
+    const seatData = seats[id];
+
+    if (seatData) {
+      // 💚 Si payé → vert
+      if (seatData.paid) {
+        el.classList.add("paid");
+      } else {
+        // ⚫ réservé non payé
+        el.classList.add("reserved");
+      }
+    } else if (selected.includes(id)) {
+      // 🔵 sélectionné
+      el.classList.add("selected");
+    } else {
+      // 🔴 libre
+      el.classList.add("free");
+    }
   });
 }
+
 
 /* === Clic sur un siège === */
 function toggle(id, el) {
@@ -1052,6 +1079,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
