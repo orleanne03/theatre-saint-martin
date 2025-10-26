@@ -81,16 +81,21 @@ h1 {
 .seat.strapontin.selected { background: #82b1ff !important; }
 
 .hall-wrapper {
-  display: block;
+  display: flex;
+  justify-content: center;       /* ✅ centre horizontalement */
+  align-items: flex-start;       /* ou center pour centrer aussi verticalement */
   width: 100%;
-  overflow-x: auto;                 /* scroll horizontal natif */
-  overflow-y: auto;                 /* scroll vertical natif */
-  -webkit-overflow-scrolling: touch;/* fluide iOS */
-  touch-action: pinch-zoom pan-x pan-y; /* ✅ autorise zoom + défilement */
+  min-height: 70vh;              /* garde un bon équilibre visuel sur grand écran */
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pinch-zoom pan-x pan-y;
   padding: 10px;
   box-sizing: border-box;
   background: transparent;
 }
+
+
 
 #hall {
   display: flex;
@@ -676,6 +681,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
