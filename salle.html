@@ -343,6 +343,12 @@ body.admin #adminBanner {
 }
 
 }
+  /* === ÉCHELLE AUTO ADAPTATIVE === */
+#hall {
+  transform-origin: top left;
+  transition: transform 0.3s ease;
+}
+
 </style>
 </head>
 
@@ -670,12 +676,33 @@ wrapper.addEventListener("touchend", e => {
 });
 </script>
 
+<script>
+/* === ADAPTATION AUTOMATIQUE AU CHARGEMENT === */
+window.addEventListener("load", () => {
+  const hall = document.getElementById("hall");
+  const wrapper = document.querySelector(".hall-wrapper");
+
+  // Mesure la taille réelle du plan et de l'écran
+  const hallWidth = hall.scrollWidth;
+  const hallHeight = hall.scrollHeight;
+  const wrapWidth = wrapper.clientWidth;
+  const wrapHeight = wrapper.clientHeight;
+
+  // Calcul du facteur d'échelle pour tout faire tenir
+  const scaleX = wrapWidth / hallWidth;
+  const scaleY = wrapHeight / hallHeight;
+  const scale = Math.min(scaleX, scaleY, 1); // pas plus grand que 1
+
+  hall.style.transform = `scale(${scale})`;
+});
+</script>
 
 
 <div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
 
 </body>
 </html>
+
 
 
 
