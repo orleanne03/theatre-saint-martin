@@ -753,7 +753,7 @@ resetBtn.onclick = () => {
   }
 };
 
-/* === Export CSV amélioré === */
+/* === Export CSV avec encodage UTF-8 (corrige les accents) === */
 document.getElementById("export").onclick = () => {
   const entries = Object.entries(seats)
     .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
@@ -769,7 +769,7 @@ document.getElementById("export").onclick = () => {
 
   csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
 
-  // ✅ Encodage UTF-8 avec BOM pour compatibilité Excel
+  // ✅ Encodage UTF-8 + BOM pour Excel (corrige “TÃ©lÃ©phone”)
   const bom = "\uFEFF";
   const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
@@ -777,6 +777,7 @@ document.getElementById("export").onclick = () => {
   a.download = `reservations_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 };
+
 
 
 /* === Mise à jour du tableau === */
@@ -927,6 +928,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
