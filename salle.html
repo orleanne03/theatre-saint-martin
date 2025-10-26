@@ -83,10 +83,10 @@ h1 {
 .hall-wrapper {
   display: block;
   width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pinch-zoom pan-x pan-y;
+  overflow-x: auto;                 /* scroll horizontal natif */
+  overflow-y: auto;                 /* scroll vertical natif */
+  -webkit-overflow-scrolling: touch;/* fluide iOS */
+  touch-action: pinch-zoom pan-x pan-y; /* ✅ autorise zoom + défilement */
   padding: 10px;
   box-sizing: border-box;
   background: transparent;
@@ -103,6 +103,8 @@ h1 {
   box-shadow: 0 3px 10px rgba(0,0,0,.15);
 }
 
+
+
 .row {
   display: flex;
   justify-content: center;
@@ -116,6 +118,103 @@ h1 {
   min-width: 18px;
 }
 .seat {
+  width: 32px;
+  height: 32px;
+  margin: 3px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.seat:hover { transform: scale(1.1); }
+
+.buttons {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: .3s;
+}
+#confirm { background: #2e7d32; } #confirm:hover { background: #1b5e20; }
+#admin { background: #d32f2f; } #admin:hover { background: #b71c1c; }
+#reset { background: #455a64; } #reset:hover { background: #263238; }
+#export { background: #009688; } #export:hover { background: #00695c; }
+#scanTicket { background: #8e24aa; } #scanTicket:hover { background: #6a1b9a; }
+
+#reservations {
+  margin: 20px auto;
+  width: 90%;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  padding: 10px;
+}
+#reservations h3 {
+  text-align: left;
+  margin: 10px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#reservations table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+#reservations th, #reservations td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px;
+  text-align: left;
+}
+#reservations th { background: #1976d2; color: #fff; }
+
+.modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.5); display: flex; justify-content: center; align-items: center; z-index: 10;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: #fff; padding: 20px; border-radius: 10px; width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.modal-content input {
+  width: 90%; margin: 6px auto; padding: 8px; border: 1px solid #ccc;
+  border-radius: 5px; display: block;
+}
+#loader {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999; transition: opacity .4s ease;
+}
+#loader.hidden { opacity: 0; pointer-events: none; }
+.loader-content { text-align: center; color: #0d47a1; font-weight: 600; font-size: 1.1rem; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #bbdefb;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+  /* === STYLE FAUTEUILS RÉALISTES === */
+.seat {
   position: relative;
   width: 34px;
   height: 34px;
@@ -125,11 +224,9 @@ h1 {
   display: inline-block;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   transform-origin: bottom center;
-  font-size: 11px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
+
+/* Dossier (partie haute) */
 .seat::before {
   content: "";
   position: absolute;
@@ -142,6 +239,8 @@ h1 {
               radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
   pointer-events: none;
 }
+
+/* Assise (partie basse) */
 .seat::after {
   content: "";
   position: absolute;
@@ -154,24 +253,34 @@ h1 {
   pointer-events: none;
 }
 
+/* 🔴 Siège libre */
 .free {
   background: linear-gradient(145deg, #c62828, #8e0000);
-  color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  color: #fff; /* texte blanc */
 }
-.free:hover { transform: scale(1.1); }
+.free:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+}
 
+/* 🔵 Sélectionné */
 .selected {
   background: linear-gradient(145deg, #1565c0, #0d47a1);
   box-shadow: 0 4px 10px rgba(13,71,161,0.4);
-  color: #fff;
+  transform: scale(1.1);
+  color: #fff; /* texte blanc */
 }
 
+/* ⚫ Réservé */
 .reserved {
   background: linear-gradient(145deg, #7c787773, #3e272300);
   opacity: 0.8;
   cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
 
+/* 🟡 Strapontin */
 .strapontin {
   background: linear-gradient(145deg, #f9a825, #f57f17);
   box-shadow: 0 3px 6px rgba(0,0,0,0.25);
@@ -186,26 +295,35 @@ h1 {
   .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
   .row-label { font-size: 12px; margin-right: 4px; }
   h1 { font-size: 1.5rem; }
-} /* ✅ fermeture media query */
+  /* === 🌟 VISUEL AMÉLIORÉ POUR LE MODE ADMIN === */
 
-/* === 🌟 VISUEL MODE ADMIN === */
+/* Fond légèrement doré pour signaler le mode admin */
 body.admin {
   background: radial-gradient(circle at center, #fff8e1, #ffe082);
   transition: background 0.5s ease;
 }
+
+/* Aura dorée autour de tous les sièges réservés */
 .admin .seat.reserved {
-  box-shadow: 0 0 10px 3px rgba(255,215,0,0.7), inset 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 0 10px 3px rgba(255,215,0,0.7),
+              inset 0 2px 4px rgba(0,0,0,0.3);
   animation: pulseGold 1.5s infinite alternate;
 }
+
+/* Animation douce (pulsation dorée) */
 @keyframes pulseGold {
   from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
   to   { box-shadow: 0 0 14px 5px rgba(255,215,0,0.9); }
 }
+
+/* Curseur et effet au survol des sièges réservés */
 .admin .seat.reserved:hover {
   cursor: pointer;
   transform: scale(1.12);
   filter: brightness(1.15);
 }
+
+/* Petite étiquette visuelle "Mode Admin" fixe */
 #adminBanner {
   position: fixed;
   top: 10px;
@@ -220,7 +338,11 @@ body.admin {
   z-index: 10000;
   display: none;
 }
-body.admin #adminBanner { display: block; }
+body.admin #adminBanner {
+  display: block;
+}
+
+}
 </style>
 </head>
 
@@ -249,7 +371,7 @@ body.admin #adminBanner { display: block; }
 <div class="buttons">
   <button id="confirm">✅ Confirmer</button>
   <button id="admin">🔐 Admin</button>
-  <button id="reset" style="display:none;">♻️ Réinitialiser</button>
+  <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
 </div>
@@ -275,8 +397,6 @@ body.admin #adminBanner { display: block; }
     </div>
   </div>
 </div>
-
-<div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
 
 <script type="module">
 await new Promise(resolve => {
@@ -352,6 +472,7 @@ function render() {
 
 /* === Clic sur un siège === */
 function toggle(id, el) {
+  // 🧰 Si admin : peut libérer un siège réservé
   if (admin && seats[id]) {
     if (confirm(`🔓 Libérer le siège ${id} ?`)) {
       delete seats[id];
@@ -361,9 +482,14 @@ function toggle(id, el) {
     }
     return;
   }
+
+  // Si non admin : clic sur un siège réservé => bloqué
   if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+
+  // Sélection / désélection classique
   if (selected.includes(id)) selected = selected.filter(s => s !== id);
   else selected.push(id);
+
   render();
 }
 
@@ -379,6 +505,7 @@ document.getElementById("save").onclick = async () => {
   const email = document.getElementById("email").value.trim();
   const phone = document.getElementById("phone").value.trim();
   if (!name || !email || !phone) return alert("Tous les champs sont requis.");
+
   const user = { name, email, phone };
   selected.forEach(id => { if (!seats[id]) seats[id] = user; });
   save();
@@ -413,7 +540,7 @@ adminBtn.onclick = () => {
       admin = true;
       alert("✅ Mode admin activé");
       resetBtn.style.display = "inline-block";
-      document.getElementById("export").style.display = "inline-block";
+      document.getElementById("export").style.display = "inline-block"; // 🔥 affiche Export CSV
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
     } else {
@@ -423,13 +550,15 @@ adminBtn.onclick = () => {
     admin = false;
     alert("👋 Mode admin désactivé");
     resetBtn.style.display = "none";
-    document.getElementById("export").style.display = "none";
+    document.getElementById("export").style.display = "none"; // 🔥 cache Export CSV
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
   }
 };
 
-/* === Réinitialiser === */
+
+
+/* === Réinitialiser toute la salle === */
 resetBtn.onclick = () => {
   if (!admin) return alert("Activez le mode admin.");
   if (confirm("Effacer toutes les réservations ?")) {
@@ -453,7 +582,7 @@ document.getElementById("export").onclick = () => {
   a.click();
 };
 
-/* === Tableau === */
+/* === Mise à jour du tableau === */
 function updateTable() {
   const tbody = document.getElementById("resBody");
   tbody.innerHTML = "";
@@ -465,7 +594,12 @@ function updateTable() {
   entries.forEach(([id, data]) => {
     const [r, s] = id.split("-");
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r}</td><td>${s}</td><td>${data.name}</td><td>${data.email}</td><td>${data.phone}</td>`;
+    tr.innerHTML = `
+      <td>${r}</td>
+      <td>${s}</td>
+      <td>${data.name}</td>
+      <td>${data.email}</td>
+      <td>${data.phone}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -473,55 +607,88 @@ function updateTable() {
 /* === Scanner billets === */
 document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
 </script>
-
-<!-- 🖐 Zoom & Pan tactile -->
+ <script>
 <script>
-const wrapper = document.querySelector('.hall-wrapper');
-const hallEl = document.getElementById('hall');
-let isDragging = false, startX = 0, startY = 0, lastX = 0, lastY = 0, lastDist = 0, scale = 1;
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+
+/* 🔧 Fonction pour limiter le déplacement */
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 wrapper.addEventListener("touchstart", e => {
   if (e.touches.length === 2) {
+    // début du pinch
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     lastDist = Math.hypot(dx, dy);
   } else if (e.touches.length === 1) {
+    // début du drag
     isDragging = true;
     startX = e.touches[0].clientX - lastX;
     startY = e.touches[0].clientY - lastY;
   }
 });
+
 wrapper.addEventListener("touchmove", e => {
   if (e.touches.length === 2) {
     e.preventDefault();
+    // pinch zoom
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     const dist = Math.hypot(dx, dy);
     if (lastDist) {
       const delta = dist / lastDist;
-      scale = clamp(scale * delta, 0.6, 3);
-      hallEl.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
+      scale = Math.min(3, Math.max(0.6, scale * delta));
+      hall.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
     }
     lastDist = dist;
   } else if (isDragging && e.touches.length === 1) {
     e.preventDefault();
-    const rectW = wrapper.getBoundingClientRect();
-    const rectH = hallEl.getBoundingClientRect();
-    const maxX = Math.max(0, (rectH.width * scale - rectW.width) / 2);
-    const maxY = Math.max(0, (rectH.height * scale - rectW.height) / 2);
+
+    // dimensions du conteneur et du contenu
+    const rectWrapper = wrapper.getBoundingClientRect();
+    const rectHall = hall.getBoundingClientRect();
+
+    const maxOffsetX = Math.max(0, (rectHall.width * scale - rectWrapper.width) / 2);
+    const maxOffsetY = Math.max(0, (rectHall.height * scale - rectWrapper.height) / 2);
+
     const x = e.touches[0].clientX - startX;
     const y = e.touches[0].clientY - startY;
-    lastX = clamp(x, -maxX, maxX);
-    lastY = clamp(y, -maxY, maxY);
-    hallEl.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
+
+    // limitation du déplacement
+    lastX = clamp(x, -maxOffsetX, maxOffsetX);
+    lastY = clamp(y, -maxOffsetY, maxOffsetY);
+
+    hall.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
   }
 });
+
 wrapper.addEventListener("touchend", e => {
   if (e.touches.length < 2) lastDist = 0;
   if (e.touches.length === 0) isDragging = false;
 });
 </script>
 
+
+
+<div id="adminBanner">🛠️ MODE ADMIN ACTIF</div>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
