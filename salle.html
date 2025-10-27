@@ -953,6 +953,10 @@ button#editPrices {
         <span>Si paiement reçu, coche la case</span>
         <input type="checkbox" id="paid">
       </div>
+	<div class="payment-line">
+  <label for="babyCount">Moins de 8 ans</label>
+  <input id="babyCount" type="number" min="0" value="0" step="1">
+</div>
 
       <div class="payment-line">
         <label for="adultCount">Adultes</label>
@@ -1112,8 +1116,10 @@ window.addEventListener("DOMContentLoaded", () => {
   const totalDisplay = document.getElementById("total-display");
   function updateTotal() {
     const nbA = parseInt(adultInput.value) || 0;
-    const nbE = parseInt(childInput.value) || 0;
-    const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
+const nbE = parseInt(childInput.value) || 0;
+const nbB = parseInt(document.getElementById("babyCount").value) || 0; // 👶 Moins de 8 ans
+const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // 👶 Gratuit ou tarif 0 €
+
     totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
   }
   adultInput.addEventListener("input", updateTotal);
@@ -1122,49 +1128,64 @@ window.addEventListener("DOMContentLoaded", () => {
 
 /* === Validation + enregistrement === */
 document.getElementById("save").onclick = async () => {
-  const name = document.getElementById("name").value.trim().toUpperCase();
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const phone = formatPhone(document.getElementById("phone").value.trim());
-  const paid = document.getElementById("paid").checked;
+  const name   = document.getElementById("name").value.trim().toUpperCase();
+  const email  = document.getElementById("email").value.trim().toLowerCase();
+  const phone  = formatPhone(document.getElementById("phone").value.trim());
+  const paid   = document.getElementById("paid").checked;
+
   const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
   const nbChild = parseInt(document.getElementById("childCount").value) || 0;
-  const totalSeats = selected.length;
-  const totalPeople = nbAdult + nbChild;
+  const nbBaby  = parseInt(document.getElementById("babyCount")?.value || "0") || 0; // "Moins de 8 ans" (gratuit)
 
-  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
-  if (totalPeople !== totalSeats)
-    return alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges sélectionnés (${totalSeats}).`);
+  const totalSeats  = selected.length;                  // ✅ manquait
+  const totalPeople = nbAdult + nbChild + nbBaby;
 
-  const amount = nbAdult * 14 + nbChild * 10;
-  const user = { name, email, phone, paid, nbAdult, nbChild, amount };
-
-  let adultRemaining = nbAdult;
-let childRemaining = nbChild;
-
-selected.forEach(id => {
-  if (!seats[id]) {
-    let seatData = { ...user };
-
-    // 🧍 ou 👶 — attribuer le type par siège
-    if (adultRemaining > 0) {
-      seatData.type = "adulte";
-      adultRemaining--;
-    } else if (childRemaining > 0) {
-      seatData.type = "enfant";
-      childRemaining--;
-    } else {
-      seatData.type = "autre";
-    }
-
-    seats[id] = seatData;
+  if (!name || !email || !phone) {
+    alert("Tous les champs sont requis.");
+    return;
   }
-});
+  if (totalPeople !== totalSeats) {
+    alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges sélectionnés (${totalSeats}).`);
+    return;
+  }
+
+  // 💶 Moins de 8 ans = gratuit. Utilise les tarifs configurables si présents.
+  const amount = nbAdult * (typeof PRICE_ADULT === "number" ? PRICE_ADULT : 14)
+               + nbChild * (typeof PRICE_CHILD === "number" ? PRICE_CHILD : 10);
+
+  const user = { name, email, phone, paid, nbAdult, nbChild, nbBaby, amount };
+
+  // Répartition des types par siège
+  let adultRemaining = nbAdult;
+  let childRemaining = nbChild;
+  let babyRemaining  = nbBaby;
+
+  selected.forEach(id => {
+    if (!seats[id]) {
+      const seatData = { ...user };
+      if (adultRemaining > 0) {
+        seatData.type = "adulte";
+        adultRemaining--;
+      } else if (childRemaining > 0) {
+        seatData.type = "enfant";
+        childRemaining--;
+      } else if (babyRemaining > 0) {
+        seatData.type = "moins8";
+        babyRemaining--;
+      } else {
+        seatData.type = "autre";
+      }
+      seats[id] = seatData;
+    }
+  });
+
   save();
   await sendEmail(user);
   selected = [];
   document.getElementById("modal").classList.add("hidden");
-  alert(`✅ Réservation confirmée pour ${nbAdult} adulte(s) et ${nbChild} enfant(s) — Total ${amount} €.`);
+  alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
 };
+
 
 /* === Email + QR === */
 async function sendEmail(user) {
@@ -1237,10 +1258,11 @@ document.getElementById("export").onclick = () => {
     .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
   const now = new Date().toLocaleString("fr-FR");
   let csv = `Export des réservations – Théâtre Saint Martin (${now})\n\n`;
-  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE;ADULTES;ENFANTS;TOTAL(€)\n";
+  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE;ADULTES;ENFANTS;MOINS_DE_X_ANS;TOTAL(€)\n";
+
   for (const [k, v] of entries) {
     const [r, s] = k.split("-");
-    csv += `${r};${s};${v.name};${v.email};${v.phone};${v.nbAdult||0};${v.nbChild||0};${v.amount||0}\n`;
+csv += `${r};${s};${v.name};${v.email};${v.phone};${v.nbAdult||0};${v.nbChild||0};${v.nbBaby||0};${v.amount||0}\n`;
   }
   csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
   const bom = "\uFEFF";
@@ -1310,6 +1332,8 @@ for (const [id, data] of entries) {
     <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
     <p><strong>Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} €</p>
     <p><strong>Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} €</p>
+	<p><strong>Moins de 8 ans :</strong> ${info.nbBaby || 0}</p>
+
     <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
 
     <div class="seat-list" style="margin-top:8px;">
@@ -1357,8 +1381,10 @@ for (const [id, data] of entries) {
         const modal = document.getElementById("adminPaymentModal");
         const clientLabel = document.getElementById("adminClientName");
         const adultInput = document.getElementById("adminAdult");
-        const childInput = document.getElementById("adminChild");
-        const totalDisplay = document.getElementById("adminTotal");
+const childInput = document.getElementById("adminChild");
+const babyInput = document.getElementById("adminBaby");
+const totalDisplay = document.getElementById("adminTotal");
+
 
         clientLabel.textContent = `Client : ${clientName}`;
         adultInput.value = firstSeat[1].nbAdult || 0;
@@ -1367,8 +1393,10 @@ for (const [id, data] of entries) {
         // Fonction pour recalculer le total
         function updateAdminTotal() {
           const nbA = parseInt(adultInput.value) || 0;
-          const nbE = parseInt(childInput.value) || 0;
-          totalDisplay.textContent = `Total : ${(nbA * 14 + nbE * 10).toFixed(2)} €`;
+const nbE = parseInt(childInput.value) || 0;
+const nbB = parseInt(babyInput.value) || 0;
+const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // 👶 “moins de 8 ans” gratuit
+
         }
         adultInput.addEventListener("input", updateAdminTotal);
         childInput.addEventListener("input", updateAdminTotal);
@@ -1402,7 +1430,9 @@ for (const [id, data] of entries) {
 
   for (const [id, data] of clientSeats) {
     data.nbAdult = nbA;
-    data.nbChild = nbE;
+data.nbChild = nbE;
+data.nbBaby = nbB;
+
     data.amount = total;
     data.paid = true;
   }
@@ -1440,8 +1470,10 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
     const manualInput = document.getElementById("manualSeatInput");
     const paidBox = document.getElementById("addSeatPaid");
     const adultInput = document.getElementById("addSeatAdult");
-    const childInput = document.getElementById("addSeatChild");
-    const totalDisplay = document.getElementById("addSeatTotal");
+const childInput = document.getElementById("addSeatChild");
+const babyInput = document.getElementById("addSeatBaby");
+const totalDisplay = document.getElementById("addSeatTotal");
+
 
     document.getElementById("addSeatClient").textContent = `Client : ${clientName}`;
     map.innerHTML = "";
@@ -1480,8 +1512,10 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
     // 🧮 Recalcul du total
     function updateTotal() {
       const a = parseInt(adultInput.value) || 0;
-      const c = parseInt(childInput.value) || 0;
-      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`;
+const c = parseInt(childInput.value) || 0;
+const b = parseInt(babyInput.value) || 0;
+totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`; // 👶 “moins de 8 ans” gratuit
+
     }
     adultInput.oninput = childInput.oninput = updateTotal;
 
@@ -1494,8 +1528,10 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
       const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
       const allChosen = [...chosen, ...typed];
       const nbA = parseInt(adultInput.value) || 0;
-      const nbC = parseInt(childInput.value) || 0;
-      const totalPeople = nbA + nbC;
+const nbC = parseInt(childInput.value) || 0;
+const nbB = parseInt(babyInput.value) || 0;
+const totalPeople = nbA + nbC + nbB;
+
       const total = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
 
       if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
@@ -1506,7 +1542,8 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
         const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
         if (!seatEl || !seatEl.classList.contains("free")) continue;
         const type = added < nbA ? "adulte" : "enfant";
-        seats[id] = { ...clientSeat[1], paid: paidBox.checked, nbAdult: nbA, nbChild: nbC, type, amount: total };
+        seats[id] = { ...clientSeat[1], paid: paidBox.checked, nbAdult: nbA, nbChild: nbC, nbBaby: nbB, type, amount: total };
+
         added++;
       }
       if (added > 0) {
@@ -1710,6 +1747,9 @@ toggleAdminUI();
 
     <label for="adminChild">Nombre d’enfants (10 €)</label>
     <input id="adminChild" type="number" min="0" value="0" step="1">
+	<label for="adminBaby">Nombre de moins de 8 ans</label>
+<input id="adminBaby" type="number" min="0" value="0" step="1">
+
 
     <p id="adminTotal" style="font-weight:600;color:#2e7d32;margin-top:8px;">Total : 0 €</p>
 
@@ -1749,6 +1789,11 @@ toggleAdminUI();
         <label for="addSeatAdult">Adultes (${PRICE_ADULT} €)</label>
         <input id="addSeatAdult" type="number" min="0" value="0" step="1" style="width:60px;">
       </div>
+	  <div class="payment-line">
+  <label for="addSeatBaby">Moins de 8 ans</label>
+  <input id="addSeatBaby" type="number" min="0" value="0" step="1" style="width:60px;">
+</div>
+
       <div class="payment-line">
         <label for="addSeatChild">Enfants (${PRICE_CHILD} €)</label>
         <input id="addSeatChild" type="number" min="0" value="0" step="1" style="width:60px;">
@@ -1774,11 +1819,14 @@ toggleAdminUI();
   <div class="modal-content">
     <h3>💶 Modifier les tarifs</h3>
 
-    <label for="priceAdult">Tarif adulte (€)</label>
-    <input id="priceAdult" type="number" min="0" step="0.5" value="14">
+<label for="priceAdult">Tarif adulte (€)</label>
+<input id="priceAdult" type="number" min="0" step="0.5" value="14">
+<span id="labelPriceAdult" style="display:none;"></span>
 
-    <label for="priceChild">Tarif enfant (€)</label>
-    <input id="priceChild" type="number" min="0" step="0.5" value="10">
+<label for="priceChild">Tarif enfant (€)</label>
+<input id="priceChild" type="number" min="0" step="0.5" value="10">
+<span id="labelPriceChild" style="display:none;"></span>
+
 
     <div style="margin-top:12px;">
       <button id="savePrices">Enregistrer</button>
