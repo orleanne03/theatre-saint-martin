@@ -915,6 +915,30 @@ button#editPrices {
     <button id="info">ℹ️ AIDE</button>
 
 </div>
+<!-- 💰 Résumé des statistiques -->
+<!-- 💰 Résumé des statistiques globales -->
+<div id="stats-bar" style="
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:25px;
+  background:#f8f9fa;
+  padding:10px 20px;
+  margin:10px auto 5px;
+  border-radius:12px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+  font-family:'Segoe UI',sans-serif;
+  font-weight:600;
+  color:#2e7d32;
+  flex-wrap:wrap;
+">
+  <span id="stat-total">💰 Total encaissé : 0 €</span>
+  <span id="stat-adult">🧍 Adultes : 0</span>
+  <span id="stat-child">👶 Enfants : 0</span>
+  <span id="stat-baby">🍼 Moins de 8 ans : 0</span>
+  <span id="stat-sold">🎟️ Places vendues : 0</span>
+</div>
+
 
 <div id="reservations">
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
@@ -927,7 +951,10 @@ button#editPrices {
   font-weight:600;
 "></h4>
 
-
+    <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+      <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
+      
+    </div>
   </div>
 
   <div id="resBody"><p>Aucune réservation.</p></div>
@@ -1556,32 +1583,40 @@ const totalPeople = nbA + nbC + nbB;
 
 
 
+// === Totaux globaux ===
+let totalAmount = 0;
+let totalAdult = 0;
+let totalChild = 0;
+let totalBaby = 0;
+let soldSeats = Object.keys(seats).length;
+const processedClients = new Set();
 
-
-
-  // === Totaux globaux ===
-  let totalAmount = 0;
-  let totalAdult = 0;
-  let totalChild = 0;
-  let soldSeats = Object.keys(seats).length;
-  const processedClients = new Set();
-
-  for (const data of Object.values(seats)) {
-    if (data.paid && data.amount && !processedClients.has(data.name)) {
-      totalAmount += parseFloat(data.amount);
-      totalAdult += parseInt(data.nbAdult || 0);
-      totalChild += parseInt(data.nbChild || 0);
-      processedClients.add(data.name);
-    }
+for (const data of Object.values(seats)) {
+  if (data.paid && data.amount && !processedClients.has(data.name)) {
+    totalAmount += parseFloat(data.amount);
+    totalAdult += parseInt(data.nbAdult || 0);
+    totalChild += parseInt(data.nbChild || 0);
+    totalBaby += parseInt(data.nbBaby || 0);
+    processedClients.add(data.name);
   }
-
-  const totalElement = document.getElementById("total-amount");
-  totalElement.innerHTML = `
-    💰 <b>Total encaissé :</b> ${totalAmount.toFixed(2)} €<br>
-    🧍 <b>Adultes :</b> ${totalAdult} &nbsp;&nbsp; 👶 <b>Enfants :</b> ${totalChild}<br>
-    🎟️ <b>Places vendues :</b> ${soldSeats}
-  `;
 }
+
+// === Met à jour la barre de statistiques compacte ===
+const statTotal = document.getElementById("stat-total");
+const statAdult = document.getElementById("stat-adult");
+const statChild = document.getElementById("stat-child");
+const statBaby = document.getElementById("stat-baby");
+const statSold = document.getElementById("stat-sold");
+
+if (statTotal && statAdult && statChild && statBaby && statSold) {
+  statTotal.textContent = `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
+  statAdult.textContent = `🧍 Adultes : ${totalAdult}`;
+  statChild.textContent = `👶 Enfants : ${totalChild}`;
+  statBaby.textContent = `🍼 Moins de 8 ans : ${totalBaby}`;
+  statSold.textContent = `🎟️ Places vendues : ${soldSeats}`;
+}
+} // ← dernière accolade de la fonction updateTable()
+
 
 
 
