@@ -1711,17 +1711,21 @@ function fitHallToScreen() {
   // Calcule un facteur d’échelle pour tout faire tenir
   const scaleX = wrapperWidth / hallWidth;
   const scaleY = wrapperHeight / hallHeight;
-  const scale = Math.min(scaleX, scaleY) * 0.95; // léger espace autour
+  const scale = Math.min(scaleX, scaleY) * 0.95; // marge autour
 
-  // Applique le zoom centré
-  hall.style.transformOrigin = "top center";
-  hall.style.transform = `scale(${scale})`;
+  // Applique le zoom et centre le contenu
+  const offsetX = (wrapperWidth - hallWidth * scale) / 2;
+  const offsetY = (wrapperHeight - hallHeight * scale) / 2;
+
+  hall.style.transformOrigin = "top left";
+  hall.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 }
 
 /* Lance l'ajustement après chargement complet */
 window.addEventListener("load", () => {
-  setTimeout(fitHallToScreen, 300);
+  setTimeout(fitHallToScreen, 500);
 });
+
 
 
 </script>
