@@ -216,21 +216,12 @@ h1 {
 }
 
 /* ⚫ Réservé */
-/* ⚫ Réservé non payé — rose clair */
 .reserved {
-  background: #f8bbd0 !important;
-  color: #212121;
+  background: linear-gradient(145deg, #7c787773, #3e272300);
+  opacity: 0.8;
   cursor: not-allowed;
-  box-shadow: 0 0 6px rgba(233,30,99,0.3);
-  opacity: 1;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
-/* 🟡 Strapontin réservé (même rose) */
-.seat.strapontin.reserved {
-  background: #f8bbd0 !important;
-  color: #212121;
-  box-shadow: 0 0 6px rgba(233,30,99,0.3);
-}
-
 /* 💚 Siège réservé et payé */
 /* 💚 Légende Payé */
 .paid {
@@ -523,175 +514,6 @@ input.paid-toggle {
 .seat.strapontin.paid {
   background: linear-gradient(145deg, #7cb342, #558b2f);
 }
-/* === Ligne "Paiement reçu" === */
-.paid-line {
-  
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0 12px 5px;
-  font-weight: 500;
-}
-
-.paid-line input[type="checkbox"] {
-  transform: scale(1.3);
-  cursor: pointer;
-  margin-right: 8px; /* espace léger avec le bord droit */
-}
-/* ✨ Animation d'apparition des sièges */
-@keyframes seatPop {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.seat {
-  animation: seatPop 0.4s ease-out;
-}
-
-/* 💡 Petit rebond au clic */
-.seat:active {
-  transform: scale(0.9);
-  transition: transform 0.1s;
-}
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #bbdefb;
-  border-top: 4px solid #1976d2;
-  border-radius: 50%;
-  animation: spin 1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loader-content p {
-  animation: fadeIn 1s ease-in-out infinite alternate;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0.6; }
-  to { opacity: 1; }
-}
-.modal-content {
-  transform: scale(0.8);
-  opacity: 0;
-  animation: modalIn 0.3s ease-out forwards;
-}
-
-@keyframes modalIn {
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-button {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-button:active {
-  transform: scale(0.96);
-}
-.scene {
-  animation: float 3s ease-in-out infinite alternate;
-}
-
-@keyframes float {
-  from { transform: translateY(0); }
-  to { transform: translateY(-4px); }
-}
-/* === Accordéons de réservation par client (version douce) === */
-.accordion {
-  background: #f9f9f9;
-  border-radius: 8px;
-  margin: 10px 0;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.accordion-header {
-  background: #6fb572; /* 💙 bleu plus doux */
-  color: #000000;
-  padding: 10px 14px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 100;
-  transition: background 0.3s;
-}
-
-.accordion-header:hover {
-  background: #42a5f5;
-}
-
-.accordion-content {
-  background: #fff;
-  padding: 10px 14px;
-  display: none;
-  border-top: 1px solid #ddd;
-  transition: all 0.3s ease;
-}
-
-.accordion.open .accordion-content {
-  display: block;
-}
-
-.accordion-header span {
-  font-size: 0.9rem;
-  font-weight: normal;
-  color: #e3f2fd;
-}
-
-.seat-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 0.9rem;
-  margin-top: 6px;
-}
-
-.badge-seat {
-  background: #64b5f6; /* même bleu doux */
-  color: #fff;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-weight: 600;
-}
-
-.accordion-content p {
-  margin: 4px 0;
-}
-/* === Couleur différente si non payé === */
-.accordion-header.paid {
-  background: #a5d1a7; /* 💙 bleu doux */
-}
-
-.accordion-header.unpaid {
-  background: #f8bbd0; /* 🌸 rose clair */
-  color: #212121;
-}
-
-.accordion-header.unpaid:hover {
-  background: #f48fb1;
-}
-.accordion-header.paid {
-  border-left: 6px solid #49a760;
-}
-
-.accordion-header.unpaid {
-  border-left: 6px solid #e91e63;
-}
-
-.paid-toggle-client {
-  transform: scale(1.2);
-  cursor: pointer;
-}
 
 </style>
 </head>
@@ -734,12 +556,24 @@ button:active {
     <h3>📋 Liste des réservations</h3>
     <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
       <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
-      
+      <span>Client ayant payé</span>
     </div>
   </div>
 
-  <div id="resBody"><p>Aucune réservation.</p></div>
+  <table>
+    <thead>
+  <tr>
+    <th>Rangée</th>
+    <th>Siège</th>
+    <th>Nom</th>
+    <th>Email</th>
+    <th>Téléphone</th>
+    <th>Payé</th>
+  </tr>
+</thead>
 
+    <tbody id="resBody"><tr><td colspan="5">Aucune réservation.</td></tr></tbody>
+  </table>
 </div>
 
 
@@ -750,10 +584,10 @@ button:active {
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
 
-    <div class="paid-line">
-  <span>💰 Paiement reçu, coche la case</span>
-  <input type="checkbox" id="paid" />
-</div>
+    <label style="display:flex;align-items:center;gap:6px;margin:8px 0 12px 5px;">
+      <input type="checkbox" id="paid" />
+      💰 Paiement reçu
+    </label>
 
     <div>
       <button id="save">Valider</button>
@@ -1061,104 +895,50 @@ document.getElementById("export").onclick = () => {
 
 /* === Mise à jour du tableau === */
 function updateTable() {
-  const container = document.getElementById("resBody");
-  container.innerHTML = "";
-
+  const tbody = document.getElementById("resBody");
+  tbody.innerHTML = "";
   const entries = Object.entries(seats || {});
   if (!entries.length) {
-    container.innerHTML = '<p>Aucune réservation.</p>';
+    tbody.innerHTML = '<tr><td colspan="6">Aucune réservation.</td></tr>';
     return;
   }
 
-  // 🔹 Grouper par NOM
-  const grouped = {};
-  for (const [id, data] of entries) {
-    const key = data.name || "Inconnu";
-    if (!grouped[key]) grouped[key] = { ...data, seats: [], emails: new Set(), paid: data.paid };
-    grouped[key].seats.push(id);
-    grouped[key].emails.add(data.email || "N/A");
+  entries.forEach(([id, data]) => {
+    const [r, s] = id.split("-");
+    const tr = document.createElement("tr");
 
-    // Si au moins un siège est payé, on garde paid = true
-    if (data.paid) grouped[key].paid = true;
-  }
+    // ✅ ligne verte si payé
+    if (data.paid) tr.style.backgroundColor = "#c8e6c9";
 
-  // 🔹 Tri alphabétique
-  const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
-    (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
-  );
-
-  // 🔹 Création des accordéons
-  for (const [name, info] of sorted) {
-    const div = document.createElement("div");
-    div.className = "accordion";
-
-    // ✅ couleur selon statut de paiement
-    const header = document.createElement("div");
-    header.className = `accordion-header ${info.paid ? "paid" : "unpaid"}`;
-    header.innerHTML = `
-      <div>
-        👤 ${name}
-      </div>
-      <div>${info.paid ? "💰 Payé" : "❌"}</div>
+    tr.innerHTML = `
+      <td>${r}</td>
+      <td>${s}</td>
+      <td>${data.name}</td>
+      <td>${data.email}</td>
+      <td>${data.phone}</td>
+      <td>
+        <input type="checkbox" class="paid-toggle" data-id="${id}" ${data.paid ? "checked" : ""}>
+      </td>
     `;
-    header.onclick = () => div.classList.toggle("open");
 
-    const content = document.createElement("div");
-    content.className = "accordion-content";
-
-    const emailsHTML = [...info.emails]
-      .map(e => `<p><strong>Email :</strong> ${e}</p>`)
-      .join("");
-
-    content.innerHTML = `
-  ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
-  <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-
-  <label style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
-    💰 Paiement reçu
-    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.paid ? "checked" : ""}>
-  </label>
-
-  <div class="seat-list">
-    ${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}
-  </div>
-`;
-
-
-    div.append(header, content);
-    container.append(div);
-  }
-  // 🎯 Gestion des changements de statut payé/non payé
-document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-  cb.addEventListener("change", e => {
-    if (!admin) {
-      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
-      e.target.checked = !e.target.checked;
-      return;
-    }
-
-    const clientName = e.target.dataset.name;
-    const isPaid = e.target.checked;
-
-    // 🔄 Met à jour tous les sièges de cette personne
-    for (const [id, data] of Object.entries(seats)) {
-      if (data.name === clientName) {
-        seats[id].paid = isPaid;
-      }
-    }
-
-    save(); // 🔥 Enregistre dans Firebase
-    updateTable(); // 🔁 Rafraîchit la vue
-    render(); // 🎨 Met à jour les couleurs des sièges
+    tbody.appendChild(tr);
   });
-});
 
+  // 🧠 Après création du tableau, on gère les cases à cocher
+  document.querySelectorAll(".paid-toggle").forEach(cb => {
+    if (!admin) cb.disabled = true; // désactive si pas admin
+
+    cb.addEventListener("change", e => {
+      if (!admin) return; // sécurité
+      const id = e.target.dataset.id;
+      if (!seats[id]) return;
+
+      seats[id].paid = e.target.checked;
+      save(); // 🔥 met à jour Firebase
+      updateTable(); // 🔁 rafraîchit visuel
+    });
+  });
 }
-
-
-
-
-
 
 
   // 🧠 Activation de la mise à jour en mode admin
@@ -1300,18 +1080,6 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
