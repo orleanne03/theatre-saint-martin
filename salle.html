@@ -692,7 +692,76 @@ button:active {
   transform: scale(1.2);
   cursor: pointer;
 }
+#amount {
+  width: 90%;
+  margin: 6px auto;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: block;
+  font-size: 14px;
+}
+#total-amount {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+#total-amount.updated {
+  transform: scale(1.1);
+  color: #43a047;
+}
+.paid-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px auto 14px;
+  padding: 6px 10px;
+  width: 90%;
+  background: #f1f1f1;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
 
+.paid-line input[type="checkbox"] {
+  transform: scale(1.3);
+  accent-color: #2e7d32; /* ✅ vert doux */
+  cursor: pointer;
+}
+.payment-group {
+  background: #f5f5f5;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px auto 15px;
+  width: 90%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.payment-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.payment-line input[type="checkbox"] {
+  transform: scale(1.2);
+  accent-color: #2e7d32; /* vert doux */
+  cursor: pointer;
+}
+
+#amount {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+input#paid {
+    width: 10%;
+}
 </style>
 </head>
 
@@ -732,6 +801,14 @@ button:active {
 <div id="reservations">
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
     <h3>📋 Liste des réservations</h3>
+	<h4 id="total-amount" style="
+  text-align:right;
+  color:#2e7d32;
+  margin:10px 15px;
+  font-size:1rem;
+  font-weight:600;
+"></h4>
+
     <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
       <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
       
@@ -750,10 +827,14 @@ button:active {
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
 
-    <div class="paid-line">
-  <span>💰 Paiement reçu, coche la case</span>
-  <input type="checkbox" id="paid" />
+    <div class="payment-group">
+  <div class="payment-line">
+    <span> Si paiement reçu, coche la case</span>
+    <input type="checkbox" id="paid">
+  </div>
+  <input id="amount" placeholder="Somme perçue (€)" type="number" min="0" step="0.01">
 </div>
+
 
     <div>
       <button id="save">Valider</button>
@@ -924,9 +1005,11 @@ document.getElementById("save").onclick = async () => {
     return alert("Tous les champs sont requis.");
   }
 
-  const paid = document.getElementById("paid").checked; // 💰 récupère le statut
+  const paid = document.getElementById("paid").checked;
+const amount = parseFloat(document.getElementById("amount").value) || 0;
 
-const user = { name, email, phone, paid };
+const user = { name, email, phone, paid, amount };
+
 
 // Enregistre les sièges choisis
 selected.forEach(id => { 
@@ -942,6 +1025,22 @@ selected.forEach(id => {
   document.getElementById("modal").classList.add("hidden");
   alert("✅ Réservation confirmée et email envoyé !");
 };
+// 🧮 Validation et format numérique pour "Somme perçue"
+const amountInput = document.getElementById("amount");
+
+amountInput.addEventListener("input", (e) => {
+  // autorise seulement chiffres, virgule et point
+  let value = e.target.value.replace(/[^\d.,]/g, "");
+
+  // remplace la virgule par un point pour cohérence
+  value = value.replace(",", ".");
+
+  // empêche plusieurs points
+  const parts = value.split(".");
+  if (parts.length > 2) value = parts[0] + "." + parts.slice(1).join("");
+
+  e.target.value = value;
+});
 
 
 /* === Email + QR === */
@@ -1113,6 +1212,7 @@ function updateTable() {
     content.innerHTML = `
   ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
   <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
+  <p><strong>Somme perçue :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
 
   <label style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
     💰 Paiement reçu
@@ -1123,6 +1223,7 @@ function updateTable() {
     ${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}
   </div>
 `;
+
 
 
     div.append(header, content);
@@ -1146,12 +1247,30 @@ document.querySelectorAll(".paid-toggle-client").forEach(cb => {
         seats[id].paid = isPaid;
       }
     }
+// 💰 Si on coche payé, mais qu'il n'y a pas de montant → on demande une saisie rapide
+if (isPaid && (!seats[id].amount || seats[id].amount === 0)) {
+  const newAmount = prompt(`💶 Entrez la somme reçue pour ${clientName} :`, "0");
+  const amountValue = parseFloat(newAmount) || 0;
+  seats[id].amount = amountValue;
+}
 
     save(); // 🔥 Enregistre dans Firebase
     updateTable(); // 🔁 Rafraîchit la vue
     render(); // 🎨 Met à jour les couleurs des sièges
   });
 });
+  // 💶 Calcul du total encaissé
+  let total = 0;
+  for (const data of Object.values(seats)) {
+    if (data.paid && data.amount) total += parseFloat(data.amount);
+  }
+
+  const totalElement = document.getElementById("total-amount");
+  if (totalElement) {
+    totalElement.textContent = `💰 Total encaissé : ${total.toFixed(2)} €`;
+    totalElement.classList.add("updated");
+    setTimeout(() => totalElement.classList.remove("updated"), 500);
+  }
 
 }
 
@@ -1300,6 +1419,7 @@ wrapper.addEventListener("touchend", e => {
 
 </body>
 </html>
+
 
 
 
