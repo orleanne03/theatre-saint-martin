@@ -878,6 +878,19 @@ input#paid {
 button#editPrices {
     background: coral;
 }
+/* ✅ Correction centrage sur PC */
+@media (min-width: 769px) {
+  .hall-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+  #hall {
+    display: inline-block;
+    margin: 0 auto;
+    transform: none !important; /* désactive les translations calculées */
+  }
+}
+
 </style>
 </head>
 
@@ -1714,7 +1727,8 @@ function fitHallToScreen() {
   const scale = Math.min(scaleX, scaleY) * 0.95; // marge autour
 
   // Applique le zoom et centre le contenu
-  const offsetX = (wrapperWidth - hallWidth * scale) / 2;
+  const offsetX = Math.max(0, (wrapperWidth - hallWidth * scale) / 2);
+
   const offsetY = (wrapperHeight - hallHeight * scale) / 2;
 
   hall.style.transformOrigin = "top left";
