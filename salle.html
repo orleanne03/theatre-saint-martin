@@ -878,6 +878,15 @@ input#paid {
 button#editPrices {
     background: coral;
 }
+	input#childCount {
+    width: 50%;
+}
+	input#adultCount {
+    width: 50%;
+}
+	input#babyCount {
+    width: 50%;
+}
 </style>
 </head>
 
@@ -978,7 +987,7 @@ button#editPrices {
         <input type="checkbox" id="paid">
       </div>
 	<div class="payment-line">
-  <label for="babyCount">Moins de 8 ans</label>
+  <label for="babyCount">- de 8 ans</label>
   <input id="babyCount" type="number" min="0" value="0" step="1">
 </div>
 
@@ -988,7 +997,7 @@ button#editPrices {
       </div>
 
       <div class="payment-line">
-        <label for="childCount">Enfants</label>
+        <label for="childCount">Enfants + 14 ans</label>
         <input id="childCount" type="number" min="0" value="0" step="1">
       </div>
 
@@ -1872,6 +1881,7 @@ toggleAdminUI();
 
 </body>
 </html>
+
 
 
 
