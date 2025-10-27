@@ -692,192 +692,7 @@ button:active {
   transform: scale(1.2);
   cursor: pointer;
 }
-#amount {
-  width: 90%;
-  margin: 6px auto;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  display: block;
-  font-size: 14px;
-}
-#total-amount {
-  transition: transform 0.3s ease, color 0.3s ease;
-}
-#total-amount.updated {
-  transform: scale(1.1);
-  color: #43a047;
-}
-.paid-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 10px auto 14px;
-  padding: 6px 10px;
-  width: 90%;
-  background: #f1f1f1;
-  border-radius: 6px;
-  font-weight: 600;
-  color: #333;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
 
-.paid-line input[type="checkbox"] {
-  transform: scale(1.3);
-  accent-color: #2e7d32; /* ✅ vert doux */
-  cursor: pointer;
-}
-.payment-group {
-  background: #f5f5f5;
-  padding: 10px;
-  border-radius: 8px;
-  margin: 10px auto 15px;
-  width: 90%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.payment-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.payment-line input[type="checkbox"] {
-  transform: scale(1.2);
-  accent-color: #2e7d32; /* vert doux */
-  cursor: pointer;
-}
-
-#amount {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-input#paid {
-    width: 10%;
-}
-#stats {
-  background: linear-gradient(180deg, #e3f2fd 0%, #f8f9fa 100%);
-  border-radius: 10px;
-  padding: 10px 16px;
-  margin-top: 15px;
-  width: fit-content;
-  text-align: left;
-  font-weight: 600;
-  color: #0d47a1;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  font-size: 15px;
-}
-.modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-.modal.hidden { display: none; }
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  width: 300px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.3);
-}
-.mini-seat.selected {
-  background: linear-gradient(145deg,#1565c0,#0d47a1);
-  color:#fff;
-  transform: scale(1.1);
-}
-.mini-seat:hover {
-  box-shadow: 0 0 6px rgba(33,150,243,0.6);
-}
-/* 🎭 Mini-plan compact pour l’ajout manuel */
-#miniSeatMap {
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 6px;
-  justify-items: center;
-  align-items: center;
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 12px;
-  max-height: 320px;
-  overflow: auto;
-  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
-}
-
-/* Siège visuel dans le mini-plan */
-.mini-seat {
-  width: 34px;
-  height: 34px;
-  border-radius: 6px 6px 8px 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  background: linear-gradient(145deg, #e0e0e0, #bdbdbd);
-  color: #212121;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-}
-
-.mini-seat:hover {
-  transform: scale(1.1);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-}
-
-/* Siège sélectionné */
-.mini-seat.selected {
-  background: linear-gradient(145deg, #1565c0, #0d47a1);
-  color: #fff;
-  box-shadow: 0 0 10px rgba(25,118,210,0.6);
-}
-
-/* Strapontins */
-.mini-seat[data-strapontin="true"] {
-  background: linear-gradient(145deg, #f9a825, #f57f17);
-  color: #fff;
-}
-.mini-seat[data-strapontin="true"].selected {
-  background: linear-gradient(145deg, #ffca28, #fbc02d);
-}
-
-/* Indication de rangée à gauche */
-.mini-row-label {
-  grid-column: 1 / -1;
-  text-align: left;
-  width: 100%;
-  margin: 4px 0 0 4px;
-  font-weight: 700;
-  color: #424242;
-}
-
-/* Scrollbar discrète */
-#miniSeatMap::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-#miniSeatMap::-webkit-scrollbar-thumb {
-  background: #90a4ae;
-  border-radius: 3px;
-}
-#miniSeatMap::-webkit-scrollbar-track {
-  background: #e0e0e0;
-}
-button#editPrices {
-    background: coral;
-}
 </style>
 </head>
 
@@ -910,8 +725,6 @@ button#editPrices {
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
-  <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
-
     <button id="info">ℹ️ AIDE</button>
 
 </div>
@@ -919,14 +732,6 @@ button#editPrices {
 <div id="reservations">
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
     <h3>📋 Liste des réservations</h3>
-	<h4 id="total-amount" style="
-  text-align:right;
-  color:#2e7d32;
-  margin:10px 15px;
-  font-size:1rem;
-  font-weight:600;
-"></h4>
-
     <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
       <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
       
@@ -935,44 +740,20 @@ button#editPrices {
 
   <div id="resBody"><p>Aucune réservation.</p></div>
 
-
 </div>
 
 
-<!-- 🧾 Fenêtre modale de réservation -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Informations de réservation</h3>
-
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
     <input id="phone" placeholder="Téléphone">
 
-    <div class="payment-group">
-      <div class="payment-line">
-        <span>Si paiement reçu, coche la case</span>
-        <input type="checkbox" id="paid">
-      </div>
-
-      <div class="payment-line">
-        <label for="adultCount">Adultes</label>
-        <input id="adultCount" type="number" min="0" value="0" step="1">
-      </div>
-
-      <div class="payment-line">
-        <label for="childCount">Enfants</label>
-        <input id="childCount" type="number" min="0" value="0" step="1">
-      </div>
-
-      <p id="total-display" style="
-        margin:6px 0 0;
-        font-weight:600;
-        text-align:right;
-        color:#2e7d32;
-      ">
-        Total : 0 €
-      </p>
-    </div>
+    <div class="paid-line">
+  <span>💰 Paiement reçu, coche la case</span>
+  <input type="checkbox" id="paid" />
+</div>
 
     <div>
       <button id="save">Valider</button>
@@ -982,9 +763,7 @@ button#editPrices {
 </div>
 
 
-
 <script type="module">
-/* === Attente que Firebase soit prêt === */
 await new Promise(resolve => {
   const check = () => window._firebaseRef ? resolve() : setTimeout(check, 100);
   check();
@@ -1003,10 +782,10 @@ const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
 const loader = document.getElementById("loader");
 
-/* === Plan de la salle === */
 const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
 const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 
+/* === Génération du plan === */
 rows.forEach(r => {
   const row = document.createElement("div");
   row.className = "row";
@@ -1027,7 +806,6 @@ function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
-  d.setAttribute("aria-label", `Siège ${id}`);
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent = label;
@@ -1037,6 +815,7 @@ function makeSeat(id, label, extra){
   return d;
 }
 
+
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
@@ -1045,9 +824,10 @@ onValue(seatsRef, snapshot => {
   updateTable();
   setTimeout(() => loader.classList.add("hidden"), 400);
 });
+
 function save(){ set(seatsRef, seats); }
 
-/* === Rendu === */
+/* === Rendu visuel === */
 function render() {
   document.querySelectorAll(".seat").forEach(el => {
     const id = el.dataset.id;
@@ -1056,19 +836,29 @@ function render() {
     if (wasStrap) el.classList.add("strapontin");
 
     const seatData = seats[id];
+
     if (seatData) {
-      if (seatData.paid) el.classList.add("paid");
-      else el.classList.add("reserved");
+      // 💚 Si payé → vert
+      if (seatData.paid) {
+        el.classList.add("paid");
+      } else {
+        // ⚫ réservé non payé
+        el.classList.add("reserved");
+      }
     } else if (selected.includes(id)) {
+      // 🔵 sélectionné
       el.classList.add("selected");
     } else {
+      // 🔴 libre
       el.classList.add("free");
     }
   });
 }
 
-/* === Sélection === */
+
+/* === Clic sur un siège === */
 function toggle(id, el) {
+  // 🧰 Si admin : peut libérer un siège réservé
   if (admin && seats[id]) {
     if (confirm(`🔓 Libérer le siège ${id} ?`)) {
       delete seats[id];
@@ -1078,93 +868,81 @@ function toggle(id, el) {
     }
     return;
   }
+
+  // Si non admin : clic sur un siège réservé => bloqué
   if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
+
+  // Sélection / désélection classique
   if (selected.includes(id)) selected = selected.filter(s => s !== id);
   else selected.push(id);
+
   render();
 }
 
-/* === Ouvre/ferme la modale === */
+/* === Confirmation réservation === */
 document.getElementById("confirm").onclick = () => {
   if (!selected.length) return alert("Aucun siège sélectionné !");
   document.getElementById("modal").classList.remove("hidden");
 };
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
+document.getElementById("paid").checked = false;
 
-/* === Formatage nom/email/téléphone === */
+/* === 🧹 Fonction utilitaire : formatage du numéro de téléphone === */
 function formatPhone(input) {
+  // Supprime tout caractère non numérique
   let digits = input.replace(/\D/g, "");
+
+  // Si commence par +33 ou 0033 → convertir en 0
   if (digits.startsWith("33")) digits = "0" + digits.slice(2);
   if (digits.startsWith("0033")) digits = "0" + digits.slice(4);
+
+  // Tronque à 10 chiffres
   digits = digits.slice(0, 10);
+
+  // Regroupe en blocs de deux chiffres
   return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
-document.getElementById("name").addEventListener("input", e => e.target.value = e.target.value.toUpperCase());
-document.getElementById("email").addEventListener("input", e => e.target.value = e.target.value.toLowerCase());
-document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
 
-/* === 🧮 Calcul automatique total (adultes/enfants) === */
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("reset").style.display = "none";
-
-  const adultInput = document.getElementById("adultCount");
-  const childInput = document.getElementById("childCount");
-  const totalDisplay = document.getElementById("total-display");
-  function updateTotal() {
-    const nbA = parseInt(adultInput.value) || 0;
-    const nbE = parseInt(childInput.value) || 0;
-    const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
-    totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
-  }
-  adultInput.addEventListener("input", updateTotal);
-  childInput.addEventListener("input", updateTotal);
+/* === 🧠 Formattage en direct pendant la saisie === */
+document.getElementById("name").addEventListener("input", e => {
+  e.target.value = e.target.value.toUpperCase(); // 🔠 nom en MAJ
+});
+document.getElementById("email").addEventListener("input", e => {
+  e.target.value = e.target.value.toLowerCase(); // 🔡 email en minuscules
+});
+document.getElementById("phone").addEventListener("input", e => {
+  e.target.value = formatPhone(e.target.value);  // 📱 numéro formaté
 });
 
-/* === Validation + enregistrement === */
+/* === 💾 Validation et enregistrement de la réservation === */
 document.getElementById("save").onclick = async () => {
   const name = document.getElementById("name").value.trim().toUpperCase();
   const email = document.getElementById("email").value.trim().toLowerCase();
   const phone = formatPhone(document.getElementById("phone").value.trim());
-  const paid = document.getElementById("paid").checked;
-  const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
-  const nbChild = parseInt(document.getElementById("childCount").value) || 0;
-  const totalSeats = selected.length;
-  const totalPeople = nbAdult + nbChild;
 
-  if (!name || !email || !phone) return alert("Tous les champs sont requis.");
-  if (totalPeople !== totalSeats)
-    return alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges sélectionnés (${totalSeats}).`);
-
-  const amount = nbAdult * 14 + nbChild * 10;
-  const user = { name, email, phone, paid, nbAdult, nbChild, amount };
-
-  let adultRemaining = nbAdult;
-let childRemaining = nbChild;
-
-selected.forEach(id => {
-  if (!seats[id]) {
-    let seatData = { ...user };
-
-    // 🧍 ou 👶 — attribuer le type par siège
-    if (adultRemaining > 0) {
-      seatData.type = "adulte";
-      adultRemaining--;
-    } else if (childRemaining > 0) {
-      seatData.type = "enfant";
-      childRemaining--;
-    } else {
-      seatData.type = "autre";
-    }
-
-    seats[id] = seatData;
+  if (!name || !email || !phone) {
+    return alert("Tous les champs sont requis.");
   }
+
+  const paid = document.getElementById("paid").checked; // 💰 récupère le statut
+
+const user = { name, email, phone, paid };
+
+// Enregistre les sièges choisis
+selected.forEach(id => { 
+  if (!seats[id]) seats[id] = user; 
 });
-  save();
-  await sendEmail(user);
+
+
+  save(); // 🔥 envoie dans Firebase
+  await sendEmail(user); // 💌 envoie email avec QR
   selected = [];
+
+  // Ferme la modale et confirme
   document.getElementById("modal").classList.add("hidden");
-  alert(`✅ Réservation confirmée pour ${nbAdult} adulte(s) et ${nbChild} enfant(s) — Total ${amount} €.`);
+  alert("✅ Réservation confirmée et email envoyé !");
 };
+
 
 /* === Email + QR === */
 async function sendEmail(user) {
@@ -1193,35 +971,58 @@ adminBtn.onclick = () => {
     if (p === "admin123") {
       admin = true;
       alert("✅ Mode admin activé");
+
+
+      // Boutons visibles en mode admin
       resetBtn.style.display = "inline-block";
       document.getElementById("export").style.display = "inline-block";
+
+      // Boutons masqués en mode admin
       scanBtn.style.display = "none";
       infoBtn.style.display = "none";
+
+      // Visuel et état
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
-      updateTable();
-
-      toggleAdminUI(); // ✅ ajoute cette ligne ici aussi
+      updateTable(); // ✅ force le tableau à se recréer avec les cases actives
     } else {
       alert("❌ Mot de passe incorrect.");
     }
   } else {
     admin = false;
     alert("👋 Mode admin désactivé");
+
+    // Boutons masqués hors admin
     resetBtn.style.display = "none";
     document.getElementById("export").style.display = "none";
+
+    // Boutons visibles hors admin
     scanBtn.style.display = "inline-block";
     infoBtn.style.display = "inline-block";
+
+    // Visuel et état
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
-    updateTable();
-    toggleAdminUI(); // ✅ déjà présent ici
+    updateTable(); // ✅ réaffiche le tableau en mode lecture seule
   }
 };
 
+/* === 🧹 État initial au chargement de la page === */
+window.addEventListener("DOMContentLoaded", () => {
+  resetBtn.style.display = "none";
+  document.getElementById("export").style.display = "none";
+  document.body.classList.remove("admin");
+  adminBtn.textContent = "🔐 Admin";
+
+  // Toujours visibles au démarrage
+  document.getElementById("scanTicket").style.display = "inline-block";
+  document.getElementById("info").style.display = "inline-block";
+});
 
 
-/* === Réinitialiser === */
+
+
+/* === Réinitialiser toute la salle === */
 resetBtn.onclick = () => {
   if (!admin) return alert("Activez le mode admin.");
   if (confirm("Effacer toutes les réservations ?")) {
@@ -1231,18 +1032,23 @@ resetBtn.onclick = () => {
   }
 };
 
-/* === Export CSV === */
+/* === Export CSV avec encodage UTF-8 (corrige les accents) === */
 document.getElementById("export").onclick = () => {
   const entries = Object.entries(seats)
     .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
+
   const now = new Date().toLocaleString("fr-FR");
   let csv = `Export des réservations – Théâtre Saint Martin (${now})\n\n`;
-  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE;ADULTES;ENFANTS;TOTAL(€)\n";
+  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE\n";
+
   for (const [k, v] of entries) {
     const [r, s] = k.split("-");
-    csv += `${r};${s};${v.name};${v.email};${v.phone};${v.nbAdult||0};${v.nbChild||0};${v.amount||0}\n`;
+    csv += `${r};${s};${v.name};${v.email};${v.phone}\n`;
   }
+
   csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
+
+  // ✅ Encodage UTF-8 + BOM pour Excel (corrige “TÃ©lÃ©phone”)
   const bom = "\uFEFF";
   const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a");
@@ -1251,322 +1057,197 @@ document.getElementById("export").onclick = () => {
   a.click();
 };
 
-/* === Liste réservations === */
+
+
+/* === Mise à jour du tableau === */
 function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
+
   const entries = Object.entries(seats || {});
-  if (!entries.length) return container.innerHTML = '<p>Aucune réservation.</p>';
-
-  // === Regroupement des réservations par client ===
-const grouped = {};
-
-for (const [id, data] of entries) {
-  const key = data.name || "Inconnu";
-
-  if (!grouped[key]) {
-    grouped[key] = {
-      ...data,
-      seats: [],
-      emails: new Set(),
-      allPaid: true, // ✅ on part du principe que tout est payé
-    };
+  if (!entries.length) {
+    container.innerHTML = '<p>Aucune réservation.</p>';
+    return;
   }
 
-  grouped[key].seats.push({
-    id,
-    paid: data.paid || false,
-    nbAdult: data.nbAdult || 0,
-    nbChild: data.nbChild || 0,
-  });
+  // 🔹 Grouper par NOM
+  const grouped = {};
+  for (const [id, data] of entries) {
+    const key = data.name || "Inconnu";
+    if (!grouped[key]) grouped[key] = { ...data, seats: [], emails: new Set(), paid: data.paid };
+    grouped[key].seats.push(id);
+    grouped[key].emails.add(data.email || "N/A");
 
-  grouped[key].emails.add(data.email || "N/A");
+    // Si au moins un siège est payé, on garde paid = true
+    if (data.paid) grouped[key].paid = true;
+  }
 
-  // ✅ Si au moins un siège n’est pas payé → la ligne sera rose
-  if (!data.paid) grouped[key].allPaid = false;
-}
-
-
-
+  // 🔹 Tri alphabétique
   const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
     (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
   );
 
+  // 🔹 Création des accordéons
   for (const [name, info] of sorted) {
-  const div = document.createElement("div");
-  div.className = "accordion";
-  const header = document.createElement("div");
-  header.className = `accordion-header ${info.allPaid ? "paid" : "unpaid"}`;
-  header.innerHTML = `
-    <div>👤 ${name}</div>
-    <div>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</div>
-  `;
-  header.onclick = () => div.classList.toggle("open");
+    const div = document.createElement("div");
+    div.className = "accordion";
 
-  const content = document.createElement("div");
-  content.className = "accordion-content";
-  content.innerHTML = `
-    ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
-    <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-    <p><strong>Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} €</p>
-    <p><strong>Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} €</p>
-    <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
+    // ✅ couleur selon statut de paiement
+    const header = document.createElement("div");
+    header.className = `accordion-header ${info.paid ? "paid" : "unpaid"}`;
+    header.innerHTML = `
+      <div>
+        👤 ${name}
+      </div>
+      <div>${info.paid ? "💰 Payé" : "❌"}</div>
+    `;
+    header.onclick = () => div.classList.toggle("open");
 
-    <div class="seat-list" style="margin-top:8px;">
-      ${info.seats.map(s => {
-        const type = s.type === "adulte" ? "🧍" : s.type === "enfant" ? "👶" : "🎟️";
-        const paidIcon = s.paid ? "💰" : "❌";
-        return `
-          <span class="badge-seat" style="
-            background:${s.paid ? "#43a047" : "#ef5350"};
-            color:white;
-            border-radius:6px;
-            padding:4px 8px;
-            font-size:0.85rem;
-          ">${type} ${s.id} ${paidIcon}</span>`;
-      }).join("")}
-    </div>
+    const content = document.createElement("div");
+    content.className = "accordion-content";
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-      <label>💶 Tout payé <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}></label>
-      ${admin ? `<button class="add-seat-btn" data-name="${name}" style="background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajouter siège</button>` : ""}
-    </div>
-  `;
+    const emailsHTML = [...info.emails]
+      .map(e => `<p><strong>Email :</strong> ${e}</p>`)
+      .join("");
 
-  div.append(header, content);
-  container.append(div);
-}
+    content.innerHTML = `
+  ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
+  <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
+
+  <label style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
+    💰 Paiement reçu
+    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.paid ? "checked" : ""}>
+  </label>
+
+  <div class="seat-list">
+    ${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}
+  </div>
+`;
 
 
-  // === Gestion de la coche "Paiement reçu" ===
-  document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-    cb.addEventListener("change", e => {
-      if (!admin) {
-        alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
-        e.target.checked = !e.target.checked;
-        return;
-      }
-
-      const clientName = e.target.dataset.name;
-      const isPaid = e.target.checked;
-
-      if (isPaid) {
-        const firstSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
-        if (!firstSeat) return;
-
-        const modal = document.getElementById("adminPaymentModal");
-        const clientLabel = document.getElementById("adminClientName");
-        const adultInput = document.getElementById("adminAdult");
-        const childInput = document.getElementById("adminChild");
-        const totalDisplay = document.getElementById("adminTotal");
-
-        clientLabel.textContent = `Client : ${clientName}`;
-        adultInput.value = firstSeat[1].nbAdult || 0;
-        childInput.value = firstSeat[1].nbChild || 0;
-
-        // Fonction pour recalculer le total
-        function updateAdminTotal() {
-          const nbA = parseInt(adultInput.value) || 0;
-          const nbE = parseInt(childInput.value) || 0;
-          totalDisplay.textContent = `Total : ${(nbA * 14 + nbE * 10).toFixed(2)} €`;
-        }
-        adultInput.addEventListener("input", updateAdminTotal);
-        childInput.addEventListener("input", updateAdminTotal);
-        updateAdminTotal();
-
-        modal.classList.remove("hidden");
-
-        const saveBtn = document.getElementById("adminSavePayment");
-        const cancelBtn = document.getElementById("adminCancelPayment");
-
-        const closeModal = () => {
-          modal.classList.add("hidden");
-          saveBtn.onclick = cancelBtn.onclick = null;
-        };
-
-        // ✅ Validation du paiement admin
-        saveBtn.onclick = () => {
-  const nbA = parseInt(adultInput.value) || 0;
-  const nbE = parseInt(childInput.value) || 0;
-  const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
-
-  // ✅ Vérification du nombre total de sièges
-  const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
-  const totalSeats = clientSeats.length;
-  const totalPeople = nbA + nbE;
-
-  if (totalPeople !== totalSeats) {
-    alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges réservés (${totalSeats}).`);
-    return; // ⛔ Annule la validation
+    div.append(header, content);
+    container.append(div);
   }
-
-  for (const [id, data] of clientSeats) {
-    data.nbAdult = nbA;
-    data.nbChild = nbE;
-    data.amount = total;
-    data.paid = true;
-  }
-
-  save();
-  updateTable();
-  render();
-  closeModal();
-  alert(`✅ Paiement enregistré pour ${clientName}\nAdultes : ${nbA}\nEnfants : ${nbE}\nTotal : ${total} €`);
-};
-
-
-        cancelBtn.onclick = closeModal;
-      } else {
-        // Si décoché : on marque comme non payé
-        for (const [id, data] of Object.entries(seats)) {
-          if (data.name === clientName) seats[id].paid = false;
-        }
-        save();
-        updateTable();
-        render();
-      }
-    });
-  });
-// === Ajouter des sièges manuellement (mode admin) ===
-document.querySelectorAll(".add-seat-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    if (!admin) return alert("⚠️ Activez le mode admin.");
-    const clientName = btn.dataset.name;
-    const clientSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
-    if (!clientSeat) return alert("❌ Client introuvable.");
-
-    const modal = document.getElementById("addSeatModal");
-    const map = document.getElementById("miniSeatMap");
-    const manualInput = document.getElementById("manualSeatInput");
-    const paidBox = document.getElementById("addSeatPaid");
-    const adultInput = document.getElementById("addSeatAdult");
-    const childInput = document.getElementById("addSeatChild");
-    const totalDisplay = document.getElementById("addSeatTotal");
-
-    document.getElementById("addSeatClient").textContent = `Client : ${clientName}`;
-    map.innerHTML = "";
-    manualInput.value = "";
-    paidBox.checked = false;
-    adultInput.value = 0;
-    childInput.value = 0;
-    totalDisplay.textContent = "Total : 0 €";
-
-    // 🎨 Affichage des sièges libres (mini version)
-    Object.keys(seats).forEach(id => {
-      const el = document.querySelector(`.seat[data-id="${id}"]`);
-      if (!el) return;
-    });
-
-    const allSeats = Array.from(document.querySelectorAll(".seat.free"));
-    allSeats.forEach(el => {
-      const id = el.dataset.id;
-      const seatBtn = document.createElement("button");
-      seatBtn.textContent = id;
-      seatBtn.className = "mini-seat";
-      seatBtn.style.cssText = `
-        width:45px;height:30px;
-        border:none;
-        border-radius:6px;
-        background:#e0e0e0;
-        color:#000;
-        cursor:pointer;
-        font-size:12px;
-        font-weight:600;
-      `;
-      seatBtn.onclick = () => seatBtn.classList.toggle("selected");
-      map.appendChild(seatBtn);
-    });
-
-    // 🧮 Recalcul du total
-    function updateTotal() {
-      const a = parseInt(adultInput.value) || 0;
-      const c = parseInt(childInput.value) || 0;
-      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`;
+  // 🎯 Gestion des changements de statut payé/non payé
+document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+  cb.addEventListener("change", e => {
+    if (!admin) {
+      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+      e.target.checked = !e.target.checked;
+      return;
     }
-    adultInput.oninput = childInput.oninput = updateTotal;
 
-    modal.classList.remove("hidden");
+    const clientName = e.target.dataset.name;
+    const isPaid = e.target.checked;
 
-    document.getElementById("addSeatCancel").onclick = () => modal.classList.add("hidden");
-
-    document.getElementById("addSeatConfirm").onclick = () => {
-      const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
-      const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
-      const allChosen = [...chosen, ...typed];
-      const nbA = parseInt(adultInput.value) || 0;
-      const nbC = parseInt(childInput.value) || 0;
-      const totalPeople = nbA + nbC;
-      const total = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
-
-      if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
-      if (totalPeople !== allChosen.length) return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
-
-      let added = 0;
-      for (const id of allChosen) {
-        const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
-        if (!seatEl || !seatEl.classList.contains("free")) continue;
-        const type = added < nbA ? "adulte" : "enfant";
-        seats[id] = { ...clientSeat[1], paid: paidBox.checked, nbAdult: nbA, nbChild: nbC, type, amount: total };
-        added++;
+    // 🔄 Met à jour tous les sièges de cette personne
+    for (const [id, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        seats[id].paid = isPaid;
       }
-      if (added > 0) {
-        save();
-        render();
-        updateTable();
-        alert(`✅ ${added} siège(s) ajouté(s) à ${clientName}.`);
-      }
-      modal.classList.add("hidden");
-    };
+    }
+
+    save(); // 🔥 Enregistre dans Firebase
+    updateTable(); // 🔁 Rafraîchit la vue
+    render(); // 🎨 Met à jour les couleurs des sièges
   });
 });
 
-
-
-
-
-
-  // === Totaux globaux ===
-  let totalAmount = 0;
-  let totalAdult = 0;
-  let totalChild = 0;
-  let soldSeats = Object.keys(seats).length;
-  const processedClients = new Set();
-
-  for (const data of Object.values(seats)) {
-    if (data.paid && data.amount && !processedClients.has(data.name)) {
-      totalAmount += parseFloat(data.amount);
-      totalAdult += parseInt(data.nbAdult || 0);
-      totalChild += parseInt(data.nbChild || 0);
-      processedClients.add(data.name);
-    }
-  }
-
-  const totalElement = document.getElementById("total-amount");
-  totalElement.innerHTML = `
-    💰 <b>Total encaissé :</b> ${totalAmount.toFixed(2)} €<br>
-    🧍 <b>Adultes :</b> ${totalAdult} &nbsp;&nbsp; 👶 <b>Enfants :</b> ${totalChild}<br>
-    🎟️ <b>Places vendues :</b> ${soldSeats}
-  `;
 }
 
 
 
 
-/* === Scanner et Aide === */
-document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
-document.getElementById("info").onclick = () => window.open("mode_emploi.pdf", "_blank");
 
-/* === Zoom/drag mobile === */
-const wrapper = document.querySelector(".hall-wrapper");
-let isDragging = false, startX = 0, startY = 0, lastX = 0, lastY = 0, lastDist = 0, scale = 1;
-function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+
+  // 🧠 Activation de la mise à jour en mode admin
+  document.querySelectorAll(".paid-toggle").forEach(cb => {
+    cb.addEventListener("change", e => {
+      if (!admin) return; // sécurité
+      const id = e.target.dataset.id;
+      if (!seats[id]) return;
+      seats[id].paid = e.target.checked;
+      save();
+      updateTable(); // rafraîchit visuel
+    });
+  });
+
+
+
+/* === Scanner billets === */
+document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
+  // === ℹ️ Bouton Info : ouvre le PDF du mode d'emploi ===
+document.getElementById("info").onclick = () => {
+  window.open("mode_emploi.pdf", "_blank");
+};
+
+  /* === 🧭 Ajustement automatique du zoom sur mobile === */
+function autoFitHall() {
+  const hall = document.getElementById("hall");
+  const wrapper = document.querySelector(".hall-wrapper");
+
+  if (!hall || !wrapper) return;
+
+  // ✅ Seulement sur mobile
+  if (window.innerWidth <= 768) {
+    const hallWidth = hall.scrollWidth;
+    const wrapperWidth = wrapper.clientWidth;
+
+    if (hallWidth > wrapperWidth) {
+      const scale = wrapperWidth / hallWidth;
+
+      // applique l'échelle et garde le centrage
+      hall.style.transform = `scale(${scale})`;
+      hall.style.transformOrigin = "top center";
+      hall.dataset.autoScaled = "true";
+    }
+  } else {
+    // ✅ Sur PC, on remet à la taille normale
+    if (hall.dataset.autoScaled === "true") {
+      hall.style.transform = "";
+      hall.style.transformOrigin = "";
+      delete hall.dataset.autoScaled;
+    }
+  }
+}
+
+/* === 🪄 Centrage automatique du plan à l’ouverture === */
+window.addEventListener("load", () => {
+  autoFitHall();
+  const wrapper = document.querySelector(".hall-wrapper");
+  if (wrapper) {
+    wrapper.scrollLeft = (wrapper.scrollWidth - wrapper.clientWidth) / 2;
+  }
+});
+
+/* === 🔁 Réajuste lors d’un redimensionnement ou d’une rotation d’écran === */
+window.addEventListener("resize", autoFitHall);
+// === 🧹 Forcer l'état initial (au chargement de la page) ===
+window.addEventListener("DOMContentLoaded", () => {
+  resetBtn.style.display = "none";
+  document.getElementById("export").style.display = "none";
+  document.body.classList.remove("admin");
+  adminBtn.textContent = "🔐 Admin";
+});
+
+</script>
+<script>
+
+
+/* 🔧 Fonction pour limiter le déplacement */
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 wrapper.addEventListener("touchstart", e => {
   if (e.touches.length === 2) {
+    // début du pinch
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     lastDist = Math.hypot(dx, dy);
   } else if (e.touches.length === 1) {
+    // début du drag
     isDragging = true;
     startX = e.touches[0].clientX - lastX;
     startY = e.touches[0].clientY - lastY;
@@ -1576,6 +1257,7 @@ wrapper.addEventListener("touchstart", e => {
 wrapper.addEventListener("touchmove", e => {
   if (e.touches.length === 2) {
     e.preventDefault();
+    // pinch zoom
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
     const dist = Math.hypot(dx, dy);
@@ -1587,212 +1269,37 @@ wrapper.addEventListener("touchmove", e => {
     lastDist = dist;
   } else if (isDragging && e.touches.length === 1) {
     e.preventDefault();
+
+    // dimensions du conteneur et du contenu
     const rectWrapper = wrapper.getBoundingClientRect();
     const rectHall = hall.getBoundingClientRect();
+
     const maxOffsetX = Math.max(0, (rectHall.width * scale - rectWrapper.width) / 2);
     const maxOffsetY = Math.max(0, (rectHall.height * scale - rectWrapper.height) / 2);
+
     const x = e.touches[0].clientX - startX;
     const y = e.touches[0].clientY - startY;
+
+    // limitation du déplacement
     lastX = clamp(x, -maxOffsetX, maxOffsetX);
     lastY = clamp(y, -maxOffsetY, maxOffsetY);
+
     hall.style.transform = `translate(${lastX}px, ${lastY}px) scale(${scale})`;
   }
 });
+
 wrapper.addEventListener("touchend", e => {
   if (e.touches.length < 2) lastDist = 0;
   if (e.touches.length === 0) isDragging = false;
 });
-
-/* === 💶 Gestion des tarifs personnalisables === */
-const editPricesBtn = document.getElementById("editPrices");
-const priceModal = document.getElementById("priceModal");
-const priceAdultInput = document.getElementById("priceAdult");
-const priceChildInput = document.getElementById("priceChild");
-
-// === Valeurs par défaut ou chargées du localStorage ===
-let PRICE_ADULT = parseFloat(localStorage.getItem("PRICE_ADULT")) || 14;
-let PRICE_CHILD = parseFloat(localStorage.getItem("PRICE_CHILD")) || 10;
-
-/* === Affiche les tarifs actuels dans les labels === */
-function updatePriceLabels() {
-  const mainAdult = document.getElementById("labelPriceAdult");
-  const mainChild = document.getElementById("labelPriceChild");
-  const addAdult = document.getElementById("labelAddSeatPriceAdult");
-  const addChild = document.getElementById("labelAddSeatPriceChild");
-
-  if (mainAdult) mainAdult.textContent = PRICE_ADULT.toFixed(2);
-  if (mainChild) mainChild.textContent = PRICE_CHILD.toFixed(2);
-  if (addAdult) addAdult.textContent = PRICE_ADULT.toFixed(2);
-  if (addChild) addChild.textContent = PRICE_CHILD.toFixed(2);
-}
-
-/* === Ouvrir la modale === */
-function openPriceModal() {
-  priceAdultInput.value = PRICE_ADULT;
-  priceChildInput.value = PRICE_CHILD;
-  priceModal.classList.remove("hidden");
-}
-
-/* === Fermer la modale === */
-document.getElementById("cancelPrices").onclick = () => {
-  priceModal.classList.add("hidden");
-};
-
-/* === Enregistrer les nouveaux tarifs === */
-document.getElementById("savePrices").onclick = () => {
-  const newAdult = parseFloat(priceAdultInput.value);
-  const newChild = parseFloat(priceChildInput.value);
-  if (isNaN(newAdult) || isNaN(newChild)) {
-    alert("⚠️ Les tarifs doivent être des nombres valides.");
-    return;
-  }
-
-  const oldAdult = PRICE_ADULT;
-  const oldChild = PRICE_CHILD;
-
-  PRICE_ADULT = newAdult;
-  PRICE_CHILD = newChild;
-
-  localStorage.setItem("PRICE_ADULT", PRICE_ADULT);
-  localStorage.setItem("PRICE_CHILD", PRICE_CHILD);
-
-  updatePriceLabels();
-  render();
-  updateTable();
-
-  const msg = document.getElementById("priceMessage");
-  msg.textContent = `✔️ Tarifs mis à jour :
-  Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € | 
-  Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
-  msg.style.display = "block";
-  msg.style.opacity = 1;
-
-  // Effet de disparition douce
-  setTimeout(() => {
-    msg.style.transition = "opacity 0.5s";
-    msg.style.opacity = 0;
-    setTimeout(() => {
-      msg.style.display = "none";
-      priceModal.classList.add("hidden");
-    }, 600);
-  }, 1800);
-};
-
-
-
-/* === Afficher le bouton si admin === */
-function toggleAdminUI() {
-  const isAdmin = document.body.classList.contains("admin");
-  editPricesBtn.style.display = isAdmin ? "inline-block" : "none";
-}
-
-
-
-
-/* === Lier le bouton principal === */
-editPricesBtn.onclick = openPriceModal;
-
-/* === Initialiser au démarrage === */
-updatePriceLabels();
-toggleAdminUI();
-
-
 </script>
 
-<!-- 🧮 Fenêtre admin : saisie adultes/enfants -->
-<div id="adminPaymentModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>💰 Saisie du paiement</h3>
-    <p id="adminClientName" style="font-weight:600;margin-bottom:10px;"></p>
-
-    <label for="adminAdult">Nombre d’adultes (14 €)</label>
-    <input id="adminAdult" type="number" min="0" value="0" step="1">
-
-    <label for="adminChild">Nombre d’enfants (10 €)</label>
-    <input id="adminChild" type="number" min="0" value="0" step="1">
-
-    <p id="adminTotal" style="font-weight:600;color:#2e7d32;margin-top:8px;">Total : 0 €</p>
-
-    <div style="margin-top:12px;">
-      <button id="adminSavePayment">Valider</button>
-      <button id="adminCancelPayment">Annuler</button>
-    </div>
-  </div>
-</div>
-<!-- 🆕 Modale ajout manuel de sièges -->
-<!-- 🆕 Modale ajout manuel de sièges -->
-<div id="addSeatModal" class="modal hidden">
-  <div class="modal-content" style="max-width:480px;">
-    <h3>➕ Ajouter des sièges</h3>
-    <p id="addSeatClient" style="font-weight:600;margin-bottom:10px;"></p>
-
-    <!-- 🧭 Mini plan des sièges -->
-    <div id="miniSeatMap" style="
-      display:grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap:5px;
-      justify-items:center;
-      margin-bottom:10px;
-      max-height:250px;
-      overflow-y:auto;
-      padding:8px;
-      background:#fafafa;
-      border-radius:8px;
-      border:1px solid #ddd;
-    "></div>
-
-    <p style="font-weight:600;">ou saisir manuellement :</p>
-    <input id="manualSeatInput" type="text" placeholder="Ex : A12, B3, S9" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;margin-bottom:10px;">
-
-    <div class="payment-group">
-      <div class="payment-line">
-        <label for="addSeatAdult">Adultes (${PRICE_ADULT} €)</label>
-        <input id="addSeatAdult" type="number" min="0" value="0" step="1" style="width:60px;">
-      </div>
-      <div class="payment-line">
-        <label for="addSeatChild">Enfants (${PRICE_CHILD} €)</label>
-        <input id="addSeatChild" type="number" min="0" value="0" step="1" style="width:60px;">
-      </div>
-      <p id="addSeatTotal" style="margin-top:8px;text-align:right;font-weight:600;color:#2e7d32;">Total : 0 €</p>
-    </div>
-
-    <label style="display:flex;align-items:center;gap:6px;margin:10px 0;">
-      <input type="checkbox" id="addSeatPaid">
-      💶 Marquer ces sièges comme payés
-    </label>
-
-    <div style="margin-top:12px;">
-      <button id="addSeatConfirm">Valider</button>
-      <button id="addSeatCancel">Annuler</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- 💶 Fenêtre modale de modification des tarifs -->
-<div id="priceModal" class="modal hidden">
-  <div class="modal-content">
-    <h3>💶 Modifier les tarifs</h3>
-
-    <label for="priceAdult">Tarif adulte (€)</label>
-    <input id="priceAdult" type="number" min="0" step="0.5" value="14">
-
-    <label for="priceChild">Tarif enfant (€)</label>
-    <input id="priceChild" type="number" min="0" step="0.5" value="10">
-
-    <div style="margin-top:12px;">
-      <button id="savePrices">Enregistrer</button>
-      <button id="cancelPrices">Annuler</button>
-    </div>
-  </div>
-</div>
 
 
 
 
 </body>
 </html>
-
 
 
 
