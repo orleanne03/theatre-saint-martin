@@ -792,7 +792,92 @@ input#paid {
   width: 300px;
   box-shadow: 0 4px 12px rgba(0,0,0,.3);
 }
+.mini-seat.selected {
+  background: linear-gradient(145deg,#1565c0,#0d47a1);
+  color:#fff;
+  transform: scale(1.1);
+}
+.mini-seat:hover {
+  box-shadow: 0 0 6px rgba(33,150,243,0.6);
+}
+/* 🎭 Mini-plan compact pour l’ajout manuel */
+#miniSeatMap {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 6px;
+  justify-items: center;
+  align-items: center;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
 
+/* Siège visuel dans le mini-plan */
+.mini-seat {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px 6px 8px 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(145deg, #e0e0e0, #bdbdbd);
+  color: #212121;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.mini-seat:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Siège sélectionné */
+.mini-seat.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(25,118,210,0.6);
+}
+
+/* Strapontins */
+.mini-seat[data-strapontin="true"] {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  color: #fff;
+}
+.mini-seat[data-strapontin="true"].selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+}
+
+/* Indication de rangée à gauche */
+.mini-row-label {
+  grid-column: 1 / -1;
+  text-align: left;
+  width: 100%;
+  margin: 4px 0 0 4px;
+  font-weight: 700;
+  color: #424242;
+}
+
+/* Scrollbar discrète */
+#miniSeatMap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#miniSeatMap::-webkit-scrollbar-thumb {
+  background: #90a4ae;
+  border-radius: 3px;
+}
+#miniSeatMap::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+button#editPrices {
+    background: coral;
+}
 </style>
 </head>
 
@@ -825,6 +910,8 @@ input#paid {
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
+  <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
+
     <button id="info">ℹ️ AIDE</button>
 
 </div>
@@ -868,12 +955,12 @@ input#paid {
       </div>
 
       <div class="payment-line">
-        <label for="adultCount">Adultes (14 €)</label>
+        <label for="adultCount">Adultes</label>
         <input id="adultCount" type="number" min="0" value="0" step="1">
       </div>
 
       <div class="payment-line">
-        <label for="childCount">Enfants (10 €)</label>
+        <label for="childCount">Enfants</label>
         <input id="childCount" type="number" min="0" value="0" step="1">
       </div>
 
@@ -1026,7 +1113,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function updateTotal() {
     const nbA = parseInt(adultInput.value) || 0;
     const nbE = parseInt(childInput.value) || 0;
-    const total = nbA * 14 + nbE * 10;
+    const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
     totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
   }
   adultInput.addEventListener("input", updateTotal);
@@ -1051,7 +1138,27 @@ document.getElementById("save").onclick = async () => {
   const amount = nbAdult * 14 + nbChild * 10;
   const user = { name, email, phone, paid, nbAdult, nbChild, amount };
 
-  selected.forEach(id => { if (!seats[id]) seats[id] = user; });
+  let adultRemaining = nbAdult;
+let childRemaining = nbChild;
+
+selected.forEach(id => {
+  if (!seats[id]) {
+    let seatData = { ...user };
+
+    // 🧍 ou 👶 — attribuer le type par siège
+    if (adultRemaining > 0) {
+      seatData.type = "adulte";
+      adultRemaining--;
+    } else if (childRemaining > 0) {
+      seatData.type = "enfant";
+      childRemaining--;
+    } else {
+      seatData.type = "autre";
+    }
+
+    seats[id] = seatData;
+  }
+});
   save();
   await sendEmail(user);
   selected = [];
@@ -1093,7 +1200,11 @@ adminBtn.onclick = () => {
       document.body.classList.add("admin");
       adminBtn.textContent = "🚪 Sortir du mode admin";
       updateTable();
-    } else alert("❌ Mot de passe incorrect.");
+
+      toggleAdminUI(); // ✅ ajoute cette ligne ici aussi
+    } else {
+      alert("❌ Mot de passe incorrect.");
+    }
   } else {
     admin = false;
     alert("👋 Mode admin désactivé");
@@ -1104,8 +1215,11 @@ adminBtn.onclick = () => {
     document.body.classList.remove("admin");
     adminBtn.textContent = "🔐 Admin";
     updateTable();
+    toggleAdminUI(); // ✅ déjà présent ici
   }
 };
+
+
 
 /* === Réinitialiser === */
 resetBtn.onclick = () => {
@@ -1144,44 +1258,85 @@ function updateTable() {
   const entries = Object.entries(seats || {});
   if (!entries.length) return container.innerHTML = '<p>Aucune réservation.</p>';
 
-  const grouped = {};
-  for (const [id, data] of entries) {
-    const key = data.name || "Inconnu";
-    if (!grouped[key]) grouped[key] = { ...data, seats: [], emails: new Set(), paid: data.paid };
-    grouped[key].seats.push(id);
-    grouped[key].emails.add(data.email || "N/A");
-    if (data.paid) grouped[key].paid = true;
+  // === Regroupement des réservations par client ===
+const grouped = {};
+
+for (const [id, data] of entries) {
+  const key = data.name || "Inconnu";
+
+  if (!grouped[key]) {
+    grouped[key] = {
+      ...data,
+      seats: [],
+      emails: new Set(),
+      allPaid: true, // ✅ on part du principe que tout est payé
+    };
   }
+
+  grouped[key].seats.push({
+    id,
+    paid: data.paid || false,
+    nbAdult: data.nbAdult || 0,
+    nbChild: data.nbChild || 0,
+  });
+
+  grouped[key].emails.add(data.email || "N/A");
+
+  // ✅ Si au moins un siège n’est pas payé → la ligne sera rose
+  if (!data.paid) grouped[key].allPaid = false;
+}
+
+
 
   const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
     (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
   );
 
   for (const [name, info] of sorted) {
-    const div = document.createElement("div");
-    div.className = "accordion";
-    const header = document.createElement("div");
-    header.className = `accordion-header ${info.paid ? "paid" : "unpaid"}`;
-    header.innerHTML = `<div>👤 ${name}</div><div>${info.paid ? "💰 Payé" : "❌"}</div>`;
-    header.onclick = () => div.classList.toggle("open");
+  const div = document.createElement("div");
+  div.className = "accordion";
+  const header = document.createElement("div");
+  header.className = `accordion-header ${info.allPaid ? "paid" : "unpaid"}`;
+  header.innerHTML = `
+    <div>👤 ${name}</div>
+    <div>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</div>
+  `;
+  header.onclick = () => div.classList.toggle("open");
 
-    const content = document.createElement("div");
-    content.className = "accordion-content";
-    content.innerHTML = `
-      ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
-      <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-      <p><strong>Adultes :</strong> ${info.nbAdult || 0} × 14 €</p>
-      <p><strong>Enfants :</strong> ${info.nbChild || 0} × 10 €</p>
-      <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
-      <label style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
-        💰 Paiement reçu
-        <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.paid ? "checked" : ""}>
-      </label>
-      <div class="seat-list">${info.seats.map(s => `<span class="badge-seat">${s}</span>`).join("")}</div>
-    `;
-    div.append(header, content);
-    container.append(div);
-  }
+  const content = document.createElement("div");
+  content.className = "accordion-content";
+  content.innerHTML = `
+    ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
+    <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
+    <p><strong>Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} €</p>
+    <p><strong>Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} €</p>
+    <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
+
+    <div class="seat-list" style="margin-top:8px;">
+      ${info.seats.map(s => {
+        const type = s.type === "adulte" ? "🧍" : s.type === "enfant" ? "👶" : "🎟️";
+        const paidIcon = s.paid ? "💰" : "❌";
+        return `
+          <span class="badge-seat" style="
+            background:${s.paid ? "#43a047" : "#ef5350"};
+            color:white;
+            border-radius:6px;
+            padding:4px 8px;
+            font-size:0.85rem;
+          ">${type} ${s.id} ${paidIcon}</span>`;
+      }).join("")}
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+      <label>💶 Tout payé <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}></label>
+      ${admin ? `<button class="add-seat-btn" data-name="${name}" style="background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajouter siège</button>` : ""}
+    </div>
+  `;
+
+  div.append(header, content);
+  container.append(div);
+}
+
 
   // === Gestion de la coche "Paiement reçu" ===
   document.querySelectorAll(".paid-toggle-client").forEach(cb => {
@@ -1233,7 +1388,7 @@ function updateTable() {
         saveBtn.onclick = () => {
   const nbA = parseInt(adultInput.value) || 0;
   const nbE = parseInt(childInput.value) || 0;
-  const total = nbA * 14 + nbE * 10;
+  const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
 
   // ✅ Vérification du nombre total de sièges
   const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
@@ -1272,6 +1427,103 @@ function updateTable() {
       }
     });
   });
+// === Ajouter des sièges manuellement (mode admin) ===
+document.querySelectorAll(".add-seat-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (!admin) return alert("⚠️ Activez le mode admin.");
+    const clientName = btn.dataset.name;
+    const clientSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
+    if (!clientSeat) return alert("❌ Client introuvable.");
+
+    const modal = document.getElementById("addSeatModal");
+    const map = document.getElementById("miniSeatMap");
+    const manualInput = document.getElementById("manualSeatInput");
+    const paidBox = document.getElementById("addSeatPaid");
+    const adultInput = document.getElementById("addSeatAdult");
+    const childInput = document.getElementById("addSeatChild");
+    const totalDisplay = document.getElementById("addSeatTotal");
+
+    document.getElementById("addSeatClient").textContent = `Client : ${clientName}`;
+    map.innerHTML = "";
+    manualInput.value = "";
+    paidBox.checked = false;
+    adultInput.value = 0;
+    childInput.value = 0;
+    totalDisplay.textContent = "Total : 0 €";
+
+    // 🎨 Affichage des sièges libres (mini version)
+    Object.keys(seats).forEach(id => {
+      const el = document.querySelector(`.seat[data-id="${id}"]`);
+      if (!el) return;
+    });
+
+    const allSeats = Array.from(document.querySelectorAll(".seat.free"));
+    allSeats.forEach(el => {
+      const id = el.dataset.id;
+      const seatBtn = document.createElement("button");
+      seatBtn.textContent = id;
+      seatBtn.className = "mini-seat";
+      seatBtn.style.cssText = `
+        width:45px;height:30px;
+        border:none;
+        border-radius:6px;
+        background:#e0e0e0;
+        color:#000;
+        cursor:pointer;
+        font-size:12px;
+        font-weight:600;
+      `;
+      seatBtn.onclick = () => seatBtn.classList.toggle("selected");
+      map.appendChild(seatBtn);
+    });
+
+    // 🧮 Recalcul du total
+    function updateTotal() {
+      const a = parseInt(adultInput.value) || 0;
+      const c = parseInt(childInput.value) || 0;
+      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`;
+    }
+    adultInput.oninput = childInput.oninput = updateTotal;
+
+    modal.classList.remove("hidden");
+
+    document.getElementById("addSeatCancel").onclick = () => modal.classList.add("hidden");
+
+    document.getElementById("addSeatConfirm").onclick = () => {
+      const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
+      const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+      const allChosen = [...chosen, ...typed];
+      const nbA = parseInt(adultInput.value) || 0;
+      const nbC = parseInt(childInput.value) || 0;
+      const totalPeople = nbA + nbC;
+      const total = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
+
+      if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
+      if (totalPeople !== allChosen.length) return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
+
+      let added = 0;
+      for (const id of allChosen) {
+        const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
+        if (!seatEl || !seatEl.classList.contains("free")) continue;
+        const type = added < nbA ? "adulte" : "enfant";
+        seats[id] = { ...clientSeat[1], paid: paidBox.checked, nbAdult: nbA, nbChild: nbC, type, amount: total };
+        added++;
+      }
+      if (added > 0) {
+        save();
+        render();
+        updateTable();
+        alert(`✅ ${added} siège(s) ajouté(s) à ${clientName}.`);
+      }
+      modal.classList.add("hidden");
+    };
+  });
+});
+
+
+
+
+
 
   // === Totaux globaux ===
   let totalAmount = 0;
@@ -1350,6 +1602,101 @@ wrapper.addEventListener("touchend", e => {
   if (e.touches.length < 2) lastDist = 0;
   if (e.touches.length === 0) isDragging = false;
 });
+
+/* === 💶 Gestion des tarifs personnalisables === */
+const editPricesBtn = document.getElementById("editPrices");
+const priceModal = document.getElementById("priceModal");
+const priceAdultInput = document.getElementById("priceAdult");
+const priceChildInput = document.getElementById("priceChild");
+
+// === Valeurs par défaut ou chargées du localStorage ===
+let PRICE_ADULT = parseFloat(localStorage.getItem("PRICE_ADULT")) || 14;
+let PRICE_CHILD = parseFloat(localStorage.getItem("PRICE_CHILD")) || 10;
+
+/* === Affiche les tarifs actuels dans les labels === */
+function updatePriceLabels() {
+  const mainAdult = document.getElementById("labelPriceAdult");
+  const mainChild = document.getElementById("labelPriceChild");
+  const addAdult = document.getElementById("labelAddSeatPriceAdult");
+  const addChild = document.getElementById("labelAddSeatPriceChild");
+
+  if (mainAdult) mainAdult.textContent = PRICE_ADULT.toFixed(2);
+  if (mainChild) mainChild.textContent = PRICE_CHILD.toFixed(2);
+  if (addAdult) addAdult.textContent = PRICE_ADULT.toFixed(2);
+  if (addChild) addChild.textContent = PRICE_CHILD.toFixed(2);
+}
+
+/* === Ouvrir la modale === */
+function openPriceModal() {
+  priceAdultInput.value = PRICE_ADULT;
+  priceChildInput.value = PRICE_CHILD;
+  priceModal.classList.remove("hidden");
+}
+
+/* === Fermer la modale === */
+document.getElementById("cancelPrices").onclick = () => {
+  priceModal.classList.add("hidden");
+};
+
+/* === Enregistrer les nouveaux tarifs === */
+document.getElementById("savePrices").onclick = () => {
+  const newAdult = parseFloat(priceAdultInput.value);
+  const newChild = parseFloat(priceChildInput.value);
+  if (isNaN(newAdult) || isNaN(newChild)) {
+    alert("⚠️ Les tarifs doivent être des nombres valides.");
+    return;
+  }
+
+  const oldAdult = PRICE_ADULT;
+  const oldChild = PRICE_CHILD;
+
+  PRICE_ADULT = newAdult;
+  PRICE_CHILD = newChild;
+
+  localStorage.setItem("PRICE_ADULT", PRICE_ADULT);
+  localStorage.setItem("PRICE_CHILD", PRICE_CHILD);
+
+  updatePriceLabels();
+  render();
+  updateTable();
+
+  const msg = document.getElementById("priceMessage");
+  msg.textContent = `✔️ Tarifs mis à jour :
+  Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € | 
+  Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
+  msg.style.display = "block";
+  msg.style.opacity = 1;
+
+  // Effet de disparition douce
+  setTimeout(() => {
+    msg.style.transition = "opacity 0.5s";
+    msg.style.opacity = 0;
+    setTimeout(() => {
+      msg.style.display = "none";
+      priceModal.classList.add("hidden");
+    }, 600);
+  }, 1800);
+};
+
+
+
+/* === Afficher le bouton si admin === */
+function toggleAdminUI() {
+  const isAdmin = document.body.classList.contains("admin");
+  editPricesBtn.style.display = isAdmin ? "inline-block" : "none";
+}
+
+
+
+
+/* === Lier le bouton principal === */
+editPricesBtn.onclick = openPriceModal;
+
+/* === Initialiser au démarrage === */
+updatePriceLabels();
+toggleAdminUI();
+
+
 </script>
 
 <!-- 🧮 Fenêtre admin : saisie adultes/enfants -->
@@ -1372,6 +1719,76 @@ wrapper.addEventListener("touchend", e => {
     </div>
   </div>
 </div>
+<!-- 🆕 Modale ajout manuel de sièges -->
+<!-- 🆕 Modale ajout manuel de sièges -->
+<div id="addSeatModal" class="modal hidden">
+  <div class="modal-content" style="max-width:480px;">
+    <h3>➕ Ajouter des sièges</h3>
+    <p id="addSeatClient" style="font-weight:600;margin-bottom:10px;"></p>
+
+    <!-- 🧭 Mini plan des sièges -->
+    <div id="miniSeatMap" style="
+      display:grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap:5px;
+      justify-items:center;
+      margin-bottom:10px;
+      max-height:250px;
+      overflow-y:auto;
+      padding:8px;
+      background:#fafafa;
+      border-radius:8px;
+      border:1px solid #ddd;
+    "></div>
+
+    <p style="font-weight:600;">ou saisir manuellement :</p>
+    <input id="manualSeatInput" type="text" placeholder="Ex : A12, B3, S9" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;margin-bottom:10px;">
+
+    <div class="payment-group">
+      <div class="payment-line">
+        <label for="addSeatAdult">Adultes (${PRICE_ADULT} €)</label>
+        <input id="addSeatAdult" type="number" min="0" value="0" step="1" style="width:60px;">
+      </div>
+      <div class="payment-line">
+        <label for="addSeatChild">Enfants (${PRICE_CHILD} €)</label>
+        <input id="addSeatChild" type="number" min="0" value="0" step="1" style="width:60px;">
+      </div>
+      <p id="addSeatTotal" style="margin-top:8px;text-align:right;font-weight:600;color:#2e7d32;">Total : 0 €</p>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:6px;margin:10px 0;">
+      <input type="checkbox" id="addSeatPaid">
+      💶 Marquer ces sièges comme payés
+    </label>
+
+    <div style="margin-top:12px;">
+      <button id="addSeatConfirm">Valider</button>
+      <button id="addSeatCancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 💶 Fenêtre modale de modification des tarifs -->
+<div id="priceModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>💶 Modifier les tarifs</h3>
+
+    <label for="priceAdult">Tarif adulte (€)</label>
+    <input id="priceAdult" type="number" min="0" step="0.5" value="14">
+
+    <label for="priceChild">Tarif enfant (€)</label>
+    <input id="priceChild" type="number" min="0" step="0.5" value="10">
+
+    <div style="margin-top:12px;">
+      <button id="savePrices">Enregistrer</button>
+      <button id="cancelPrices">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
+
 
 </body>
 </html>
