@@ -1107,14 +1107,43 @@ function render() {
 /* === Sélection === */
 function toggle(id, el) {
   if (admin && seats[id]) {
-    if (confirm(`🔓 Libérer le siège ${id} ?`)) {
-      delete seats[id];
-      save();
-      render();
-      alert(`✅ Siège ${id} libéré.`);
+  if (confirm(`🔓 Libérer le siège ${id} ?`)) {
+    const clientName = seats[id].name;
+    delete seats[id];
+
+    // 🧮 Recalculer les totaux restants pour ce client
+    let totalA = 0, totalC = 0, totalB = 0;
+    let totalAmount = 0;
+
+    for (const data of Object.values(seats)) {
+      if (data.name === clientName) {
+        totalA += parseInt(data.type === "adulte" ? 1 : 0);
+        totalC += parseInt(data.type === "enfant" ? 1 : 0);
+        totalB += parseInt(data.type === "moins8" ? 1 : 0);
+      }
     }
-    return;
+
+    totalAmount = totalA * PRICE_ADULT + totalC * PRICE_CHILD;
+
+    // 🔁 Appliquer les nouveaux totaux à tous les sièges restants du client
+    for (const [sid, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        data.nbAdult = totalA;
+        data.nbChild = totalC;
+        data.nbBaby = totalB;
+        data.amount = totalAmount;
+      }
+    }
+
+    save();
+    render();
+    updateTable();
+    updateStatsBar(); // ✅ rafraîchit aussi la barre du haut
+    alert(`✅ Siège ${id} libéré. Totaux mis à jour pour ${clientName}.`);
   }
+  return;
+}
+
   if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
   if (selected.includes(id)) selected = selected.filter(s => s !== id);
   else selected.push(id);
