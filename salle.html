@@ -329,7 +329,7 @@ button {
   box-shadow: 0 4px 12px rgba(0,0,0,.3);
 }
 .modal-content input {
-  width: 90%; margin: 6px auto; padding: 8px; border: 1px solid #ccc;
+  width: 20%; margin: 6px auto; padding: 8px; border: 1px solid #ccc;
   border-radius: 5px; display: block;
 }
 #loader {
@@ -889,6 +889,12 @@ button#editPrices {
 }
 	div#miniSeatMap {
     display: none !important;
+}
+	button#addSeatConfirm {
+    background: black;
+}
+	button#addSeatCancel {
+    background: black;
 }
 </style>
 </head>
@@ -1965,7 +1971,7 @@ function updateStatsBar() {
 
     <label style="display:flex;align-items:center;gap:6px;margin:10px 0;">
       <input type="checkbox" id="addSeatPaid">
-      💶 Marquer ces sièges comme payés
+      💶 Sièges payés
     </label>
 
     <div style="margin-top:12px;">
@@ -2002,6 +2008,7 @@ function updateStatsBar() {
 
 </body>
 </html>
+
 
 
 
