@@ -1216,6 +1216,8 @@ document.getElementById("save").onclick = async () => {
   await sendEmail(user);
   selected = [];
   document.getElementById("modal").classList.add("hidden");
+  updateStatsBar(); // ✅ met à jour la barre du haut immédiatement
+
   alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
 };
 
@@ -1281,6 +1283,7 @@ resetBtn.onclick = () => {
   if (confirm("Effacer toutes les réservations ?")) {
     seats = {};
     save();
+	updateStatsBar(); // ✅ ajout ici
     alert("✅ Réinitialisation complète.");
   }
 };
@@ -1395,101 +1398,56 @@ for (const [id, data] of entries) {
 }
 
 
-  // === Gestion de la coche "Paiement reçu" ===
-  document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-    cb.addEventListener("change", e => {
-      if (!admin) {
-        alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
-        e.target.checked = !e.target.checked;
-        return;
+  // === Gestion stable de la case "Tout payé" (sans cumul) ===
+document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+  cb.addEventListener("change", e => {
+    if (!admin) {
+      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+      e.target.checked = !e.target.checked;
+      return;
+    }
+
+    const clientName = e.target.dataset.name;
+    const isPaid = e.target.checked;
+    const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
+    if (!clientSeats.length) return;
+
+    if (isPaid) {
+      // ✅ Marque tout comme payé, sans modifier les quantités existantes
+      for (const [id, data] of clientSeats) {
+        data.paid = true;
+
+        // 💶 recalcul du montant uniquement si inexistant
+        if (!data.amount || data.amount === 0) {
+          const nbA = parseInt(data.nbAdult || 0);
+          const nbC = parseInt(data.nbChild || 0);
+          data.amount = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
+        }
       }
 
-      const clientName = e.target.dataset.name;
-      const isPaid = e.target.checked;
+      save();
+      render();
+      updateTable();
+      updateStatsBar();
+      console.log(`✅ ${clientName} marqué comme payé (montants recalculés si nécessaire)`);
 
-      if (isPaid) {
-        const firstSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
-        if (!firstSeat) return;
-
-        const modal = document.getElementById("adminPaymentModal");
-        const clientLabel = document.getElementById("adminClientName");
-        const adultInput = document.getElementById("adminAdult");
-const childInput = document.getElementById("adminChild");
-const babyInput = document.getElementById("adminBaby");
-const totalDisplay = document.getElementById("adminTotal");
-
-
-        clientLabel.textContent = `Client : ${clientName}`;
-        adultInput.value = firstSeat[1].nbAdult || 0;
-        childInput.value = firstSeat[1].nbChild || 0;
-
-        // Fonction pour recalculer le total
-        function updateAdminTotal() {
-          const nbA = parseInt(adultInput.value) || 0;
-const nbE = parseInt(childInput.value) || 0;
-const nbB = parseInt(babyInput.value) || 0;
-const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // 👶 “moins de 8 ans” gratuit
-
-        }
-        adultInput.addEventListener("input", updateAdminTotal);
-        childInput.addEventListener("input", updateAdminTotal);
-        updateAdminTotal();
-
-        modal.classList.remove("hidden");
-
-        const saveBtn = document.getElementById("adminSavePayment");
-        const cancelBtn = document.getElementById("adminCancelPayment");
-
-        const closeModal = () => {
-          modal.classList.add("hidden");
-          saveBtn.onclick = cancelBtn.onclick = null;
-        };
-
-        // ✅ Validation du paiement admin
-        saveBtn.onclick = () => {
-  const nbA = parseInt(adultInput.value) || 0;
-  const nbE = parseInt(childInput.value) || 0;
-  const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD;
-
-  // ✅ Vérification du nombre total de sièges
-  const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
-  const totalSeats = clientSeats.length;
-  const totalPeople = nbA + nbE;
-
-  if (totalPeople !== totalSeats) {
-    alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges réservés (${totalSeats}).`);
-    return; // ⛔ Annule la validation
-  }
-
-  for (const [id, data] of clientSeats) {
-    data.nbAdult = nbA;
-data.nbChild = nbE;
-data.nbBaby = nbB;
-
-    data.amount = total;
-    data.paid = true;
-  }
-
-  save();
-  updateTable();
-  render();
-  closeModal();
-  alert(`✅ Paiement enregistré pour ${clientName}\nAdultes : ${nbA}\nEnfants : ${nbE}\nTotal : ${total} €`);
-};
-
-
-        cancelBtn.onclick = closeModal;
-      } else {
-        // Si décoché : on marque comme non payé
-        for (const [id, data] of Object.entries(seats)) {
-          if (data.name === clientName) seats[id].paid = false;
-        }
-        save();
-        updateTable();
-        render();
+    } else {
+      // ❌ Annule le paiement sans toucher aux quantités
+      for (const [id, data] of clientSeats) {
+        data.paid = false;
       }
-    });
+
+      save();
+      render();
+      updateTable();
+      updateStatsBar();
+      console.log(`❌ Paiement retiré pour ${clientName}`);
+    }
   });
+});
+
+
+
 // === Ajouter des sièges manuellement (mode admin) ===
 document.querySelectorAll(".add-seat-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -1503,10 +1461,9 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
     const manualInput = document.getElementById("manualSeatInput");
     const paidBox = document.getElementById("addSeatPaid");
     const adultInput = document.getElementById("addSeatAdult");
-const childInput = document.getElementById("addSeatChild");
-const babyInput = document.getElementById("addSeatBaby");
-const totalDisplay = document.getElementById("addSeatTotal");
-
+    const childInput = document.getElementById("addSeatChild");
+    const babyInput = document.getElementById("addSeatBaby");
+    const totalDisplay = document.getElementById("addSeatTotal");
 
     document.getElementById("addSeatClient").textContent = `Client : ${clientName}`;
     map.innerHTML = "";
@@ -1514,14 +1471,10 @@ const totalDisplay = document.getElementById("addSeatTotal");
     paidBox.checked = false;
     adultInput.value = 0;
     childInput.value = 0;
+    babyInput.value = 0;
     totalDisplay.textContent = "Total : 0 €";
 
     // 🎨 Affichage des sièges libres (mini version)
-    Object.keys(seats).forEach(id => {
-      const el = document.querySelector(`.seat[data-id="${id}"]`);
-      if (!el) return;
-    });
-
     const allSeats = Array.from(document.querySelectorAll(".seat.free"));
     allSeats.forEach(el => {
       const id = el.dataset.id;
@@ -1545,85 +1498,92 @@ const totalDisplay = document.getElementById("addSeatTotal");
     // 🧮 Recalcul du total
     function updateTotal() {
       const a = parseInt(adultInput.value) || 0;
-const c = parseInt(childInput.value) || 0;
-const b = parseInt(babyInput.value) || 0;
-totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`; // 👶 “moins de 8 ans” gratuit
-
+      const c = parseInt(childInput.value) || 0;
+      const b = parseInt(babyInput.value) || 0;
+      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`; // 👶 Moins de 8 ans gratuit
     }
-    adultInput.oninput = childInput.oninput = updateTotal;
+    adultInput.oninput = childInput.oninput = babyInput.oninput = updateTotal;
 
     modal.classList.remove("hidden");
 
     document.getElementById("addSeatCancel").onclick = () => modal.classList.add("hidden");
 
     document.getElementById("addSeatConfirm").onclick = () => {
-      const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
-      const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
-      const allChosen = [...chosen, ...typed];
-      const nbA = parseInt(adultInput.value) || 0;
-const nbC = parseInt(childInput.value) || 0;
-const nbB = parseInt(babyInput.value) || 0;
-const totalPeople = nbA + nbC + nbB;
+  const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
+  const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  const allChosen = [...chosen, ...typed];
+  const nbA = parseInt(adultInput.value) || 0;
+  const nbC = parseInt(childInput.value) || 0;
+  const nbB = parseInt(babyInput.value) || 0;
+  const totalPeople = nbA + nbC + nbB;
+  const totalAdd = nbA * PRICE_ADULT + nbC * PRICE_CHILD; // 👶 moins de 8 ans gratuit
 
-      const total = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
+  if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
+  if (totalPeople !== allChosen.length)
+    return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
 
-      if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
-      if (totalPeople !== allChosen.length) return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
+  // 🔍 Récupère les anciens totaux du client
+  let oldA = 0, oldC = 0, oldB = 0, oldTotal = 0;
+  for (const [sid, data] of Object.entries(seats)) {
+    if (data.name === clientName) {
+      oldA = parseInt(data.nbAdult || 0);
+      oldC = parseInt(data.nbChild || 0);
+      oldB = parseInt(data.nbBaby  || 0);
+      oldTotal = parseFloat(data.amount || 0);
+      break;
+    }
+  }
 
-      let added = 0;
-      for (const id of allChosen) {
-        const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
-        if (!seatEl || !seatEl.classList.contains("free")) continue;
-        const type = added < nbA ? "adulte" : "enfant";
-        seats[id] = { ...clientSeat[1], paid: paidBox.checked, nbAdult: nbA, nbChild: nbC, nbBaby: nbB, type, amount: total };
+  const newA = oldA + nbA;
+  const newC = oldC + nbC;
+  const newB = oldB + nbB;
+  const newTotal = oldTotal + totalAdd;
 
-        added++;
-      }
-      if (added > 0) {
-        save();
-        render();
-        updateTable();
-        alert(`✅ ${added} siège(s) ajouté(s) à ${clientName}.`);
-      }
-      modal.classList.add("hidden");
+  // 🪑 Ajout des nouveaux sièges
+  let added = 0;
+  for (const id of allChosen) {
+    const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
+    if (!seatEl || !seatEl.classList.contains("free")) continue;
+    const type = added < nbA ? "adulte" : added < nbA + nbC ? "enfant" : "moins8";
+    seats[id] = {
+      ...clientSeat[1],
+      paid: paidBox.checked,
+      nbAdult: newA,
+      nbChild: newC,
+      nbBaby: newB,
+      type,
+      amount: newTotal,
     };
+    added++;
+  }
+
+  // ✅ Met à jour TOUS les sièges du client avec les nouveaux totaux cumulés
+  for (const [sid, data] of Object.entries(seats)) {
+    if (data.name === clientName) {
+      data.nbAdult = newA;
+      data.nbChild = newC;
+      data.nbBaby  = newB;
+      data.amount  = newTotal;
+    }
+  }
+
+  if (added > 0) {
+    save();
+    render();
+    updateTable();
+    updateStatsBar(); // 🧮 maj des statistiques
+    alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
+  }
+  modal.classList.add("hidden");
+};
+
   });
 });
 
 
 
-// === Totaux globaux ===
-let totalAmount = 0;
-let totalAdult = 0;
-let totalChild = 0;
-let totalBaby = 0;
-let soldSeats = Object.keys(seats).length;
-const processedClients = new Set();
 
-for (const data of Object.values(seats)) {
-  if (data.paid && data.amount && !processedClients.has(data.name)) {
-    totalAmount += parseFloat(data.amount);
-    totalAdult += parseInt(data.nbAdult || 0);
-    totalChild += parseInt(data.nbChild || 0);
-    totalBaby += parseInt(data.nbBaby || 0);
-    processedClients.add(data.name);
-  }
-}
 
-// === Met à jour la barre de statistiques compacte ===
-const statTotal = document.getElementById("stat-total");
-const statAdult = document.getElementById("stat-adult");
-const statChild = document.getElementById("stat-child");
-const statBaby = document.getElementById("stat-baby");
-const statSold = document.getElementById("stat-sold");
-
-if (statTotal && statAdult && statChild && statBaby && statSold) {
-  statTotal.textContent = `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
-  statAdult.textContent = `🧍 Adultes : ${totalAdult}`;
-  statChild.textContent = `👶 Enfants : ${totalChild}`;
-  statBaby.textContent = `🍼 Moins de 8 ans : ${totalBaby}`;
-  statSold.textContent = `🎟️ Places vendues : ${soldSeats}`;
-}
 } // ← dernière accolade de la fonction updateTable()
 
 
@@ -1774,6 +1734,40 @@ editPricesBtn.onclick = openPriceModal;
 updatePriceLabels();
 toggleAdminUI();
 
+// === 🔄 Mise à jour complète de la barre de statistiques ===
+function updateStatsBar() {
+  let totalAmount = 0;
+  let totalAdult = 0;
+  let totalChild = 0;
+  let totalBaby = 0;
+  let soldSeats = Object.keys(seats).length;
+  const processedClients = new Set();
+
+  for (const data of Object.values(seats)) {
+    if (data.paid && !processedClients.has(data.name)) {
+      let amount = parseFloat(data.amount);
+      if (isNaN(amount) || amount === 0) {
+        const nbA = parseInt(data.nbAdult || 0);
+        const nbC = parseInt(data.nbChild || 0);
+        amount = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
+      }
+
+      totalAmount += amount;
+      totalAdult += parseInt(data.nbAdult || 0);
+      totalChild += parseInt(data.nbChild || 0);
+      totalBaby += parseInt(data.nbBaby || 0);
+      processedClients.add(data.name);
+    }
+  }
+
+  document.getElementById("stat-total").textContent = `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
+  document.getElementById("stat-adult").textContent = `🧍 Adultes : ${totalAdult}`;
+  document.getElementById("stat-child").textContent = `👶 Enfants : ${totalChild}`;
+  document.getElementById("stat-baby").textContent = `🍼 Moins de 8 ans : ${totalBaby}`;
+  document.getElementById("stat-sold").textContent = `🎟️ Places vendues : ${soldSeats}`;
+}
+
+
 
 </script>
 
@@ -1881,6 +1875,7 @@ toggleAdminUI();
 
 </body>
 </html>
+
 
 
 
