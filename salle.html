@@ -1925,23 +1925,10 @@ function updateStatsBar() {
     <h3>➕ Ajouter des sièges</h3>
     <p id="addSeatClient" style="font-weight:600;margin-bottom:10px;"></p>
 
-    <!-- 🧭 Mini plan des sièges -->
-    <div id="miniSeatMap" style="
-      display:grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap:5px;
-      justify-items:center;
-      margin-bottom:10px;
-      max-height:250px;
-      overflow-y:auto;
-      padding:8px;
-      background:#fafafa;
-      border-radius:8px;
-      border:1px solid #ddd;
-    "></div>
 
-    <p style="font-weight:600;">ou saisir manuellement :</p>
-    <input id="manualSeatInput" type="text" placeholder="Ex : A12, B3, S9" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;margin-bottom:10px;">
+
+    <p style="font-weight:600;">saisir manuellement :</p>
+    <input id="manualSeatInput" type="text" placeholder="Ex : A-12, B-3, S-9" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;margin-bottom:10px;">
 
     <div class="payment-group">
       <div class="payment-line">
@@ -1999,6 +1986,7 @@ function updateStatsBar() {
 
 </body>
 </html>
+
 
 
 
