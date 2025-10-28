@@ -1431,17 +1431,18 @@ for (const [id, data] of entries) {
   const babySeats  = babies.map(s => s.id).join(", ") || "—";
 
   return `
-    <p><strong>🧍 Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} € → 
-      <span style="color:#1565c0;font-weight:600">${adultSeats}</span>
-    </p>
-    <p><strong>👧 Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} € → 
-      <span style="color:#0288d1;font-weight:600">${childSeats}</span>
-    </p>
-    <p><strong>🍼 Moins de 8 ans :</strong> ${info.nbBaby || 0} → 
-      <span style="color:#6a1b9a;font-weight:600">${babySeats}</span>
-    </p>
-    <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
-  `;
+  <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € → 
+    <span style="color:#1565c0;font-weight:600">${adultSeats}</span>
+  </p>
+  <p><strong>👧 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € → 
+    <span style="color:#0288d1;font-weight:600">${childSeats}</span>
+  </p>
+  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} → 
+    <span style="color:#6a1b9a;font-weight:600">${babySeats}</span>
+  </p>
+  <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
+`;
+
 })()}
 
 
@@ -2008,6 +2009,7 @@ function updateStatsBar() {
 
 </body>
 </html>
+
 
 
 
