@@ -1080,8 +1080,10 @@ onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
   render();
   updateTable();
+  updateStatsBar(); // ✅ AJOUT ICI — met à jour les compteurs au chargement
   setTimeout(() => loader.classList.add("hidden"), 400);
 });
+
 function save(){ set(seatsRef, seats); }
 
 /* === Rendu === */
