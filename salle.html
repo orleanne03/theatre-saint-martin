@@ -1358,7 +1358,7 @@ for (const [id, data] of entries) {
       ...data,
       seats: [],
       emails: new Set(),
-      allPaid: true, // ✅ on part du principe que tout est payé
+      allPaid: true,
     };
   }
 
@@ -1368,6 +1368,7 @@ for (const [id, data] of entries) {
     nbAdult: data.nbAdult || 0,
     nbChild: data.nbChild || 0,
   });
+
 
   grouped[key].emails.add(data.email || "N/A");
 
@@ -1395,13 +1396,71 @@ for (const [id, data] of entries) {
   const content = document.createElement("div");
   content.className = "accordion-content";
   content.innerHTML = `
-    ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
-    <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-    <p><strong>Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} €</p>
-    <p><strong>Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} €</p>
-	<p><strong>Moins de 8 ans :</strong> ${info.nbBaby || 0}</p>
+  ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
+  <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
+  ${(() => {
+  // 🧠 Récupère les sièges par type si disponible,
+  // sinon les répartit selon les nombres de personnes enregistrées.
+  const allSeats = [...info.seats];
+  let adults = allSeats.filter(s => s.type === "adulte");
+  let children = allSeats.filter(s => s.type === "enfant");
+  let babies = allSeats.filter(s => s.type === "moins8");
 
+  // ✅ Si aucun type n’est défini, on répartit dans l’ordre :
+  if (!adults.length && !children.length && !babies.length) {
+    const nbA = info.nbAdult || 0;
+    const nbC = info.nbChild || 0;
+    const nbB = info.nbBaby || 0;
+
+    adults = allSeats.slice(0, nbA);
+    children = allSeats.slice(nbA, nbA + nbC);
+    babies = allSeats.slice(nbA + nbC, nbA + nbC + nbB);
+  }
+
+  const adultSeats = adults.map(s => s.id).join(", ") || "—";
+  const childSeats = children.map(s => s.id).join(", ") || "—";
+  const babySeats  = babies.map(s => s.id).join(", ") || "—";
+
+  return `
+    <p><strong>🧍 Adultes :</strong> ${info.nbAdult || 0} × ${PRICE_ADULT} € → 
+      <span style="color:#1565c0;font-weight:600">${adultSeats}</span>
+    </p>
+    <p><strong>👧 Enfants :</strong> ${info.nbChild || 0} × ${PRICE_CHILD} € → 
+      <span style="color:#0288d1;font-weight:600">${childSeats}</span>
+    </p>
+    <p><strong>🍼 Moins de 8 ans :</strong> ${info.nbBaby || 0} → 
+      <span style="color:#6a1b9a;font-weight:600">${babySeats}</span>
+    </p>
     <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
+  `;
+})()}
+
+
+${(() => {
+  // 🧩 On reconstruit les groupes de sièges par type.
+  const adultSeats = info.seats
+    .filter(s => (s.type === "adulte") || (!s.type && /[13579]$/.test(s.id))) // 🔁 fallback si pas de type
+    .map(s => s.id)
+    .join(", ") || "—";
+
+  const childSeats = info.seats
+    .filter(s => (s.type === "enfant") || (!s.type && /[02468]$/.test(s.id))) // 🔁 fallback simple
+    .map(s => s.id)
+    .join(", ") || "—";
+
+  const babySeats = info.seats
+    .filter(s => s.type === "moins8")
+    .map(s => s.id)
+    .join(", ") || "—";
+
+  // ✅ On renvoie le HTML voulu (sinon → undefined)
+  return `
+  
+  `;
+})()}
+
+
+
 
     <div class="seat-list" style="margin-top:8px;">
       ${info.seats.map(s => {
@@ -1572,10 +1631,28 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
 
   // 🪑 Ajout des nouveaux sièges
   let added = 0;
-  for (const id of allChosen) {
+  for (let id of allChosen) {
+
+    // ✅ Correction : normalise les IDs pour les strapontins ("S15", "S16" → "A-S15", etc.)
+    if (/^S\d+$/i.test(id)) {
+      id = `A-${id}`; // 🟡 tu peux changer la lettre de rangée ici si besoin
+    }
+
     const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
-    if (!seatEl || !seatEl.classList.contains("free")) continue;
+    console.log("Ajout manuel :", id, "→", seatEl ? "OK" : "non trouvé");
+
+    if (!seatEl) {
+      alert(`⚠️ Le siège ${id} n'existe pas dans le plan.`);
+      continue;
+    }
+
+    if (!seatEl.classList.contains("free")) {
+      alert(`⚠️ Le siège ${id} est déjà réservé.`);
+      continue;
+    }
+
     const type = added < nbA ? "adulte" : added < nbA + nbC ? "enfant" : "moins8";
+
     seats[id] = {
       ...clientSeat[1],
       paid: paidBox.checked,
@@ -1588,7 +1665,7 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
     added++;
   }
 
-  // ✅ Met à jour TOUS les sièges du client avec les nouveaux totaux cumulés
+  // ✅ Met à jour TOUS les sièges du client avec les nouveaux totaux
   for (const [sid, data] of Object.entries(seats)) {
     if (data.name === clientName) {
       data.nbAdult = newA;
@@ -1600,13 +1677,29 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
 
   if (added > 0) {
     save();
-    render();
-    updateTable();
-    updateStatsBar(); // 🧮 maj des statistiques
+    render();       // 🟢 met à jour visuellement le plan
+    updateTable();  // 🟢 met à jour la liste de réservations
+    updateStatsBar(); // 🧮 met à jour la barre de stats
+
+    // ✨ Ouvre automatiquement l’accordéon du client ajouté
+    setTimeout(() => {
+      const accHeader = [...document.querySelectorAll('.accordion-header')]
+        .find(h => h.textContent.includes(clientName));
+      if (accHeader && accHeader.parentElement) {
+        accHeader.parentElement.classList.add('open');
+        accHeader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        accHeader.style.transition = "background 0.4s";
+        accHeader.style.background = "#fff59d";
+        setTimeout(() => accHeader.style.background = "", 1200);
+      }
+    }, 300);
+
     alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
   }
+
   modal.classList.add("hidden");
 };
+
 
   });
 });
@@ -1906,6 +1999,7 @@ function updateStatsBar() {
 
 </body>
 </html>
+
 
 
 
