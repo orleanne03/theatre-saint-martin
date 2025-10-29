@@ -41,6 +41,29 @@
     <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
     <button id="gotoHome" class="violet">🏠 Accueil</button>
   </div>
+<!-- ✅ Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // expose pour le script principal
+  window._db = db;
+  window._firebaseGet = get;
+  window._firebaseRef = ref;
+</script>
 
 <script>
 let scanner;
@@ -115,56 +138,81 @@ async function onScanSuccess(text){
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
     flash("red");
+    vibrate();
   } else {
     scanned.push(text);
     localStorage.setItem("scannedTickets", JSON.stringify(scanned));
     updateCounter();
-    statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
-    flash("lime");
   }
 
   if (data && typeof data === "object") {
-  const paye = data.paye === true || data.paid === true; // ✅ compatibilité des deux champs
+    // === 🔍 Vérifie dans Firebase si tous les sièges de ce client sont payés ===
+    const email = (data.email || "").toLowerCase();
+    let allPaid = false;
+    let seatCount = 0, paidCount = 0;
 
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = `
-    <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
-    <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
-    <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
-    <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}<br>
-    <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}
-  `;
+    try {
+      const snapshot = await window._firebaseGet(window._firebaseRef(window._db, "seats"));
+      if (snapshot.exists()) {
+        const allSeats = snapshot.val();
+        for (const s of Object.values(allSeats)) {
+          if (s.email?.toLowerCase() === email) {
+            seatCount++;
+            if (s.paid) paidCount++;
+          }
+        }
+        allPaid = seatCount > 0 && paidCount === seatCount;
+      }
+    } catch(err) {
+      console.error("Erreur Firebase :", err);
+    }
 
-  if (paye) {
-    statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
-    flash("lime");
+    const paye = data.paye === true || data.paid === true || allPaid;
+
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}<br>
+      <strong>Payés dans Firebase :</strong> ${paidCount}/${seatCount}
+    `;
+
+    // === Affichage en fonction du résultat ===
+    if (allPaid) {
+      statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
+      flash("lime");
+      vibrate("ok");
+    } else if (seatCount > 0 && paidCount < seatCount) {
+      statusEl.innerHTML = "<span class='err'>⚠️ Réservation partiellement payée !</span>";
+      flash("red");
+      vibrate("err");
+      alert("⚠️ Attention : certains sièges de cette réservation ne sont pas encore payés !");
+    } else {
+      statusEl.innerHTML = "<span class='err'>❌ Billet non payé</span>";
+      flash("red");
+      vibrate("err");
+    }
   } else {
-    statusEl.innerHTML = "<span class='err'>❌ Billet non payé</span>";
-    flash("red");
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
-} else {
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
-}
 
-
-
-  // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
+  // réaffiche le bouton "Nouveau scan" après 5 secondes
   setTimeout(() => {
     newScanBtn.style.display = "inline-block";
     statusEl.textContent = "Prêt pour un nouveau scan.";
   }, 5000);
 }
 
-// effet flash visuel
-function flash(color) {
-  const overlay = document.createElement("div");
-  Object.assign(overlay.style, {
-    position:"fixed", inset:"0", background:color, opacity:"0.25", zIndex:"99",
-  });
-  document.body.append(overlay);
-  setTimeout(() => overlay.remove(), 150);
+// 📳 vibration légère selon le résultat
+function vibrate(type="") {
+  if (!navigator.vibrate) return;
+  if (type === "ok") navigator.vibrate([80]);
+  else if (type === "err") navigator.vibrate([150, 100, 150]);
+  else navigator.vibrate(60);
 }
+
 
 // bouton "Nouveau scan"
 newScanBtn.onclick = () => {
