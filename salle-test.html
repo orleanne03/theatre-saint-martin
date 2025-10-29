@@ -1547,8 +1547,8 @@ ${(() => {
 
 
   // === Gestion stable de la case "Tout payé" (sans cumul) ===
-document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-  cb.addEventListener("change", e => {
+  document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+  cb.addEventListener("change", async e => {
     if (!admin) {
       alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
       e.target.checked = !e.target.checked;
@@ -1560,12 +1560,10 @@ document.querySelectorAll(".paid-toggle-client").forEach(cb => {
     const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
     if (!clientSeats.length) return;
 
+    // === ✅ MARQUER PAYÉ ===
     if (isPaid) {
-      // ✅ Marque tout comme payé, sans modifier les quantités existantes
       for (const [id, data] of clientSeats) {
         data.paid = true;
-
-        // 💶 recalcul du montant uniquement si inexistant
         if (!data.amount || data.amount === 0) {
           const nbA = parseInt(data.nbAdult || 0);
           const nbC = parseInt(data.nbChild || 0);
@@ -1579,8 +1577,26 @@ document.querySelectorAll(".paid-toggle-client").forEach(cb => {
       updateStatsBar();
       console.log(`✅ ${clientName} marqué comme payé (montants recalculés si nécessaire)`);
 
+      // 📧 Envoi automatique d'un e-mail avec QR code mis à jour
+      const clientData = clientSeats[0][1]; // premier siège = infos client
+      if (clientData) {
+        try {
+          await sendEmail({
+            name: clientData.name,
+            email: clientData.email,
+            phone: clientData.phone,
+            paid: true,
+            amount: clientData.amount || 0
+          });
+          alert(`📨 E-mail de confirmation envoyé à ${clientData.email}`);
+        } catch (err) {
+          console.error("Erreur e-mail :", err);
+          alert("❌ Impossible d'envoyer l'e-mail de mise à jour.");
+        }
+      }
+
+    // === ❌ ANNULER LE PAIEMENT ===
     } else {
-      // ❌ Annule le paiement sans toucher aux quantités
       for (const [id, data] of clientSeats) {
         data.paid = false;
       }
