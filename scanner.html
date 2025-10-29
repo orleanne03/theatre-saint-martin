@@ -124,30 +124,17 @@ async function onScanSuccess(text){
   }
 
   if (data && typeof data === "object") {
-  const paye = data.paye === true || data.paid === true; // ✅ compatibilité des deux champs
-
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = `
-    <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
-    <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
-    <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
-    <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}<br>
-    <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}
-  `;
-
-  if (paye) {
-    statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
-    flash("lime");
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}
+    `;
   } else {
-    statusEl.innerHTML = "<span class='err'>❌ Billet non payé</span>";
-    flash("red");
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
-} else {
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
-}
-
-
 
   // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
   setTimeout(() => {
