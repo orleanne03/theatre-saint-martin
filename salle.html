@@ -1276,16 +1276,15 @@ async function sendEmail(user) {
     .map(([id]) => id)
     .join(", ");
   const qrData = JSON.stringify({ nom: user.name, email: user.email, tel: user.phone, sieges: reservedSeats });
-  const allSeats = Object.entries(seats).filter(([_, v]) => v.email === user.email);
-const paid = allSeats.every(([_, v]) => v.paid === true); // ✅ vrai si tous les sièges de ce client sont payés
-
-const qrData = JSON.stringify({
-  nom: user.name,
-  email: user.email,
-  tel: user.phone,
-  sieges: allSeats.map(([id]) => id).join(", "),
-  paye: paid
-});
+  const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
+  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
+    to_name: user.name,
+    to_email: user.email,
+    seats: reservedSeats,
+    phone: user.phone,
+    qr_image: qrImage
+  }).then(() => console.log("✅ Email envoyé")).catch(err => console.error("❌ Erreur EmailJS :", err));
+}
 
 /* === Mode Admin === */
 adminBtn.onclick = () => {
@@ -2023,6 +2022,7 @@ function updateStatsBar() {
 
 </body>
 </html>
+
 
 
 
