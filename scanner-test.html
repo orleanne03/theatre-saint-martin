@@ -118,10 +118,11 @@ function safeDecode(str){
   return str;
 }
 
-async function onScanSuccess(text){
+async function onScanSuccess(text) {
   const now = Date.now();
   if (text === lastScanText && now - lastScanTime < 3000) return;
-  lastScanText = text; lastScanTime = now;
+  lastScanText = text;
+  lastScanTime = now;
 
   await stopScanner();
 
@@ -130,16 +131,36 @@ async function onScanSuccess(text){
 
   const decoded = safeDecode(text);
   let data = null;
-  try { data = JSON.parse(decoded); } catch(e){ data = null; }
-
-  if (already) {
-    statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
-    flash("red"); vibrate("err");
-  } else {
-    scanned.push(text);
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-    updateCounter();
+  try {
+    data = JSON.parse(decoded);
+  } catch (e) {
+    data = null;
   }
+
+  // 🚫 Si déjà scanné → refuser immédiatement
+  if (already) {
+    statusEl.innerHTML = "<span class='err'>🚫 Billet déjà scanné — accès refusé</span>";
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data && data.nom ? data.nom : "(inconnu)"}<br>
+      <strong>Email :</strong> ${data && data.email ? data.email : "(inconnu)"}<br>
+      <em>Ce billet a déjà été validé précédemment.</em>
+    `;
+    flash("red");
+    vibrate("err");
+
+    // ⏳ Attend 5 secondes puis réactive le scanner
+    setTimeout(() => {
+      newScanBtn.style.display = "inline-block";
+      statusEl.textContent = "Prêt pour un nouveau scan.";
+    }, 5000);
+    return; // ⛔ Stop ici — refus définitif
+  }
+
+  // ✅ Nouveau billet
+  scanned.push(text);
+  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+  updateCounter();
 
   if (data && typeof data === "object") {
     const email = (data.email || "").trim().toLowerCase();
@@ -165,7 +186,7 @@ async function onScanSuccess(text){
         }
         allPaid = seatCount > 0 && paidCount === seatCount;
       }
-    } catch(err) {
+    } catch (err) {
       console.error("Erreur Firebase :", err);
     }
 
@@ -181,14 +202,17 @@ async function onScanSuccess(text){
 
     if (allPaid) {
       statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
-      flash("lime"); vibrate("ok");
+      flash("lime");
+      vibrate("ok");
     } else if (seatCount > 0 && paidCount < seatCount) {
       statusEl.innerHTML = "<span class='err'>⚠️ Réservation partiellement payée !</span>";
-      flash("red"); vibrate("err");
+      flash("red");
+      vibrate("err");
       alert("⚠️ Attention : certains sièges ne sont pas encore payés !");
     } else {
-      statusEl.innerHTML = "<span class='err'>❌ Billet non payé</span>";
-      flash("red"); vibrate("err");
+      statusEl.innerHTML = "<span class='err'>❌ Billet non payé — accès refusé</span>";
+      flash("red");
+      vibrate("err");
     }
   } else {
     detailsEl.style.display = "block";
@@ -200,6 +224,7 @@ async function onScanSuccess(text){
     statusEl.textContent = "Prêt pour un nouveau scan.";
   }, 5000);
 }
+
 
 function flash(color) {
   const overlay = document.createElement("div");
