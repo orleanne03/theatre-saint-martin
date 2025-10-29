@@ -1116,7 +1116,7 @@ function render() {
 }
 
 /* === Sélection === */
-function toggle(id, el) {
+async function toggle(id, el) {
   if (admin && seats[id]) {
   if (confirm(`🔓 Libérer le siège ${id} ?`)) {
     const clientName = seats[id].name;
@@ -1150,6 +1150,13 @@ function toggle(id, el) {
     render();
     updateTable();
     updateStatsBar(); // ✅ rafraîchit aussi la barre du haut
+    // 📧 Envoi automatique d'un e-mail de mise à jour après suppression
+const clientData = Object.values(seats).find(s => s.name === clientName);
+if (clientData) {
+  await sendEmail(clientData);
+  console.log(`📨 Email mis à jour envoyé à ${clientData.email} après suppression de siège.`);
+}
+
     alert(`✅ Siège ${id} libéré. Totaux mis à jour pour ${clientName}.`);
   }
   return;
@@ -1608,7 +1615,7 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
 
     document.getElementById("addSeatCancel").onclick = () => modal.classList.add("hidden");
 
-    document.getElementById("addSeatConfirm").onclick = () => {
+    document.getElementById("addSeatConfirm").onclick = async () => {
   const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
   const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
   const allChosen = [...chosen, ...typed];
@@ -1703,6 +1710,12 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
         setTimeout(() => accHeader.style.background = "", 1200);
       }
     }, 300);
+// 📧 Envoi automatique d'un e-mail de mise à jour avec QR code actualisé
+const clientData = Object.values(seats).find(s => s.name === clientName);
+if (clientData) {
+  await sendEmail(clientData);
+  console.log(`📨 Email mis à jour envoyé à ${clientData.email} après ajout de siège.`);
+}
 
     alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
   }
