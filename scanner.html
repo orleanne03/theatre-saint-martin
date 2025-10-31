@@ -124,17 +124,28 @@ async function onScanSuccess(text){
   }
 
   if (data && typeof data === "object") {
-    detailsEl.style.display = "block";
-    detailsEl.innerHTML = `
-      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
-      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
-      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
-      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}
-    `;
+  detailsEl.style.display = "block";
+
+  const paye = data.paye === true || data.paye === "true";
+  if (!paye) {
+    statusEl.innerHTML = "<span class='err'>❌ Billet non payé — entrée refusée</span>";
+    flash("red");
+    beep(false);
   } else {
-    detailsEl.style.display = "block";
-    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
+    statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
+    flash("lime");
+    beep(true);
   }
+
+  detailsEl.innerHTML = `
+    <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+    <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+    <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+    <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}<br>
+    <strong>Statut :</strong> ${paye ? "💰 Payé" : "❌ Non payé"}
+  `;
+}
+
 
   // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
   setTimeout(() => {
