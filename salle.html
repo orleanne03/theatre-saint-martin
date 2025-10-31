@@ -1962,18 +1962,24 @@ document.addEventListener("click", async (e) => {
     if (!confirm(`Confirmer ${groupChanges.length} siège(s) ${action} pour ${groupClient} ?`)) return;
 
     // --- SUPPRESSION
-    if (groupMode === "remove") {
-      for (const id of groupChanges) {
-        if (seats[id]) delete seats[id];
-      }
+if (groupMode === "remove") {
+  for (const id of groupChanges) {
+    if (seats[id]) delete seats[id];
+  }
 
-      const clientData = Object.values(seats).find(s => s.name === groupClient);
-      if (clientData?.email) {
-        const sendMail = await askEmailConfirmation(clientData.email);
+  // ✅ Enregistre les changements et rafraîchit l’affichage
+  save();
+  render();
+  updateTable();
+  updateStatsBar();
 
-        if (sendMail) await notifyClientUpdate(clientData.email);
-      }
-    }
+  const clientData = Object.values(seats).find(s => s.name === groupClient);
+  if (clientData?.email) {
+    const sendMail = await askEmailConfirmation(clientData.email);
+
+    if (sendMail) await notifyClientUpdate(clientData.email);
+  }
+}
 
     // --- AJOUT
     if (groupMode === "add") {
