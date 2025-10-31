@@ -5,8 +5,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎟️ Scanner — Théâtre Saint Martin</title>
 
-<!-- Librairie -->
+<!-- Librairie QR -->
 <script src="https://unpkg.com/html5-qrcode"></script>
+
+<!-- ✅ Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._firebaseGet = get;
+  window._firebaseRef = ref;
+</script>
 
 <style>
   body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
@@ -74,7 +96,6 @@ async function startScanner(){
 
   try {
     await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
-    console.log("✅ Caméra démarrée");
     updateCounter();
     newScanBtn.style.display = "none";
   } catch (err) {
@@ -87,7 +108,6 @@ async function stopScanner(){
   try {
     await scanner.stop();
     scanning = false;
-    console.log("⏸️ Scanner en pause");
   } catch(e){ console.error(e); }
 }
 
@@ -98,10 +118,11 @@ function safeDecode(str){
   return str;
 }
 
-async function onScanSuccess(text){
+async function onScanSuccess(text) {
   const now = Date.now();
   if (text === lastScanText && now - lastScanTime < 3000) return;
-  lastScanText = text; lastScanTime = now;
+  lastScanText = text;
+  lastScanTime = now;
 
   await stopScanner();
 
@@ -110,51 +131,101 @@ async function onScanSuccess(text){
 
   const decoded = safeDecode(text);
   let data = null;
-  try { data = JSON.parse(decoded); } catch(e){ data = null; }
-
-  if (already) {
-    statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
-    flash("red");
-  } else {
-    scanned.push(text);
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
-    updateCounter();
-    statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
-    flash("lime");
+  try {
+    data = JSON.parse(decoded);
+  } catch (e) {
+    data = null;
   }
+
+  // 🚫 Si déjà scanné → refuser immédiatement
+  if (already) {
+    statusEl.innerHTML = "<span class='err'>🚫 Billet déjà scanné — accès refusé</span>";
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data && data.nom ? data.nom : "(inconnu)"}<br>
+      <strong>Email :</strong> ${data && data.email ? data.email : "(inconnu)"}<br>
+      <em>Ce billet a déjà été validé précédemment.</em>
+    `;
+    flash("red");
+    vibrate("err");
+
+    // ⏳ Attend 5 secondes puis réactive le scanner
+    setTimeout(() => {
+      newScanBtn.style.display = "inline-block";
+      statusEl.textContent = "Prêt pour un nouveau scan.";
+    }, 5000);
+    return; // ⛔ Stop ici — refus définitif
+  }
+
+  // ✅ Nouveau billet
+  scanned.push(text);
+  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+  updateCounter();
 
   if (data && typeof data === "object") {
-  detailsEl.style.display = "block";
+    const email = (data.email || "").trim().toLowerCase();
+    const nom = (data.nom || "").trim().toUpperCase();
+    let allPaid = false;
+    let seatCount = 0, paidCount = 0;
+    let unpaidSeats = [];
 
-  const paye = data.paye === true || data.paye === "true";
-  if (!paye) {
-    statusEl.innerHTML = "<span class='err'>❌ Billet non payé — entrée refusée</span>";
-    flash("red");
-    beep(false);
+    try {
+      const snapshot = await window._firebaseGet(window._firebaseRef(window._db, "seats"));
+      if (snapshot.exists()) {
+        const allSeats = snapshot.val();
+        for (const [seatId, s] of Object.entries(allSeats)) {
+          const sameClient =
+            (s.email && s.email.trim().toLowerCase() === email) ||
+            (s.name && s.name.trim().toUpperCase() === nom);
+
+          if (sameClient) {
+            seatCount++;
+            if (s.paid) paidCount++;
+            else unpaidSeats.push(seatId);
+          }
+        }
+        allPaid = seatCount > 0 && paidCount === seatCount;
+      }
+    } catch (err) {
+      console.error("Erreur Firebase :", err);
+    }
+
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+      <strong>Sièges (QR) :</strong> ${data.sieges || "(inconnu)"}<br>
+      <strong>Payés dans Firebase :</strong> ${paidCount}/${seatCount}<br>
+      ${unpaidSeats.length ? "<strong>❌ Non payés :</strong> " + unpaidSeats.join(", ") : ""}
+    `;
+
+    if (allPaid) {
+      statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
+      flash("lime");
+      vibrate("ok");
+    } else if (seatCount > 0 && paidCount < seatCount) {
+      statusEl.innerHTML = "<span class='err'>⚠️ Réservation partiellement payée !</span>";
+      flash("red");
+      vibrate("err");
+      alert("⚠️ Attention : certains sièges ne sont pas encore payés !");
+    } else {
+      statusEl.innerHTML = "<span class='err'>❌ Billet non payé — accès refusé</span>";
+      flash("red");
+      vibrate("err");
+    }
   } else {
-    statusEl.innerHTML = "<span class='ok'>✅ Billet payé — accès autorisé</span>";
-    flash("lime");
-    beep(true);
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
 
-  detailsEl.innerHTML = `
-    <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
-    <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
-    <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
-    <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}<br>
-    <strong>Statut :</strong> ${paye ? "💰 Payé" : "❌ Non payé"}
-  `;
-}
-
-
-  // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
   setTimeout(() => {
     newScanBtn.style.display = "inline-block";
     statusEl.textContent = "Prêt pour un nouveau scan.";
   }, 5000);
 }
 
-// effet flash visuel
+
 function flash(color) {
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
@@ -164,7 +235,13 @@ function flash(color) {
   setTimeout(() => overlay.remove(), 150);
 }
 
-// bouton "Nouveau scan"
+function vibrate(type="") {
+  if (!navigator.vibrate) return;
+  if (type === "ok") navigator.vibrate([80]);
+  else if (type === "err") navigator.vibrate([150, 100, 150]);
+  else navigator.vibrate(60);
+}
+
 newScanBtn.onclick = () => {
   detailsEl.style.display = "none";
   statusEl.textContent = "Prêt à scanner.";
@@ -172,15 +249,13 @@ newScanBtn.onclick = () => {
   startScanner();
 };
 
-// bouton "Accueil"
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
 
-// === ♻️ Bouton "Réinitialiser les billets scannés" (protégé par mot de passe admin) ===
 const resetScanBtn = document.getElementById("resetScanBtn");
 if (resetScanBtn) {
   resetScanBtn.onclick = () => {
     const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
-    if (pwd === "admin123") { // 🔑 change ici ton mot de passe admin
+    if (pwd === "admin123") {
       if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
         localStorage.removeItem("scannedTickets");
         updateCounter();
