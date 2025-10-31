@@ -7,7 +7,18 @@
 
 <!-- Librairies externes -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+
+<!-- ✅ Ajoute la librairie EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<!-- ✅ Initialise ta clé publique EmailJS -->
+<script>
+  (function() {
+    emailjs.init("E4g_UFzGYQZBNH07m");
+    console.log("✅ EmailJS initialisé !");
+  })();
+</script>
+
 
 <!-- ✅ Firebase -->
 <script type="module">
@@ -896,6 +907,29 @@ button#editPrices {
 	button#addSeatCancel {
     background: black;
 }
+.group-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+/* Mode groupé : mise en évidence */
+.seat.selected {
+  box-shadow: 0 0 12px 3px rgba(33,150,243,0.7) !important;
+}
+body.admin .seat.selected {
+  transform: scale(1.15);
+}
+
+/* Vert clair en ajout, rouge clair en suppression */
+body.admin .seat.selected.add-mode {
+  background: #a5d6a7 !important;
+}
+body.admin .seat.selected.remove-mode {
+  background: #ef9a9a !important;
+}
+.hidden {
+  display: none !important;
+}
+
 </style>
 </head>
 
@@ -1036,7 +1070,7 @@ await new Promise(resolve => {
   check();
 });
 
-emailjs.init("2m3fNNkp36a2wCfZn");
+
 
 const db = window._firebaseDB;
 const ref = window._firebaseRef;
@@ -1094,6 +1128,40 @@ onValue(seatsRef, snapshot => {
 });
 
 function save(){ set(seatsRef, seats); }
+// 🎨 Nouvelle modale de choix du type de billet (accessible partout)
+async function askSeatType(id) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("ticketTypeModal");
+    const seatLabel = document.getElementById("ticketTypeSeat");
+    seatLabel.textContent = `🪑 Siège ${id}`;
+    modal.classList.remove("hidden");
+
+    function cleanup() {
+      modal.classList.add("hidden");
+      document.querySelectorAll(".ticket-type-btn").forEach(btn =>
+        btn.removeEventListener("click", onSelect)
+      );
+      cancelBtn.removeEventListener("click", onCancel);
+    }
+
+    function onSelect(e) {
+      const type = e.target.dataset.type;
+      cleanup();
+      resolve(type);
+    }
+
+    function onCancel() {
+      cleanup();
+      resolve(null);
+    }
+
+    const cancelBtn = document.getElementById("cancelTicketType");
+    document.querySelectorAll(".ticket-type-btn").forEach(btn =>
+      btn.addEventListener("click", onSelect)
+    );
+    cancelBtn.addEventListener("click", onCancel);
+  });
+}
 
 /* === Rendu === */
 function render() {
@@ -1117,26 +1185,54 @@ function render() {
 
 /* === Sélection === */
 async function toggle(id, el) {
-  if (admin && seats[id]) {
+
+// 🧩 Si on est en mode suppression groupée → on ne fait pas la logique normale
+if (groupMode === "remove" && admin) {
+  if (el.classList.contains("reserved") || el.classList.contains("paid")) {
+    // Sélectionne ou désélectionne le siège pour suppression
+    el.classList.toggle("selected");
+
+    if (el.classList.contains("selected")) {
+      groupChanges.push(id);
+    } else {
+      groupChanges = groupChanges.filter(x => x !== id);
+    }
+  }
+  return; // 🔁 On bloque ici : ne pas exécuter le reste de toggle()
+}
+
+// 🧩 Si on est en mode ajout groupé → même logique (pas de réservation immédiate)
+if (groupMode === "add" && admin) {
+  if (el.classList.contains("free")) {
+    el.classList.toggle("selected");
+
+    if (el.classList.contains("selected")) {
+      groupChanges.push({ id, name: groupClient });
+    } else {
+      groupChanges = groupChanges.filter(s => s.id !== id);
+    }
+  }
+  return; // 🟢 On bloque ici aussi
+}
+
+// 🧩 Sinon comportement normal
+if (admin && seats[id]) {
   if (confirm(`🔓 Libérer le siège ${id} ?`)) {
     const clientName = seats[id].name;
+    const clientEmail = seats[id].email;
     delete seats[id];
 
-    // 🧮 Recalculer les totaux restants pour ce client
+    // recalcul totaux
     let totalA = 0, totalC = 0, totalB = 0;
-    let totalAmount = 0;
-
     for (const data of Object.values(seats)) {
       if (data.name === clientName) {
-        totalA += parseInt(data.type === "adulte" ? 1 : 0);
-        totalC += parseInt(data.type === "enfant" ? 1 : 0);
-        totalB += parseInt(data.type === "moins8" ? 1 : 0);
+        totalA += (data.type === "adulte") ? 1 : 0;
+        totalC += (data.type === "enfant") ? 1 : 0;
+        totalB += (data.type === "moins8") ? 1 : 0;
       }
     }
+    const totalAmount = totalA * PRICE_ADULT + totalC * PRICE_CHILD;
 
-    totalAmount = totalA * PRICE_ADULT + totalC * PRICE_CHILD;
-
-    // 🔁 Appliquer les nouveaux totaux à tous les sièges restants du client
     for (const [sid, data] of Object.entries(seats)) {
       if (data.name === clientName) {
         data.nbAdult = totalA;
@@ -1149,24 +1245,29 @@ async function toggle(id, el) {
     save();
     render();
     updateTable();
-    updateStatsBar(); // ✅ rafraîchit aussi la barre du haut
-    // 📧 Envoi automatique d'un e-mail de mise à jour après suppression
-const clientData = Object.values(seats).find(s => s.name === clientName);
-if (clientData) {
-  await sendEmail(clientData);
-  console.log(`📨 Email mis à jour envoyé à ${clientData.email} après suppression de siège.`);
-}
+    updateStatsBar();
 
+    if (clientEmail) await notifyClientUpdate(clientEmail);
     alert(`✅ Siège ${id} libéré. Totaux mis à jour pour ${clientName}.`);
   }
   return;
 }
 
-  if (seats[id]) return alert("⚠️ Ce siège est déjà réservé !");
-  if (selected.includes(id)) selected = selected.filter(s => s !== id);
-  else selected.push(id);
+// 🎟️ comportement normal utilisateur
+if (!seats[id]) {
+  if (selected.includes(id)) {
+    selected = selected.filter(x => x !== id);
+  } else {
+    selected.push(id);
+  }
   render();
 }
+}
+
+
+  // ... le reste de ta fonction toggle
+
+
 
 /* === Ouvre/ferme la modale === */
 document.getElementById("confirm").onclick = () => {
@@ -1260,10 +1361,16 @@ document.getElementById("save").onclick = async () => {
   });
 
   save();
+
+// 📧 Envoie seulement si c’est une NOUVELLE réservation (pas un ajout groupé admin)
+if (!admin) {
   await sendEmail(user);
-  selected = [];
-  document.getElementById("modal").classList.add("hidden");
-  updateStatsBar(); // ✅ met à jour la barre du haut immédiatement
+}
+
+selected = [];
+document.getElementById("modal").classList.add("hidden");
+updateStatsBar();
+
 
   alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
 };
@@ -1271,19 +1378,118 @@ document.getElementById("save").onclick = async () => {
 
 /* === Email + QR === */
 async function sendEmail(user) {
+  console.log("📨 Envoi EmailJS vers", user.email);
+
   const reservedSeats = Object.entries(seats)
     .filter(([_, v]) => v.email === user.email)
     .map(([id]) => id)
     .join(", ");
-  const qrData = JSON.stringify({ nom: user.name, email: user.email, tel: user.phone, sieges: reservedSeats });
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    tel: user.phone,
+    sieges: reservedSeats
+  });
+
   const qrImage = await QRCode.toDataURL(qrData, { width: 180 });
-  emailjs.send("service_91fpmi6", "template_xzjnnc2", {
-    to_name: user.name,
-    to_email: user.email,
-    seats: reservedSeats,
-    phone: user.phone,
-    qr_image: qrImage
-  }).then(() => console.log("✅ Email envoyé")).catch(err => console.error("❌ Erreur EmailJS :", err));
+
+  const html = `
+    <h2>🎭 Confirmation de votre réservation — Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${user.name}</strong>,</p>
+    <p>Merci pour votre réservation.</p>
+    <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
+    <p><strong>💰 Montant total :</strong> ${user.amount.toFixed(2)} €</p>
+    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
+    <p>Voici votre QR Code de confirmation :</p>
+    <img src="${qrImage}" alt="QR Code" style="margin-top:8px;"/>
+    <p>À très bientôt au Théâtre Saint Martin 🎭</p>
+  `;
+
+  try {
+    await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+      to_email: user.email,
+      subject: "🎭 Confirmation de votre réservation",
+      message_html: html
+    });
+    console.log("✅ Email de confirmation envoyé à", user.email);
+  } catch (err) {
+    console.error("❌ Erreur EmailJS :", err);
+  }
+}
+
+async function notifyClientUpdate(email) {
+  // ✅ Si aucun email passé, on tente de le retrouver via le nom du client sélectionné
+  if (!email && typeof groupClient !== "undefined" && groupClient) {
+    const anySeat = Object.values(seats).find(s => s.name === groupClient);
+    if (anySeat && anySeat.email) {
+      email = anySeat.email;
+      console.log(`📩 Email récupéré automatiquement pour ${groupClient} → ${email}`);
+    }
+  }
+
+  if (!email) {
+    console.warn(`⚠️ Aucun email trouvé pour "${groupClient || "?"}" (email passé: ${email || "aucun"})`);
+    return;
+  }
+
+
+  const clientSeats = Object.entries(seats)
+    .filter(([id, s]) => s.email && s.email.toLowerCase() === email.toLowerCase())
+    .map(([id, s]) => ({ id, ...s }));
+
+  if (!clientSeats.length) {
+    console.warn("❌ Aucun siège trouvé pour ce client.");
+    return;
+  }
+
+  const added = groupMode === "add" ? groupChanges.map(s => s.id) : [];
+  const removed = groupMode === "remove" ? groupChanges : [];
+
+  const client = clientSeats[0];
+  const allSeats = clientSeats.map(s => s.id).join(", ");
+  const totalAmount = clientSeats[0].amount || 0;
+  const paye = clientSeats.every(s => s.paid);
+
+  const qrData = JSON.stringify({
+    nom: client.name,
+    email: client.email,
+    tel: client.tel || "",
+    sieges: allSeats,
+    paye
+  });
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+  const html = `
+    <h2>🎭 Mise à jour de votre réservation — Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${client.name}</strong>,</p>
+    <p>Votre réservation a été mise à jour par notre équipe.</p>
+
+    ${added.length ? `<p>🟢 <strong>Sièges ajoutés :</strong> ${added.join(", ")}</p>` : ""}
+    ${removed.length ? `<p>🔴 <strong>Sièges supprimés :</strong> ${removed.join(", ")}</p>` : ""}
+
+    <p>📍 <strong>Sièges actuels réservés :</strong> ${allSeats}</p>
+       <p>💳 <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}</p>
+
+    <p>Voici votre QR Code mis à jour :</p>
+    <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
+
+    <p>Merci et à bientôt au théâtre 🎭<br>— L’équipe Saint Martin</p>
+  `;
+
+  console.log("📧 Envoi du mail de mise à jour à", email);
+
+  try {
+    await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+      to_email: email,
+      subject: "🎭 Mise à jour de votre réservation",
+      message_html: html
+    });
+    console.log("✅ Email envoyé à", email);
+  } catch (err) {
+    console.error("❌ Erreur d’envoi du mail :", err);
+  }
 }
 
 /* === Mode Admin === */
@@ -1379,11 +1585,10 @@ for (const [id, data] of entries) {
   }
 
   grouped[key].seats.push({
-    id,
-    paid: data.paid || false,
-    nbAdult: data.nbAdult || 0,
-    nbChild: data.nbChild || 0,
-  });
+  id,
+  paid: !!data.paid,
+  type: data.type || null,   // 👈 essentiel
+});
 
 
   grouped[key].emails.add(data.email || "N/A");
@@ -1411,93 +1616,75 @@ for (const [id, data] of entries) {
 
   const content = document.createElement("div");
   content.className = "accordion-content";
-  content.innerHTML = `
-  ${[...info.emails].map(e => `<p><strong>Email :</strong> ${e}</p>`).join("")}
-  <p><strong>Téléphone :</strong> ${info.phone || "N/A"}</p>
-  ${(() => {
-  // 🧠 Récupère les sièges par type si disponible,
-  // sinon les répartit selon les nombres de personnes enregistrées.
-  const allSeats = [...info.seats];
-  let adults = allSeats.filter(s => s.type === "adulte");
-  let children = allSeats.filter(s => s.type === "enfant");
-  let babies = allSeats.filter(s => s.type === "moins8");
+  // --- Ajout à faire juste avant content.innerHTML = ...
+  const adults = info.seats.filter(s => s.type === "adulte");
+const children = info.seats.filter(s => s.type === "enfant");
+const babies = info.seats.filter(s => s.type === "moins8");
 
-  // ✅ Si aucun type n’est défini, on répartit dans l’ordre :
-  if (!adults.length && !children.length && !babies.length) {
-    const nbA = info.nbAdult || 0;
-    const nbC = info.nbChild || 0;
-    const nbB = info.nbBaby || 0;
+content.innerHTML = `
+  <p><strong>Email :</strong> ${info.email || "—"}</p>
+  <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
 
-    adults = allSeats.slice(0, nbA);
-    children = allSeats.slice(nbA, nbA + nbC);
-    babies = allSeats.slice(nbA + nbC, nbA + nbC + nbB);
-  }
-
-  const adultSeats = adults.map(s => s.id).join(", ") || "—";
-  const childSeats = children.map(s => s.id).join(", ") || "—";
-  const babySeats  = babies.map(s => s.id).join(", ") || "—";
-
-  return `
-  <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € → 
-    <span style="color:#1565c0;font-weight:600">${adultSeats}</span>
+  <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
+    <span style="color:#1565c0;font-weight:600">
+      ${adults.map(s => s.id).join(", ") || "—"}
+    </span>
   </p>
-  <p><strong>👧 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € → 
-    <span style="color:#0288d1;font-weight:600">${childSeats}</span>
+
+  <p><strong>🧒 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € →
+    <span style="color:#0288d1;font-weight:600">
+      ${children.map(s => s.id).join(", ") || "—"}
+    </span>
   </p>
-  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} → 
-    <span style="color:#6a1b9a;font-weight:600">${babySeats}</span>
+
+  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} →
+    <span style="color:#6a1b9a;font-weight:600">
+      ${babies.map(s => s.id).join(", ") || "—"}
+    </span>
   </p>
-  <p><strong>Total :</strong> ${info.amount ? info.amount.toFixed(2) + " €" : "0 €"}</p>
+
+  <p><strong>Total :</strong> ${(
+  (info.seats.filter(s => s.type === "adulte").length * PRICE_ADULT) +
+  (info.seats.filter(s => s.type === "enfant").length * PRICE_CHILD)
+).toFixed(2)} €</p>
+
 `;
 
-})()}
+content.innerHTML += `
+  <div class="seat-list" style="margin-top:8px;">
+    ${info.seats.map(s => {
+      const icon =
+        s.type === "adulte" ? "🧍" :
+        s.type === "enfant" ? "🧒" :
+        s.type === "moins8" ? "🍼" : "🎟️";
 
+      const paidIcon = s.paid ? "💰" : "❌";
 
-${(() => {
-  // 🧩 On reconstruit les groupes de sièges par type.
-  const adultSeats = info.seats
-    .filter(s => (s.type === "adulte") || (!s.type && /[13579]$/.test(s.id))) // 🔁 fallback si pas de type
-    .map(s => s.id)
-    .join(", ") || "—";
-
-  const childSeats = info.seats
-    .filter(s => (s.type === "enfant") || (!s.type && /[02468]$/.test(s.id))) // 🔁 fallback simple
-    .map(s => s.id)
-    .join(", ") || "—";
-
-  const babySeats = info.seats
-    .filter(s => s.type === "moins8")
-    .map(s => s.id)
-    .join(", ") || "—";
-
-  // ✅ On renvoie le HTML voulu (sinon → undefined)
-  return `
-  
-  `;
-})()}
+      return `
+        <span class="badge-seat" style="
+          background:${s.paid ? "#43a047" : "#ef5350"};
+          color:white;border-radius:6px;padding:4px 8px;font-size:0.85rem;
+        ">${icon} ${s.id} ${paidIcon}</span>
+      `;
+    }).join("")}
+  </div>
 
 
 
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;">
+  <label>💶 Tout payé 
+    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}>
+  </label>
 
-    <div class="seat-list" style="margin-top:8px;">
-      ${info.seats.map(s => {
-        const type = s.type === "adulte" ? "🧍" : s.type === "enfant" ? "👶" : "🎟️";
-        const paidIcon = s.paid ? "💰" : "❌";
-        return `
-          <span class="badge-seat" style="
-            background:${s.paid ? "#43a047" : "#ef5350"};
-            color:white;
-            border-radius:6px;
-            padding:4px 8px;
-            font-size:0.85rem;
-          ">${type} ${s.id} ${paidIcon}</span>`;
-      }).join("")}
-    </div>
+  ${admin ? `
+  <div class="group-actions" data-client="${name}" style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="group-add-btn" data-name="${name}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajout groupé</button>
+    <button class="group-remove-btn" data-name="${name}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️ Suppression groupée</button>
+    <button class="group-validate-btn" data-name="${name}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider</button>
+  </div>
+  ` : ""}
+</div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-      <label>💶 Tout payé <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}></label>
-      ${admin ? `<button class="add-seat-btn" data-name="${name}" style="background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajouter siège</button>` : ""}
-    </div>
   `;
 
   div.append(header, content);
@@ -1506,8 +1693,9 @@ ${(() => {
 
 
   // === Gestion stable de la case "Tout payé" (sans cumul) ===
-document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-  cb.addEventListener("change", e => {
+    // === Gestion stable de la case "Tout payé" (sans cumul) ===
+    document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+      cb.addEventListener("change", async e => {
     if (!admin) {
       alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
       e.target.checked = !e.target.checked;
@@ -1516,42 +1704,41 @@ document.querySelectorAll(".paid-toggle-client").forEach(cb => {
 
     const clientName = e.target.dataset.name;
     const isPaid = e.target.checked;
-    const clientSeats = Object.entries(seats).filter(([_, d]) => d.name === clientName);
-    if (!clientSeats.length) return;
 
-    if (isPaid) {
-      // ✅ Marque tout comme payé, sans modifier les quantités existantes
-      for (const [id, data] of clientSeats) {
-        data.paid = true;
+    console.log(`💶 Mise à jour du paiement pour ${clientName} → ${isPaid}`);
 
-        // 💶 recalcul du montant uniquement si inexistant
-        if (!data.amount || data.amount === 0) {
-          const nbA = parseInt(data.nbAdult || 0);
-          const nbC = parseInt(data.nbChild || 0);
-          data.amount = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
-        }
+    // ✅ Met à jour tous les sièges de ce client dans Firebase
+    for (const [id, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        data.paid = isPaid;
+        await set(ref(db, `seats/${id}`), data);
       }
+    }
 
-      save();
-      render();
-      updateTable();
-      updateStatsBar();
-      console.log(`✅ ${clientName} marqué comme payé (montants recalculés si nécessaire)`);
+    // 🔄 Rafraîchit les affichages
+    render();
+    updateTable();
+    updateStatsBar();
 
-    } else {
-      // ❌ Annule le paiement sans toucher aux quantités
-      for (const [id, data] of clientSeats) {
-        data.paid = false;
+    // 📧 (Optionnel) Notifie le client
+    const clientSeat = Object.values(seats).find(s => s.name === clientName);
+    if (clientSeat?.email) {
+      try {
+        await notifyClientUpdate(clientSeat.email);
+        console.log(`📨 Email envoyé à ${clientSeat.email}`);
+      } catch (err) {
+        console.error("Erreur d’envoi d’e-mail :", err);
       }
-
-      save();
-      render();
-      updateTable();
-      updateStatsBar();
-      console.log(`❌ Paiement retiré pour ${clientName}`);
     }
   });
-});
+
+
+
+
+
+}); // ← ferme cb.addEventListener
+};   // ← ferme updateTable()
+
 
 
 
@@ -1671,14 +1858,17 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
     const type = added < nbA ? "adulte" : added < nbA + nbC ? "enfant" : "moins8";
 
     seats[id] = {
-      ...clientSeat[1],
-      paid: paidBox.checked,
-      nbAdult: newA,
-      nbChild: newC,
-      nbBaby: newB,
-      type,
-      amount: newTotal,
-    };
+  name: groupClient,
+  email: baseData.email,
+  phone: baseData.phone,
+  paid: baseData.paid || false,
+  nbAdult: baseData.nbAdult,
+  nbChild: baseData.nbChild,
+  nbBaby: baseData.nbBaby,
+  amount: baseData.amount,
+  type: seatType, // ✅ maintenant le bon type est gardé
+};
+
     added++;
   }
 
@@ -1713,8 +1903,8 @@ document.querySelectorAll(".add-seat-btn").forEach(btn => {
 // 📧 Envoi automatique d'un e-mail de mise à jour avec QR code actualisé
 const clientData = Object.values(seats).find(s => s.name === clientName);
 if (clientData) {
-  await sendEmail(clientData);
-  console.log(`📨 Email mis à jour envoyé à ${clientData.email} après ajout de siège.`);
+  await notifyClientUpdate(clientData.email); // ✅ on envoie la version “mise à jour complète”
+  console.log(`📨 Email de mise à jour envoyé à ${clientData.email} après ajout de siège.`);
 }
 
     alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
@@ -1730,10 +1920,165 @@ if (clientData) {
 
 
 
+// === ⚙️ Gestion des ajouts/suppressions groupés (version finale propre) ===
+let groupMode = null;
+let groupClient = null;
+let groupChanges = [];
 
-} // ← dernière accolade de la fonction updateTable()
+// === ⚙️ Gestion des ajouts/suppressions groupés ===
+document.addEventListener("click", async (e) => {
+  const addBtn = e.target.closest(".group-add-btn");
+  const removeBtn = e.target.closest(".group-remove-btn");
+  const validateBtn = e.target.closest(".group-validate-btn");
+
+  // ➕ AJOUT GROUPÉ
+  if (addBtn) {
+    groupMode = "add";
+    groupClient = addBtn.dataset.name;
+    groupChanges = [];
+    addBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
+    alert(`🟢 Mode AJOUT groupé activé pour ${groupClient}. Sélectionnez les sièges libres à ajouter.`);
+    return;
+  }
+
+  // 🗑️ SUPPRESSION GROUPÉE
+  if (removeBtn) {
+    groupMode = "remove";
+    groupClient = removeBtn.dataset.name;
+    groupChanges = [];
+    removeBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
+    alert(`🔴 Mode SUPPRESSION groupée activé pour ${groupClient}. Cliquez sur les sièges réservés à supprimer.`);
+    return;
+  }
+
+  // ✅ VALIDATION
+  if (validateBtn) {
+    if (!groupClient || !groupChanges.length) {
+      alert("Aucune modification détectée.");
+      return;
+    }
+
+    const action = groupMode === "add" ? "ajoutés" : "supprimés";
+    if (!confirm(`Confirmer ${groupChanges.length} siège(s) ${action} pour ${groupClient} ?`)) return;
+
+    // --- SUPPRESSION
+    if (groupMode === "remove") {
+      for (const id of groupChanges) {
+        if (seats[id]) delete seats[id];
+      }
+
+      const clientData = Object.values(seats).find(s => s.name === groupClient);
+      if (clientData?.email) {
+        const sendMail = await askEmailConfirmation(clientData.email);
+
+        if (sendMail) await notifyClientUpdate(clientData.email);
+      }
+    }
+
+    // --- AJOUT
+    if (groupMode === "add") {
+      const baseData = Object.values(seats).find(s => s.name === groupClient);
+      if (!baseData) {
+        alert(`❌ Impossible d’ajouter : aucune donnée trouvée pour ${groupClient}`);
+      } else {
+        let addAdult = 0, addChild = 0, addBaby = 0;
+
+        for (const { id } of groupChanges) {
+          const seatType = await askSeatType(id);
+          if (!seatType) continue;
+
+          if (seatType === "adulte") addAdult++;
+          else if (seatType === "enfant") addChild++;
+          else if (seatType === "moins8") addBaby++;
+
+          seats[id] = {
+            name: groupClient,
+            email: baseData.email,
+            phone: baseData.phone,
+            paid: baseData.paid || false,
+            nbAdult: baseData.nbAdult || 0,
+            nbChild: baseData.nbChild || 0,
+            nbBaby: baseData.nbBaby || 0,
+            amount: baseData.amount || 0,
+            type: seatType
+          };
+        }
+
+        const newAdult = (baseData.nbAdult || 0) + addAdult;
+        const newChild = (baseData.nbChild || 0) + addChild;
+        const newBaby  = (baseData.nbBaby  || 0) + addBaby;
+        const newAmount = newAdult * PRICE_ADULT + newChild * PRICE_CHILD;
+
+        const refId = Object.entries(seats).find(([sid, s]) => s.name === groupClient)?.[0];
+        if (refId && seats[refId]) {
+          seats[refId].nbAdult = newAdult;
+          seats[refId].nbChild = newChild;
+          seats[refId].nbBaby  = newBaby;
+          seats[refId].amount  = newAmount;
+        }
+
+        save();
+        render();
+        updateTable();
+        updateStatsBar();
+
+        const clientData = Object.values(seats).find(s => s.name === groupClient);
+        if (clientData?.email) {
+          const sendMail = await askEmailConfirmation(clientData.email);
+
+          if (sendMail) await notifyClientUpdate(clientData.email);
+        }
+
+        alert(`✅ Ajout terminé : ${addAdult} adulte(s), ${addChild} enfant(s), ${addBaby} -8 ans`);
+      }
+    }
+
+    // --- FIN ---
+    alert(`✅ ${groupChanges.length} siège(s) ${groupMode === "add" ? "ajouté(s)" : "supprimé(s)"} pour ${groupClient}.`);
+
+    groupMode = null;
+    groupClient = null;
+    groupChanges = [];
+    document.querySelectorAll(".group-validate-btn").forEach(b => (b.style.display = "none"));
+  }
+}); // ✅ plus aucune erreur ici
 
 
+// === Clic sur un siège pendant un mode groupé ===
+hall.addEventListener("click", (e) => {
+  const seatEl = e.target.closest(".seat");
+  if (!seatEl || !groupMode || !groupClient) return;
+
+  const id = seatEl.dataset.id;
+
+  // === Mode AJOUT ===
+  if (groupMode === "add" && seatEl.classList.contains("reserved")) {
+    seatEl.classList.toggle("selected", !seatEl.classList.contains("selected"));
+    if (seatEl.classList.contains("selected")) {
+      seatEl.classList.add("add-mode");
+      seatEl.style.backgroundColor = "#a5d6a7"; // vert clair
+
+      groupChanges.push({ id, name: groupClient });
+    } else {
+      seatEl.classList.remove("add-mode");
+      seatEl.style.backgroundColor = "";
+
+      groupChanges = groupChanges.filter(s => s.id !== id);
+    }
+  }
+
+  // === Mode SUPPRESSION ===
+  else if (groupMode === "remove" && seatEl.classList.contains("reserved")) {
+    seatEl.classList.toggle("selected", !seatEl.classList.contains("selected"));
+    if (seatEl.classList.contains("selected")) {
+      seatEl.classList.add("remove-mode");
+      groupChanges.push(id);
+    } else {
+      seatEl.classList.remove("remove-mode");
+      groupChanges = groupChanges.filter(x => x !== id);
+    }
+  }
+});
 
 
 
@@ -1811,17 +2156,13 @@ function updatePriceLabels() {
   if (addChild) addChild.textContent = PRICE_CHILD.toFixed(2);
 }
 
-/* === Ouvrir la modale === */
+/* === Ouvrir/Fermer la modale === */
 function openPriceModal() {
   priceAdultInput.value = PRICE_ADULT;
   priceChildInput.value = PRICE_CHILD;
   priceModal.classList.remove("hidden");
 }
-
-/* === Fermer la modale === */
-document.getElementById("cancelPrices").onclick = () => {
-  priceModal.classList.add("hidden");
-};
+document.getElementById("cancelPrices").onclick = () => priceModal.classList.add("hidden");
 
 /* === Enregistrer les nouveaux tarifs === */
 document.getElementById("savePrices").onclick = () => {
@@ -1846,24 +2187,23 @@ document.getElementById("savePrices").onclick = () => {
   updateTable();
 
   const msg = document.getElementById("priceMessage");
-  msg.textContent = `✔️ Tarifs mis à jour :
-  Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € | 
-  Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
-  msg.style.display = "block";
-  msg.style.opacity = 1;
+  if (msg) {
+    msg.textContent = `✔️ Tarifs mis à jour :
+    Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € |
+    Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
+    msg.style.display = "block";
+    msg.style.opacity = 1;
 
-  // Effet de disparition douce
-  setTimeout(() => {
-    msg.style.transition = "opacity 0.5s";
-    msg.style.opacity = 0;
     setTimeout(() => {
-      msg.style.display = "none";
-      priceModal.classList.add("hidden");
-    }, 600);
-  }, 1800);
+      msg.style.transition = "opacity 0.5s";
+      msg.style.opacity = 0;
+      setTimeout(() => {
+        msg.style.display = "none";
+        priceModal.classList.add("hidden");
+      }, 600);
+    }, 1800);
+  }
 };
-
-
 
 /* === Afficher le bouton si admin === */
 function toggleAdminUI() {
@@ -1871,52 +2211,95 @@ function toggleAdminUI() {
   editPricesBtn.style.display = isAdmin ? "inline-block" : "none";
 }
 
-
-
-
-/* === Lier le bouton principal === */
+/* === Initialisation === */
 editPricesBtn.onclick = openPriceModal;
-
-/* === Initialiser au démarrage === */
 updatePriceLabels();
 toggleAdminUI();
 
-// === 🔄 Mise à jour complète de la barre de statistiques ===
+
+
+  // 🔹 Regroupe par client
+  const grouped = {};
+  for (const [id, data] of Object.entries(seats)) {
+    if (!grouped[data.name]) grouped[data.name] = [];
+    grouped[data.name].push(data);
+  }
+
+// 🔄 Nouvelle logique : on compte chaque siège payé individuellement
 function updateStatsBar() {
   let totalAmount = 0;
   let totalAdult = 0;
   let totalChild = 0;
   let totalBaby = 0;
-  let soldSeats = Object.keys(seats).length;
-  const processedClients = new Set();
+  const soldSeats = Object.keys(seats).length;
 
+  // 🔹 Regroupe les sièges par client
+  const grouped = {};
   for (const data of Object.values(seats)) {
-    if (data.paid && !processedClients.has(data.name)) {
-      let amount = parseFloat(data.amount);
-      if (isNaN(amount) || amount === 0) {
-        const nbA = parseInt(data.nbAdult || 0);
-        const nbC = parseInt(data.nbChild || 0);
-        amount = nbA * PRICE_ADULT + nbC * PRICE_CHILD;
-      }
+    if (!grouped[data.name]) grouped[data.name] = [];
+    grouped[data.name].push(data);
+  }
 
-      totalAmount += amount;
-      totalAdult += parseInt(data.nbAdult || 0);
-      totalChild += parseInt(data.nbChild || 0);
-      totalBaby += parseInt(data.nbBaby || 0);
-      processedClients.add(data.name);
+  // 🔹 Pour chaque client : si tous ses sièges sont payés → on recalcule son total
+  for (const client of Object.values(grouped)) {
+    const allPaid = client.every(s => s.paid);
+    if (allPaid) {
+      const nbAdult = client.filter(s => s.type === "adulte").length;
+      const nbChild = client.filter(s => s.type === "enfant").length;
+      const nbBaby  = client.filter(s => s.type === "moins8").length;
+
+      totalAmount += nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
+      totalAdult  += nbAdult;
+      totalChild  += nbChild;
+      totalBaby   += nbBaby;
     }
   }
 
-  document.getElementById("stat-total").textContent = `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
-  document.getElementById("stat-adult").textContent = `🧍 Adultes : ${totalAdult}`;
-  document.getElementById("stat-child").textContent = `👶 Enfants : ${totalChild}`;
-  document.getElementById("stat-baby").textContent = `🍼 Moins de 8 ans : ${totalBaby}`;
-  document.getElementById("stat-sold").textContent = `🎟️ Places réservées : ${soldSeats}`;
+  // 🔄 Mise à jour visuelle
+  document.getElementById("stat-total").textContent =
+    `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
+  document.getElementById("stat-adult").textContent =
+    `🧍 Adultes : ${totalAdult}`;
+  document.getElementById("stat-child").textContent =
+    `👶 Enfants : ${totalChild}`;
+  document.getElementById("stat-baby").textContent =
+    `🍼 Moins de 8 ans : ${totalBaby}`;
+  document.getElementById("stat-sold").textContent =
+    `🎟️ Places réservées : ${soldSeats}`;
+}
+
+
+async function askEmailConfirmation(email) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("emailConfirmModal");
+    const text = document.getElementById("emailConfirmText");
+    text.textContent = `Souhaitez-vous envoyer un e-mail de mise à jour à ${email} ?`;
+
+    modal.classList.remove("hidden");
+
+    const yesBtn = document.getElementById("emailConfirmYes");
+    const noBtn = document.getElementById("emailConfirmNo");
+
+    function cleanup(result) {
+      modal.classList.add("hidden");
+      yesBtn.removeEventListener("click", onYes);
+      noBtn.removeEventListener("click", onNo);
+      resolve(result);
+    }
+
+    function onYes() { cleanup(true); }
+    function onNo() { cleanup(false); }
+
+    yesBtn.addEventListener("click", onYes);
+    noBtn.addEventListener("click", onNo);
+  });
 }
 
 
 
 </script>
+
+
 
 <!-- 🧮 Fenêtre admin : saisie adultes/enfants -->
 <div id="adminPaymentModal" class="modal hidden">
@@ -2016,12 +2399,52 @@ function updateStatsBar() {
     </div>
   </div>
 </div>
+<!-- === Modal choix du type de billet === -->
+<div id="typeModal" class="hidden" style="
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;">
+  <div style="background: white; padding: 20px 30px; border-radius: 12px; text-align: center;">
+    <h3>🎫 Type de billet pour les sièges ajoutés</h3>
+    <p>Sélectionnez le type appliqué à tous les nouveaux sièges :</p>
+    <button class="type-btn" data-type="adulte" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#1565c0;color:white;">🧍 Adulte</button>
+    <button class="type-btn" data-type="enfant" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#2e7d32;color:white;">🧒 Enfant</button>
+    <button class="type-btn" data-type="moins8" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#f57c00;color:white;">🍼 Moins de 8 ans</button>
+  </div>
+</div>
+<!-- 🎫 Modal de choix du type de billet -->
+<div id="ticketTypeModal" class="modal hidden">
+  <div class="modal-content" style="max-width: 360px; text-align: center;">
+    <h3>🎫 Type de billet</h3>
+    <p id="ticketTypeSeat" style="font-weight:600; color:#0d47a1;"></p>
+    <p>Choisis le type de place à attribuer :</p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+      <button class="ticket-type-btn" data-type="adulte" style="background:#1565c0;color:#fff;">🧍 Adulte</button>
+      <button class="ticket-type-btn" data-type="enfant" style="background:#2e7d32;color:#fff;">🧒 Enfant</button>
+      <button class="ticket-type-btn" data-type="moins8" style="background:#f57c00;color:#fff;">🍼 Moins de 8 ans</button>
+      <button id="cancelTicketType" style="background:#757575;color:#fff;">❌ Annuler</button>
+    </div>
+  </div>
+</div>
 
+<!-- 🔔 Modale de confirmation d'envoi d'email -->
+<div id="emailConfirmModal" class="modal hidden">
+  <div class="modal-content" style="text-align:center; max-width:400px;">
+    <h3>📩 Envoi d’e-mail de mise à jour</h3>
+    <p id="emailConfirmText" style="margin:15px 0;">Souhaitez-vous envoyer un e-mail à cet utilisateur ?</p>
+    <div style="display:flex;justify-content:center;gap:15px;margin-top:10px;">
+      <button id="emailConfirmYes" style="background:#1565c0;color:white;">✅ Oui</button>
+      <button id="emailConfirmNo" style="background:#9e9e9e;color:white;">❌ Non</button>
+    </div>
+  </div>
+</div>
 
 
 
 </body>
 </html>
+
 
 
 
