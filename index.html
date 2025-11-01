@@ -302,38 +302,53 @@ h1 {
     const seatsRef = ref(db, "seats");
 
     onValue(seatsRef, (snapshot) => {
-      const data = snapshot.val() || {};
-      let totalEncaisse = 0;
-      let totalReservations = 0;
-      let billetsNonPayes = 0;
-      const totalPlacesMax = 200;
+  const data = snapshot.val() || {};
 
-      for (const seatId in data) {
-        const seat = data[seatId];
-        if (!seat) continue;
-        if (seat.reserved) totalReservations++;
-        if (seat.paid) {
-          totalEncaisse += seat.type === "adulte" ? 14 :
-                           seat.type === "enfant" ? 10 : 0;
-        } else if (seat.reserved) {
-          billetsNonPayes++;
-        }
-      }
+  let totalEncaisse = 0;
+  let totalReservations = 0;
+  let billetsNonPayes = 0;
+  let totalPlacesOccupees = 0; // nombre de places réservées/payées
+  const totalPlacesMax = 200; // adapte à ta salle
 
-      const tauxRemplissage = Math.round((totalReservations / totalPlacesMax) * 100);
-      document.getElementById("totalReserved").textContent = totalReservations;
-      document.getElementById("totalAmount").textContent = totalEncaisse.toFixed(2) + " €";
-      document.getElementById("fillRate").textContent = tauxRemplissage + "%";
+  for (const seatId in data) {
+    const seat = data[seatId];
+    if (!seat) continue;
 
-      const alertDiv = document.getElementById("alerts");
-      if (billetsNonPayes === 0) {
-        alertDiv.textContent = "Tous les billets sont payés ✅";
-        alertDiv.classList.add("good");
-      } else {
-        alertDiv.textContent = `${billetsNonPayes} billet${billetsNonPayes > 1 ? "s" : ""} non payé${billetsNonPayes > 1 ? "s" : ""} ⚠️`;
-        alertDiv.classList.remove("good");
-      }
-    });
+    // --- Siège réservé (payé ou non)
+    if (seat.reserved === true) {
+      totalReservations++;
+      totalPlacesOccupees++; // pour le taux
+    }
+
+    // --- Paiement
+    if (seat.paid === true) {
+      totalEncaisse += seat.type === "adulte" ? 14 :
+                       seat.type === "enfant" ? 10 :
+                       seat.type === "moins8" ? 0 : 0;
+    } else if (seat.reserved === true) {
+      billetsNonPayes++;
+    }
+  }
+
+  // --- Calcul taux de remplissage
+  const tauxRemplissage = Math.round((totalPlacesOccupees / totalPlacesMax) * 100);
+
+  // --- Mise à jour des champs
+  document.getElementById("totalReserved").textContent = totalReservations;
+  document.getElementById("totalAmount").textContent = totalEncaisse.toFixed(2) + " €";
+  document.getElementById("fillRate").textContent = tauxRemplissage + "%";
+
+  // --- Alerte billets non payés
+  const alertDiv = document.getElementById("alerts");
+  if (billetsNonPayes === 0) {
+    alertDiv.textContent = "Tous les billets sont payés ✅";
+    alertDiv.classList.add("good");
+  } else {
+    alertDiv.textContent = `${billetsNonPayes} billet${billetsNonPayes > 1 ? "s" : ""} non payé${billetsNonPayes > 1 ? "s" : ""} ⚠️`;
+    alertDiv.classList.remove("good");
+  }
+});
+
 
     document.querySelector("button:nth-of-type(1)").onclick = () => window.location.href = "salle.html";
     document.querySelector("button:nth-of-type(2)").onclick = () => window.location.href = "scanner.html";
