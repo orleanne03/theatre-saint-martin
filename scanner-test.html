@@ -292,31 +292,61 @@ window.addEventListener("load", startScanner);
 </div>
 
 <script>
-// === TABLEAU DE BORD ===
+<!-- === Tableau de bord en accordéon === -->
+<div class="panel">
+  <button id="toggleDashboard" class="violet" style="width:100%;text-align:left;font-size:16px;">
+    📋 Historique des billets scannés ▼
+  </button>
+
+  <div id="dashboardPanel" style="display:none;margin-top:10px;">
+    <table id="scanTable" style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="background:#e3f2fd;">
+          <th style="padding:8px;border:1px solid #ccc;">Nom</th>
+          <th style="padding:8px;border:1px solid #ccc;">Sièges</th>
+          <th style="padding:8px;border:1px solid #ccc;">Date</th>
+          <th style="padding:8px;border:1px solid #ccc;">🗑️</th>
+        </tr>
+      </thead>
+      <tbody id="scanTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// === ACCORDÉON TABLEAU DE BORD ===
 const dashboardPanel = document.getElementById("dashboardPanel");
 const scanTableBody = document.getElementById("scanTableBody");
+const toggleDashboard = document.getElementById("toggleDashboard");
+
+toggleDashboard.onclick = () => {
+  const open = dashboardPanel.style.display === "block";
+  dashboardPanel.style.display = open ? "none" : "block";
+  toggleDashboard.textContent = open 
+    ? "📋 Historique des billets scannés ▼" 
+    : "📋 Historique des billets scannés ▲";
+};
 
 function loadDashboard(){
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  scanTableBody.innerHTML = "";
+
   if (scanned.length === 0) {
-    dashboardPanel.style.display = "none";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucun billet scanné</td>`;
+    scanTableBody.appendChild(tr);
     return;
   }
 
-  dashboardPanel.style.display = "block";
-  scanTableBody.innerHTML = "";
-
   scanned.forEach((raw, index) => {
     let data, decoded;
-    try { decoded = safeDecode(raw); data = JSON.parse(decoded); } catch(e){ data = null; }
+    try { decoded = safeDecode(raw); data = JSON.parse(decoded); } catch(e){ data = {}; }
     const dateStr = new Date().toLocaleString("fr-FR");
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td style="border:1px solid #ccc;padding:6px;">${data?.nom || "(inconnu)"}</td>
-      <td style="border:1px solid #ccc;padding:6px;">${data?.email || "-"}</td>
-      <td style="border:1px solid #ccc;padding:6px;">${data?.tel || "-"}</td>
-      <td style="border:1px solid #ccc;padding:6px;">${data?.sieges || "-"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data.nom || "(inconnu)"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data.sieges || "-"}</td>
       <td style="border:1px solid #ccc;padding:6px;">${dateStr}</td>
       <td style="border:1px solid #ccc;padding:6px;text-align:center;">
         <button class="violet" style="padding:4px 8px;font-size:12px;" onclick="deleteScan(${index})">✖</button>
@@ -346,6 +376,8 @@ onScanSuccess = async function(text) {
 window.addEventListener("load", loadDashboard);
 </script>
 
+
 </body>
 </html>
+
 
