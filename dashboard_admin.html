@@ -1,244 +1,237 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎭 Théâtre Saint Martin – Tableau de bord admin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎭 Tableau de bord – Théâtre Saint Martin</title>
 
-<!-- Firebase -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #6d0019, #1a0006 90%);
+      color: #fff8e1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyXXXX_TON_API_KEY",
-    authDomain: "theatre-saint-martin.firebaseapp.com",
-    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "theatre-saint-martin",
-    storageBucket: "theatre-saint-martin.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcd1234efgh"
-  };
+    header {
+      background: linear-gradient(90deg, #b71c1c, #880e4f);
+      width: 100%;
+      text-align: center;
+      padding: 15px 0;
+      font-weight: 700;
+      font-size: 1.3rem;
+      color: #ffeb3b;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    .dashboard {
+      margin-top: 25px;
+      width: 90%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
 
-  window._firebaseDB = db;
-  window._firebaseRef = ref;
-  window._firebaseOnValue = onValue;
-</script>
+    .card {
+      background: linear-gradient(145deg, #b71c1c, #4a0010);
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff8e1;
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: scale(1.02);
+    }
 
-<style>
-body {
-  font-family: "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #7b1fa2 0%, #311b92 100%);
-  margin: 0;
-  color: #fff;
-  text-align: center;
-}
+    .card .icon {
+      width: 38px;
+      height: 38px;
+      fill: #ffeb3b;
+      flex-shrink: 0;
+    }
+    .card .info {
+      text-align: right;
+    }
+    .card .title {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    .card .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fffde7;
+    }
 
-header {
-  background: linear-gradient(90deg, #b71c1c, #880e4f);
-  color: #ffeb3b;
-  padding: 15px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
+    .alerts {
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 420px;
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
 
-#stats {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 20px auto;
-  width: 90%;
-  max-width: 420px;
-}
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 25px;
+      width: 90%;
+      max-width: 420px;
+    }
+    .actions button {
+      flex: 1;
+      background: linear-gradient(90deg, #c62828, #ad1457);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      padding: 12px 0;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    .actions button:hover {
+      opacity: 0.85;
+    }
 
-.card {
-  background: linear-gradient(135deg, #d32f2f, #880e4f);
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  text-align: left;
-  color: #fff;
-  transition: transform 0.2s ease;
-}
-.card:hover {
-  transform: translateY(-3px);
-}
-.card h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #ffeb3b;
-}
-.card p {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin: 6px 0 0;
-}
-
-.alerts {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 15px;
-  width: 90%;
-  margin: 0 auto 15px;
-  text-align: left;
-}
-.alert {
-  background: rgba(255,255,255,0.2);
-  padding: 8px 10px;
-  border-radius: 6px;
-  margin: 5px 0;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.alert.warning { background: rgba(255,193,7,0.25); color: #fff59d; }
-.alert.danger { background: rgba(244,67,54,0.3); color: #ffebee; }
-.alert.info { background: rgba(33,150,243,0.25); color: #bbdefb; }
-
-.actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-button {
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  transition: 0.3s;
-}
-button#back { background: #424242; }
-button#scan { background: #d32f2f; }
-button#back:hover, button#scan:hover { opacity: 0.85; }
-
-footer {
-  font-size: 12px;
-  opacity: 0.7;
-  margin: 20px 0;
-}
-</style>
+    footer {
+      margin-top: auto;
+      padding: 15px 0;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+  </style>
 </head>
 
 <body>
-<header>🎭 Tableau de bord – Théâtre Saint Martin</header>
+  <header>🎭 TABLEAU DE BORD ADMIN</header>
 
-<section class="alerts" id="alerts">
-  <div class="alert info">ℹ️ Chargement des données...</div>
-</section>
+  <section class="dashboard">
+    <div class="card">
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 
+        2v14c0 1.1.9 2 2 2h14c1.1 0 
+        2-.9 2-2V6c0-1.1-.9-2-2-2zm0 
+        16H5V9h14v11zM7 11h5v5H7z"/>
+      </svg>
+      <div class="info">
+        <div class="title">Réservations</div>
+        <div class="value" id="totalReserved">0</div>
+      </div>
+    </div>
 
-<section id="stats">
-  <div class="card">
-    <h3>💰 Total encaissé</h3>
-    <p id="totalAmount">0 €</p>
+    <div class="card">
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M12 1C5.925 1 1 5.925 1 
+        12s4.925 11 11 11 11-4.925 
+        11-11S18.075 1 12 1zm0 
+        20c-4.97 0-9-4.03-9-9s4.03-9 
+        9-9 9 4.03 9 9-4.03 9-9 
+        9zm.5-13h-1v4.25l3.5 
+        2.1.5-.85-3-1.8V8z"/>
+      </svg>
+      <div class="info">
+        <div class="title">Encaissement global</div>
+        <div class="value" id="totalAmount">0 €</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <svg class="icon" viewBox="0 0 24 24">
+        <path d="M12 2C8.13 2 5 5.13 5 
+        9c0 5.25 7 13 7 13s7-7.75 
+        7-13c0-3.87-3.13-7-7-7zm0 
+        9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 
+        2.5-2.5 2.5 1.12 2.5 
+        2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+      <div class="info">
+        <div class="title">Taux de remplissage</div>
+        <div class="value" id="fillRate">0%</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="alerts" id="alerts">
+    Chargement des données...
   </div>
-  <div class="card">
-    <h3>🎟️ Places réservées</h3>
-    <p id="totalReserved">0</p>
+
+  <div class="actions">
+    <button id="btnNew">Nouvelle vente</button>
+    <button id="btnScan">Vérifier billet</button>
   </div>
-  <div class="card">
-    <h3>🧍 Adultes</h3>
-    <p id="totalAdults">0</p>
-  </div>
-  <div class="card">
-    <h3>🧒 Enfants</h3>
-    <p id="totalChildren">0</p>
-  </div>
-  <div class="card">
-    <h3>🍼 Moins de 8 ans</h3>
-    <p id="totalBabies">0</p>
-  </div>
-  <div class="card">
-    <h3>📈 Taux de remplissage</h3>
-    <p id="fillRate">0%</p>
-  </div>
-</section>
 
-<div class="actions">
-  <button id="back">⬅️ Retour</button>
-  <button id="scan">🎫 Scanner un billet</button>
-</div>
+  <footer>© Théâtre Saint Martin – Tableau de bord admin</footer>
 
-<footer>© Théâtre Saint Martin – Tableau de bord admin</footer>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-<script type="module">
-await new Promise(resolve => {
-  const check = () => window._firebaseDB ? resolve() : setTimeout(check, 100);
-  check();
-});
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXX_TON_API_KEY",
+      authDomain: "theatre-saint-martin.firebaseapp.com",
+      databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "theatre-saint-martin",
+      storageBucket: "theatre-saint-martin.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcd1234efgh"
+    };
 
-const db = window._firebaseDB;
-const ref = window._firebaseRef;
-const onValue = window._firebaseOnValue;
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const seatsRef = ref(db, "seats");
 
-const TOTAL_SEATS = 342; // 19 rangées × 18 sièges
+    const TOTAL_SEATS = 304;
 
-const seatsRef = ref(db, "seats");
-onValue(seatsRef, snapshot => {
-  const seats = snapshot.val() || {};
-  updateDashboard(seats);
-});
+    onValue(seatsRef, snapshot => {
+      const seats = snapshot.val() || {};
+      const values = Object.values(seats);
 
-function updateDashboard(seats) {
-  const values = Object.values(seats);
-  const reserved = values.length;
-  const adults = values.filter(s => s.type === "adulte").length;
-  const children = values.filter(s => s.type === "enfant").length;
-  const babies = values.filter(s => s.type === "moins8").length;
+      const reserved = values.length;
+      const paid = values.filter(s => s.paid);
+      const unpaid = values.filter(s => !s.paid);
+      
+      let totalPaid = 0;
+      for (const s of paid) {
+        if (s.type === "adulte") totalPaid += 14;
+        if (s.type === "enfant") totalPaid += 10;
+      }
 
-  const paidSeats = values.filter(s => s.paid);
-  let totalPaid = 0;
-  for (const s of paidSeats) {
-    if (s.type === "adulte") totalPaid += 14;
-    if (s.type === "enfant") totalPaid += 10;
-  }
+      document.getElementById("totalReserved").textContent = reserved;
+      document.getElementById("totalAmount").textContent = totalPaid.toFixed(2) + " €";
+      const fill = ((reserved / TOTAL_SEATS) * 100).toFixed(1);
+      document.getElementById("fillRate").textContent = fill + "%";
 
-  document.getElementById("totalAmount").textContent = `${totalPaid.toFixed(2)} €`;
-  document.getElementById("totalReserved").textContent = reserved;
-  document.getElementById("totalAdults").textContent = adults;
-  document.getElementById("totalChildren").textContent = children;
-  document.getElementById("totalBabies").textContent = babies;
+      updateAlerts(fill, unpaid.length);
+    });
 
-  const fillRate = ((reserved / TOTAL_SEATS) * 100).toFixed(1);
-  document.getElementById("fillRate").textContent = `${fillRate}%`;
+    function updateAlerts(fillRate, unpaid) {
+      const alerts = [];
+      if (fillRate >= 90) alerts.push("🚨 Salle presque complète !");
+      else if (fillRate >= 70) alerts.push("⚠️ Salle bientôt pleine.");
+      if (unpaid > 0) alerts.push(`💳 ${unpaid} réservation(s) non payée(s).`);
+      if (alerts.length === 0) alerts.push("✅ Aucun problème détecté.");
+      document.getElementById("alerts").innerHTML = alerts.map(a => `<div>${a}</div>`).join("");
+    }
 
-  updateAlerts(fillRate, values);
-}
-
-function updateAlerts(fillRate, values) {
-  const alerts = [];
-  const unpaid = values.filter(s => !s.paid).length;
-
-  if (fillRate > 90)
-    alerts.push(`<div class="alert danger">🚨 Taux de remplissage élevé : ${fillRate}%</div>`);
-  else if (fillRate > 70)
-    alerts.push(`<div class="alert warning">⚠️ Salle bientôt pleine (${fillRate}%)</div>`);
-
-  if (unpaid > 0)
-    alerts.push(`<div class="alert warning">💳 ${unpaid} réservation(s) non payée(s)</div>`);
-
-  if (values.length === 0)
-    alerts.push(`<div class="alert info">ℹ️ Aucune réservation enregistrée</div>`);
-
-  if (alerts.length === 0)
-    alerts.push(`<div class="alert info">✅ Tout est en ordre</div>`);
-
-  document.getElementById("alerts").innerHTML = alerts.join("");
-}
-
-// Navigation
-document.getElementById("back").onclick = () => window.location.href = "index.html";
-document.getElementById("scan").onclick = () => window.location.href = "scanner.html";
-</script>
-
+    // Navigation (optionnelle)
+    document.getElementById("btnNew").onclick = () => alert("Fonction en lecture seule");
+    document.getElementById("btnScan").onclick = () => alert("Fonction en lecture seule");
+  </script>
 </body>
 </html>
