@@ -2,88 +2,30 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎟️ Scanner — Théâtre Saint Martin</title>
 
-<!-- Librairie QR -->
+<!-- Librairie -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 16px;
-    text-align: center;
-    background: linear-gradient(180deg, #f9f9f9, #e3f2fd);
-  }
-  h1 { color: #0d47a1; margin: 6px 0; font-size: 1.3em; }
-  p { margin: 4px 0 10px; }
-  #reader {
-    width: 90%;
-    max-width: 320px;
-    margin: 12px auto;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
-  }
-  .panel {
-    max-width: 500px;
-    margin: 16px auto;
-    background: #fff;
-    padding: 16px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
-    text-align: center;
-  }
-  .ok { color: #2e7d32; font-weight: 700; margin: 0; }
-  .err { color: #d32f2f; font-weight: 700; margin: 0; }
-  button {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    margin: 6px;
-    font-size: 15px;
-  }
-  .violet { background: #8e24aa; }
-  .violet:hover { background: #6a1b9a; }
-  .green { background: #2e7d32; }
-  .green:hover { background: #1b5e20; }
-  #counter { font-weight: 700; color: #0d47a1; }
-  #details {
-    margin-top: 10px;
-    text-align: left;
-    font-size: 15px;
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-  }
-  #newScanBtn { display: none; margin-top: 10px; }
-  #resetScanBtn { background: #f57c00; }
-  #resetScanBtn:hover { background: #e65100; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
-  th, td { border: 1px solid #ccc; padding: 6px; }
-  th { background: #e3f2fd; }
-
-  /* --- Amélioration mobile --- */
-  @media (max-width: 600px) {
-    body { padding: 8px; }
-    .panel { padding: 10px; }
-    table {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap;
-      font-size: 13px;
-    }
-    button { font-size: 14px; padding: 8px 10px; }
-    #details { font-size: 14px; }
-  }
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
+  h1{color:#0d47a1;margin:6px 0}
+  #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+  .panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:center}
+  .ok{color:#2e7d32;font-weight:700;margin:0}
+  .err{color:#d32f2f;font-weight:700;margin:0}
+  button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
+  .violet{background:#8e24aa}.violet:hover{background:#6a1b9a}
+  .green{background:#2e7d32}.green:hover{background:#1b5e20}
+  #counter{font-weight:700;color:#0d47a1}
+  #details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
+  #newScanBtn{display:none;margin-top:10px;}
+  #resetScanBtn{background:#f57c00;}
+  #resetScanBtn:hover{background:#e65100;}
+  @media(max-width:420px){#reader{width:260px}}
 </style>
 </head>
-
 <body>
   <h1>🎭 Théâtre Saint Martin — Scanner</h1>
   <p>Alignez le QR dans le carré pour valider un billet.</p>
@@ -97,26 +39,7 @@
 
     <button id="newScanBtn" class="green">🎬 Nouveau scan</button>
     <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
-  </div>
-
-  <!-- === Tableau visible sur toutes tailles d’écran === -->
-  <div class="panel">
-    <h2>📋 Historique des billets scannés</h2>
-    <div style="overflow-x:auto;">
-      <table id="scanTable">
-        <thead>
-          <tr>
-            <th>Nom</th>
-            <th>Sièges</th>
-            <th>Date</th>
-            <th>🗑️</th>
-          </tr>
-        </thead>
-        <tbody id="scanTableBody">
-          <tr><td colspan="4" style="padding:10px;color:#777;">Aucun billet scanné</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
   </div>
 
 <script>
@@ -129,25 +52,12 @@ const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 const newScanBtn = document.getElementById("newScanBtn");
-const scanTableBody = document.getElementById("scanTableBody");
 
-// --- Fonction sécurisée localStorage (iOS friendly) ---
-function safeStorageGet(key){
-  try { return JSON.parse(localStorage.getItem(key) || "[]"); }
-  catch(e){ return []; }
-}
-function safeStorageSet(key, val){
-  try { localStorage.setItem(key, JSON.stringify(val)); }
-  catch(e){ console.warn("Stockage désactivé sur cet appareil."); }
-}
-
-// === Compteur ===
 function updateCounter(){
-  const scanned = safeStorageGet("scannedTickets");
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   counterEl.textContent = "Billets scannés : " + scanned.length;
 }
 
-// === Scanner ===
 async function startScanner(){
   if (scanning) return;
   scanning = true;
@@ -163,7 +73,8 @@ async function startScanner(){
   };
 
   try {
-    await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess);
+    await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+    console.log("✅ Caméra démarrée");
     updateCounter();
     newScanBtn.style.display = "none";
   } catch (err) {
@@ -173,15 +84,20 @@ async function startScanner(){
 
 async function stopScanner(){
   if (!scanner) return;
-  try { await scanner.stop(); scanning = false; } catch(e){ console.error(e); }
+  try {
+    await scanner.stop();
+    scanning = false;
+    console.log("⏸️ Scanner en pause");
+  } catch(e){ console.error(e); }
 }
 
 function safeDecode(str){
-  try { if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str); } catch(e){}
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str);
+  } catch(e){}
   return str;
 }
 
-// === Quand un QR est scanné ===
 async function onScanSuccess(text){
   const now = Date.now();
   if (text === lastScanText && now - lastScanTime < 3000) return;
@@ -189,53 +105,55 @@ async function onScanSuccess(text){
 
   await stopScanner();
 
-  const scanned = safeStorageGet("scannedTickets");
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const already = scanned.includes(text);
+
   const decoded = safeDecode(text);
   let data = null;
   try { data = JSON.parse(decoded); } catch(e){ data = null; }
-
-  const nom = data?.nom || "(inconnu)";
-  const sieges = data?.sieges || "(non précisé)";
-  const date = new Date().toLocaleString("fr-FR");
-  const already = scanned.some(item => item.raw === text);
 
   if (already) {
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
     flash("red");
   } else {
-    scanned.push({ raw: text, nom, sieges, date });
-    safeStorageSet("scannedTickets", scanned);
+    scanned.push(text);
+    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
     updateCounter();
     statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
     flash("lime");
   }
 
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = `
-    <strong>Nom :</strong> ${nom}<br>
-    <strong>Sièges :</strong> ${sieges}<br>
-    <strong>Date :</strong> ${date}
-  `;
+  if (data && typeof data === "object") {
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
+      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
+      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
+      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}
+    `;
+  } else {
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
+  }
 
+  // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
   setTimeout(() => {
     newScanBtn.style.display = "inline-block";
     statusEl.textContent = "Prêt pour un nouveau scan.";
   }, 5000);
-
-  loadDashboard();
 }
 
-// === Effet flash ===
-function flash(color){
+// effet flash visuel
+function flash(color) {
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
     position:"fixed", inset:"0", background:color, opacity:"0.25", zIndex:"99",
   });
   document.body.append(overlay);
-  setTimeout(()=>overlay.remove(),150);
+  setTimeout(() => overlay.remove(), 150);
 }
 
-// === Nouveau scan ===
+// bouton "Nouveau scan"
 newScanBtn.onclick = () => {
   detailsEl.style.display = "none";
   statusEl.textContent = "Prêt à scanner.";
@@ -243,43 +161,89 @@ newScanBtn.onclick = () => {
   startScanner();
 };
 
-// === Réinitialiser ===
-document.getElementById("resetScanBtn").onclick = () => {
-  const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
-  if (pwd === "admin123") {
-    if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
-      localStorage.removeItem("scannedTickets");
-      updateCounter();
-      detailsEl.style.display = "none";
-      statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
-      newScanBtn.style.display = "none";
-      flash("lime");
-      loadDashboard();
+// bouton "Accueil"
+document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
+
+// === ♻️ Bouton "Réinitialiser les billets scannés" (protégé par mot de passe admin) ===
+const resetScanBtn = document.getElementById("resetScanBtn");
+if (resetScanBtn) {
+  resetScanBtn.onclick = () => {
+    const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
+    if (pwd === "admin123") { // 🔑 change ici ton mot de passe admin
+      if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
+        localStorage.removeItem("scannedTickets");
+        updateCounter();
+        detailsEl.style.display = "none";
+        statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
+        newScanBtn.style.display = "none";
+        flash("lime");
+      }
+    } else if (pwd !== null) {
+      alert("❌ Mot de passe incorrect.");
+      flash("red");
     }
-  } else if (pwd !== null) {
-    alert("❌ Mot de passe incorrect.");
-    flash("red");
-  }
+  };
+}
+
+window.addEventListener("load", startScanner);
+</script>
+  <!-- === Tableau de bord en accordéon === -->
+<div class="panel">
+  <button id="toggleDashboard" class="violet" style="width:100%;text-align:left;font-size:16px;">
+    📋 Historique des billets scannés ▼
+  </button>
+
+  <div id="dashboardPanel" style="display:none;margin-top:10px;">
+    <table id="scanTable" style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="background:#e3f2fd;">
+          <th style="padding:8px;border:1px solid #ccc;">Nom</th>
+          <th style="padding:8px;border:1px solid #ccc;">Sièges</th>
+          <th style="padding:8px;border:1px solid #ccc;">Date</th>
+          <th style="padding:8px;border:1px solid #ccc;">🗑️</th>
+        </tr>
+      </thead>
+      <tbody id="scanTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// === ACCORDÉON TABLEAU DE BORD ===
+const dashboardPanel = document.getElementById("dashboardPanel");
+const scanTableBody = document.getElementById("scanTableBody");
+const toggleDashboard = document.getElementById("toggleDashboard");
+
+toggleDashboard.onclick = () => {
+  const open = dashboardPanel.style.display === "block";
+  dashboardPanel.style.display = open ? "none" : "block";
+  toggleDashboard.textContent = open 
+    ? "📋 Historique des billets scannés ▼" 
+    : "📋 Historique des billets scannés ▲";
 };
 
-// === Tableau dynamique ===
 function loadDashboard(){
-  const scanned = safeStorageGet("scannedTickets");
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   scanTableBody.innerHTML = "";
 
-  if (!Array.isArray(scanned) || scanned.length === 0) {
-    scanTableBody.innerHTML = "<tr><td colspan='4' style='padding:10px;color:#777;'>Aucun billet scanné</td></tr>";
+  if (scanned.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucun billet scanné</td>`;
+    scanTableBody.appendChild(tr);
     return;
   }
 
-  const sorted = [...scanned].sort((a,b)=> new Date(b.date) - new Date(a.date));
-  sorted.forEach((item, index) => {
+  scanned.forEach((raw, index) => {
+    let data, decoded;
+    try { decoded = safeDecode(raw); data = JSON.parse(decoded); } catch(e){ data = {}; }
+    const dateStr = new Date().toLocaleString("fr-FR");
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${item.nom}</td>
-      <td>${item.sieges}</td>
-      <td>${item.date}</td>
-      <td style="text-align:center;">
+      <td style="border:1px solid #ccc;padding:6px;">${data.nom || "(inconnu)"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data.sieges || "-"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${dateStr}</td>
+      <td style="border:1px solid #ccc;padding:6px;text-align:center;">
         <button class="violet" style="padding:4px 8px;font-size:12px;" onclick="deleteScan(${index})">✖</button>
       </td>
     `;
@@ -288,17 +252,24 @@ function loadDashboard(){
 }
 
 function deleteScan(index){
-  const scanned = safeStorageGet("scannedTickets");
+  if (!confirm("Supprimer ce scan ?")) return;
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   scanned.splice(index,1);
-  safeStorageSet("scannedTickets", scanned);
+  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
   updateCounter();
   loadDashboard();
 }
 
-window.addEventListener("load", () => {
-  startScanner();
+// recharge le tableau après chaque scan
+const originalOnScanSuccess = onScanSuccess;
+onScanSuccess = async function(text) {
+  await originalOnScanSuccess(text);
   loadDashboard();
-});
+};
+
+// affiche le tableau au chargement
+window.addEventListener("load", loadDashboard);
 </script>
+
 </body>
 </html>
