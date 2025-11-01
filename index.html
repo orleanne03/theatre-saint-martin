@@ -307,38 +307,43 @@ h1 {
   let totalEncaisse = 0;
   let totalReservations = 0;
   let billetsNonPayes = 0;
-  let totalPlacesOccupees = 0; // nombre de places réservées/payées
-  const totalPlacesMax = 200; // adapte à ta salle
+  let totalPlacesOccupees = 0;
+  const totalPlacesMax = 200; // capacité max
 
   for (const seatId in data) {
     const seat = data[seatId];
     if (!seat) continue;
 
-    // --- Siège réservé (payé ou non)
-    if (seat.reserved === true) {
+    // 🔹 Considère le siège "réservé" s'il a un type défini (adulte, enfant, moins8)
+    const estReserve = seat.type && seat.type.trim() !== "";
+
+    if (estReserve) {
       totalReservations++;
-      totalPlacesOccupees++; // pour le taux
+      totalPlacesOccupees++;
     }
 
-    // --- Paiement
+    // 🔹 Paiement et encaissement
     if (seat.paid === true) {
-      totalEncaisse += seat.type === "adulte" ? 14 :
-                       seat.type === "enfant" ? 10 :
-                       seat.type === "moins8" ? 0 : 0;
-    } else if (seat.reserved === true) {
+      totalEncaisse +=
+        seat.type === "adulte" ? 14 :
+        seat.type === "enfant" ? 10 :
+        seat.type === "moins8" ? 0 : 0;
+    } else if (estReserve) {
       billetsNonPayes++;
     }
   }
 
-  // --- Calcul taux de remplissage
-  const tauxRemplissage = Math.round((totalPlacesOccupees / totalPlacesMax) * 100);
+  // 🔹 Taux de remplissage
+  const tauxRemplissage = totalPlacesMax > 0
+    ? Math.round((totalPlacesOccupees / totalPlacesMax) * 100)
+    : 0;
 
-  // --- Mise à jour des champs
+  // 🔹 Mise à jour de l'interface
   document.getElementById("totalReserved").textContent = totalReservations;
   document.getElementById("totalAmount").textContent = totalEncaisse.toFixed(2) + " €";
   document.getElementById("fillRate").textContent = tauxRemplissage + "%";
 
-  // --- Alerte billets non payés
+  // 🔹 Alerte billets non payés
   const alertDiv = document.getElementById("alerts");
   if (billetsNonPayes === 0) {
     alertDiv.textContent = "Tous les billets sont payés ✅";
@@ -348,6 +353,7 @@ h1 {
     alertDiv.classList.remove("good");
   }
 });
+
 
 
     document.querySelector("button:nth-of-type(1)").onclick = () => window.location.href = "salle.html";
