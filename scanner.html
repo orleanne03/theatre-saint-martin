@@ -229,8 +229,10 @@ if (resetScanBtn) {
         detailsEl.style.display = "none";
         statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
         newScanBtn.style.display = "none";
-        renderHistory();
         flash("lime");
+
+        // 🧹 Vide le tableau immédiatement
+        renderHistory();
       }
     } else if (pwd !== null) {
       alert("❌ Mot de passe incorrect.");
@@ -238,6 +240,7 @@ if (resetScanBtn) {
     }
   };
 }
+
 
 // === Historique ===
 const historyPanel = document.getElementById("historyPanel");
