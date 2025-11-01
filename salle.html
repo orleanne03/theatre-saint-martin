@@ -929,6 +929,38 @@ body.admin .seat.selected.remove-mode {
 .hidden {
   display: none !important;
 }
+/* === Boutons du haut === */
+.top-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+}
+
+.top-buttons button {
+  background: linear-gradient(180deg, #b22, #7b0d0d);
+  color: #ffeeba;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+button#retour-dashboard {
+    background: midnightblue;
+}
+.top-buttons button:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
+}
+
 
 </style>
 </head>
@@ -964,6 +996,8 @@ body.admin .seat.selected.remove-mode {
   <button id="scanTicket">🎟️ Scanner un billet</button>
   <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
   <button id="toggleEmailTest" style="display:none;">✉️ Mode email : TEST</button>
+  <!-- === Bouton retour Tableau de bord === -->
+<button id="retour-dashboard" class="back-btn">🏠 Retour au tableau de bord</button>
 
 
     <button id="info">ℹ️ AIDE</button>
@@ -2518,10 +2552,16 @@ async function askEmailConfirmation(email) {
     </div>
   </div>
 </div>
+<script>
+  document.getElementById("retour-dashboard").addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+</script>
 
 
 </body>
 </html>
+
 
 
 
