@@ -963,6 +963,8 @@ body.admin .seat.selected.remove-mode {
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
   <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
+  <button id="toggleEmailTest" style="display:none;">✉️ Mode email : TEST</button>
+
 
     <button id="info">ℹ️ AIDE</button>
 
@@ -1078,6 +1080,7 @@ const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 
 let seats = {}, selected = [], admin = false;
+let EMAIL_TEST_MODE = true; // ✅ true = simulation, false = envoi réel
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
@@ -1407,15 +1410,34 @@ async function sendEmail(user) {
   `;
 
   try {
-    await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
-      to_email: user.email,
-      subject: "🎭 Confirmation de votre réservation",
-      message_html: html
-    });
-    console.log("✅ Email de confirmation envoyé à", user.email);
-  } catch (err) {
-    console.error("❌ Erreur EmailJS :", err);
-  }
+  if (EMAIL_TEST_MODE) {
+  console.log("🚫 [MODE TEST] Email non envoyé — aperçu ci-dessous :");
+  console.log("Destinataire :", user.email);
+
+  // 🧩 Affiche la modale de prévisualisation
+  const previewModal = document.getElementById("emailPreviewModal");
+  const previewContent = document.getElementById("emailPreviewContent");
+  previewContent.innerHTML = html; // injecte le contenu HTML
+  previewModal.classList.remove("hidden");
+
+  // Bouton de fermeture
+  document.getElementById("closeEmailPreview").onclick = () => {
+    previewModal.classList.add("hidden");
+  };
+
+  alert(`📩 Mode test : aucun envoi, mais aperçu disponible`);
+} else {
+  await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+    to_email: user.email,
+    subject: "🎭 Confirmation de votre réservation",
+    message_html: html
+  });
+  console.log("✅ Email de confirmation envoyé à", user.email);
+}
+
+} catch (err) {
+  console.error("❌ Erreur EmailJS :", err);
+}
 }
 
 async function notifyClientUpdate(email) {
@@ -1481,15 +1503,31 @@ async function notifyClientUpdate(email) {
   console.log("📧 Envoi du mail de mise à jour à", email);
 
   try {
+  if (EMAIL_TEST_MODE) {
+    console.log("🚫 [MODE TEST] Aucun envoi réel — aperçu ci-dessous :");
+    console.log("Destinataire :", email);
+
+    // 💌 Prévisualisation HTML
+    const previewModal = document.getElementById("emailPreviewModal");
+    const previewContent = document.getElementById("emailPreviewContent");
+    previewContent.innerHTML = html;
+    previewModal.classList.remove("hidden");
+
+    document.getElementById("closeEmailPreview").onclick = () =>
+      previewModal.classList.add("hidden");
+
+    alert(`📩 Mode test : aucun email envoyé à ${email}`);
+  } else {
     await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
       to_email: email,
       subject: "🎭 Mise à jour de votre réservation",
       message_html: html
     });
     console.log("✅ Email envoyé à", email);
-  } catch (err) {
-    console.error("❌ Erreur d’envoi du mail :", err);
   }
+} catch (err) {
+  console.error("❌ Erreur d’envoi du mail :", err);
+}
 }
 
 /* === Mode Admin === */
@@ -2211,11 +2249,25 @@ document.getElementById("savePrices").onclick = () => {
   }
 };
 
-/* === Afficher le bouton si admin === */
+// === 💌 Bouton de test Email ===
+const emailTestBtn = document.getElementById("toggleEmailTest");
+
+emailTestBtn.onclick = () => {
+  EMAIL_TEST_MODE = !EMAIL_TEST_MODE;
+  emailTestBtn.textContent = EMAIL_TEST_MODE
+    ? "✉️ Mode email : TEST"
+    : "✉️ Mode email : RÉEL";
+  emailTestBtn.style.background = EMAIL_TEST_MODE ? "#607d8b" : "#2e7d32";
+  alert(`🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (EmailJS actif)"}`);
+};
+
+// ➕ Affiche le bouton seulement en mode admin
 function toggleAdminUI() {
   const isAdmin = document.body.classList.contains("admin");
   editPricesBtn.style.display = isAdmin ? "inline-block" : "none";
+  emailTestBtn.style.display = isAdmin ? "inline-block" : "none";
 }
+
 
 /* === Initialisation === */
 editPricesBtn.onclick = openPriceModal;
@@ -2446,10 +2498,31 @@ async function askEmailConfirmation(email) {
   </div>
 </div>
 
+<!-- 💌 Modale de prévisualisation d’email -->
+<div id="emailPreviewModal" class="modal hidden">
+  <div class="modal-content" style="max-width:800px;max-height:80vh;overflow:auto;text-align:left;">
+    <h3>📧 Aperçu de l’email</h3>
+    <div id="emailPreviewContent" style="border:1px solid #ccc;padding:10px;margin-top:10px;background:#fff;"></div>
+    <div style="text-align:center;margin-top:12px;">
+      <button id="closeEmailPreview" style="background:#1565c0;color:white;">Fermer</button>
+    </div>
+  </div>
+</div>
+<!-- 💌 Modale de prévisualisation d’email -->
+<div id="emailPreviewModal" class="modal hidden">
+  <div class="modal-content" style="max-width:600px;max-height:80vh;overflow:auto;text-align:left;">
+    <h3>📧 Aperçu de l’email</h3>
+    <div id="emailPreviewContent" style="border:1px solid #ccc;padding:10px;margin-top:10px;background:#fff;"></div>
+    <div style="text-align:center;margin-top:12px;">
+      <button id="closeEmailPreview" style="background:#1565c0;color:white;">Fermer</button>
+    </div>
+  </div>
+</div>
 
 
 </body>
 </html>
+
 
 
 
