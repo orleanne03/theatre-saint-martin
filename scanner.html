@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎟️ Scanner — Théâtre Saint Martin</title>
 
-<!-- Librairie -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
@@ -24,6 +23,38 @@
   #resetScanBtn{background:#f57c00;}
   #resetScanBtn:hover{background:#e65100;}
   @media(max-width:420px){#reader{width:260px}}
+
+  /* Accordéon */
+  .accordion {
+    background-color:#1976d2;
+    color:white;
+    cursor:pointer;
+    padding:10px 16px;
+    width:100%;
+    border:none;
+    text-align:left;
+    outline:none;
+    font-size:16px;
+    border-radius:8px;
+    transition:background 0.2s;
+    max-width:500px;
+    margin:16px auto 0;
+  }
+  .accordion:hover{background-color:#0d47a1}
+  .panel-acc{
+    max-width:500px;
+    margin:0 auto 16px;
+    background:white;
+    display:none;
+    overflow:hidden;
+    border-radius:0 0 10px 10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.12);
+  }
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;}
+  th{background:#f1f1f1;}
+  td .trash{cursor:pointer;color:#d32f2f;font-weight:bold;}
+  td .trash:hover{color:#b71c1c;}
 </style>
 </head>
 <body>
@@ -42,6 +73,22 @@
     <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
   </div>
 
+  <!-- Accordéon Historique -->
+  <button class="accordion">📜 Historique des scans</button>
+  <div class="panel-acc" id="historyPanel">
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Sièges</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
 <script>
 let scanner;
 let scanning = false;
@@ -53,8 +100,14 @@ const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 const newScanBtn = document.getElementById("newScanBtn");
 
+function getScanned(){
+  return JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+}
+function setScanned(list){
+  localStorage.setItem("scannedTickets", JSON.stringify(list));
+}
 function updateCounter(){
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = getScanned();
   counterEl.textContent = "Billets scannés : " + scanned.length;
 }
 
@@ -74,7 +127,6 @@ async function startScanner(){
 
   try {
     await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
-    console.log("✅ Caméra démarrée");
     updateCounter();
     newScanBtn.style.display = "none";
   } catch (err) {
@@ -87,7 +139,6 @@ async function stopScanner(){
   try {
     await scanner.stop();
     scanning = false;
-    console.log("⏸️ Scanner en pause");
   } catch(e){ console.error(e); }
 }
 
@@ -105,8 +156,8 @@ async function onScanSuccess(text){
 
   await stopScanner();
 
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
-  const already = scanned.includes(text);
+  let scanned = getScanned();
+  const already = scanned.some(s=>s.text===text);
 
   const decoded = safeDecode(text);
   let data = null;
@@ -116,9 +167,16 @@ async function onScanSuccess(text){
     statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
     flash("red");
   } else {
-    scanned.push(text);
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+    const entry = {
+      text,
+      nom: data?.nom || "(non précisé)",
+      sieges: data?.sieges || "(inconnu)",
+      date: new Date().toLocaleString()
+    };
+    scanned.push(entry);
+    setScanned(scanned);
     updateCounter();
+    renderHistory();
     statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
     flash("lime");
   }
@@ -136,14 +194,12 @@ async function onScanSuccess(text){
     detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
 
-  // ⏱️ Après 5 secondes, afficher le bouton "Nouveau scan"
   setTimeout(() => {
     newScanBtn.style.display = "inline-block";
     statusEl.textContent = "Prêt pour un nouveau scan.";
   }, 5000);
 }
 
-// effet flash visuel
 function flash(color) {
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
@@ -153,7 +209,6 @@ function flash(color) {
   setTimeout(() => overlay.remove(), 150);
 }
 
-// bouton "Nouveau scan"
 newScanBtn.onclick = () => {
   detailsEl.style.display = "none";
   statusEl.textContent = "Prêt à scanner.";
@@ -161,21 +216,20 @@ newScanBtn.onclick = () => {
   startScanner();
 };
 
-// bouton "Accueil"
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
 
-// === ♻️ Bouton "Réinitialiser les billets scannés" (protégé par mot de passe admin) ===
 const resetScanBtn = document.getElementById("resetScanBtn");
 if (resetScanBtn) {
   resetScanBtn.onclick = () => {
     const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
-    if (pwd === "admin123") { // 🔑 change ici ton mot de passe admin
+    if (pwd === "admin123") {
       if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
         localStorage.removeItem("scannedTickets");
         updateCounter();
         detailsEl.style.display = "none";
         statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
         newScanBtn.style.display = "none";
+        renderHistory();
         flash("lime");
       }
     } else if (pwd !== null) {
@@ -185,7 +239,47 @@ if (resetScanBtn) {
   };
 }
 
-window.addEventListener("load", startScanner);
+// === Historique ===
+const historyPanel = document.getElementById("historyPanel");
+const historyTable = document.getElementById("historyTable").querySelector("tbody");
+
+function renderHistory(){
+  const list = getScanned();
+  historyTable.innerHTML = "";
+  list.forEach((item,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.nom}</td>
+      <td>${item.sieges}</td>
+      <td>${item.date}</td>
+      <td><span class="trash" data-i="${i}">🗑️</span></td>
+    `;
+    historyTable.append(tr);
+  });
+
+  // gestion corbeille
+  historyTable.querySelectorAll(".trash").forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = parseInt(btn.dataset.i);
+      const list = getScanned();
+      list.splice(idx,1);
+      setScanned(list);
+      updateCounter();
+      renderHistory();
+    };
+  });
+}
+
+// Accordéon
+document.querySelector(".accordion").addEventListener("click", function(){
+  this.classList.toggle("active");
+  historyPanel.style.display = (historyPanel.style.display === "block") ? "none" : "block";
+});
+
+window.addEventListener("load", ()=>{
+  startScanner();
+  renderHistory();
+});
 </script>
 </body>
 </html>
