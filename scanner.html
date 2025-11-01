@@ -273,5 +273,361 @@ if (resetScanBtn) {
 
 window.addEventListener("load", startScanner);
 </script>
+
+  <!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎭 Tableau de bord – Théâtre Saint Martin</title>
+
+<style>
+:root {
+  --gold: #f7d65a;
+  --beige: #faecd0;
+  --red: #a21c1c;
+  --bordo: #4b0c0c;
+  --bordo-dark: #2a0202;
+}
+
+/* === FOND === */
+body {
+  margin: 0;
+  height: 100vh;
+  background: url("https://img.freepik.com/vecteurs-libre/scene-theatre-velours-rouge-ouvert_1284-12643.jpg")
+    center top / cover no-repeat fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+/* === SMARTPHONE === */
+.phone {
+  position: relative;
+  width: 360px;
+  height: 740px;
+  background: radial-gradient(circle at 30% 10%, #420909 0%, #1a0000 90%);
+  border-radius: 48px;
+  box-shadow:
+    0 0 50px rgba(0,0,0,0.85),
+    inset 0 2px 4px rgba(255,255,255,0.05),
+    inset 0 -3px 8px rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image:
+    linear-gradient(145deg, #4d0b0b 0%, #250101 50%, #4d0b0b 100%);
+  animation: dropIn 1.8s ease-out forwards;
+  transform: translateY(-120px);
+  opacity: 0;
+}
+
+@keyframes dropIn {
+  0% { transform: translateY(-200px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(20px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* halo doré subtil */
+.phone::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 40px;
+  background: linear-gradient(145deg, #2b0202 0%, #5e0f0f 45%, #1c0000 100%);
+  box-shadow:
+    inset 0 8px 18px rgba(0,0,0,0.7),
+    inset 0 -5px 10px rgba(255,255,255,0.05);
+  z-index: 0;
+}
+
+/* haut-parleur */
+.phone::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 5px;
+  background: #111;
+  border-radius: 3px;
+  opacity: 0.7;
+  z-index: 2;
+}
+
+/* === ÉCRAN === */
+.screen {
+  position: absolute;
+  inset: 12px;
+  border-radius: 38px;
+  background: linear-gradient(180deg, #5b0c0c 0%, #3a0707 100%);
+  box-shadow:
+    inset 0 12px 22px rgba(0,0,0,0.5),
+    inset 0 -4px 10px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 0;
+  z-index: 1;
+}
+
+/* === TITRE === */
+h1 {
+  text-align: center;
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 1.35rem;
+  margin-bottom: 18px;
+  letter-spacing: 0.4px;
+  animation: fadeIn 2s ease 0.6s forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === CARTES === */
+.card {
+  background: linear-gradient(180deg, #fff7e8 0%, #faecd0 100%);
+  margin: 14px 28px;
+  border-radius: 16px;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  transform: translateY(30px);
+  opacity: 0;
+  animation: cardIn 1.2s ease forwards;
+  transition: all 0.35s ease;
+}
+
+/* Séparateur lumineux animé */
+.card + .card::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 15%;
+  width: 70%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 240, 180, 0.9),
+    rgba(255, 200, 120, 0.5),
+    transparent);
+  background-size: 200% auto;
+  border-radius: 2px;
+  box-shadow: 0 0 8px rgba(255, 220, 150, 0.6);
+  animation: lightFlow 6s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes lightFlow {
+  0% { background-position: 200% 0; opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { background-position: -200% 0; opacity: 0.7; }
+}
+
+/* apparition progressive */
+.card:nth-of-type(2) { animation-delay: 0.4s; }
+.card:nth-of-type(3) { animation-delay: 0.8s; }
+
+@keyframes cardIn {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* effet au survol */
+.card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(255, 220, 150, 0.4);
+  filter: brightness(1.03);
+}
+
+/* === EMOJIS === */
+.icon {
+  font-size: 44px;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.12); filter: brightness(1.2); }
+}
+
+/* === INFO === */
+.info {
+  text-align: right;
+  color: var(--bordo-dark);
+}
+.info .label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.info .value {
+  font-weight: 900;
+  font-size: 1.3rem;
+}
+.alerts {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 0.9rem;
+  animation: blink 1.5s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* === SECTION TITRE === */
+.section-title {
+  color: var(--gold);
+  font-weight: 800;
+  text-align: center;
+  font-size: 1.05rem;
+  margin: 10px 0 8px;
+  animation: fadeIn 1.8s ease 1s forwards;
+  opacity: 0;
+}
+
+/* === BOUTONS === */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 28px 24px;
+  opacity: 0;
+  animation: fadeIn 2s ease 1.4s forwards;
+}
+.actions button {
+  flex: 1;
+  background: linear-gradient(180deg, #b22, #7b0d0d);
+  color: #ffeeba;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+.actions button:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
+}
+.actions button:active {
+  transform: scale(0.97);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 420px) {
+  .phone { width: 320px; height: 680px; }
+  h1 { font-size: 1.2rem; }
+  .card { margin: 10px 20px; padding: 12px 16px; }
+}
+</style>
+</head>
+
+<body>
+  <div class="phone">
+    <div class="screen">
+      <h1>TABLEAU DE BORD</h1>
+
+      <div class="card">
+        <div class="icon">📅</div>
+        <div class="info">
+          <div class="label">Réservations</div>
+          <div class="value" id="totalReserved">154</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="icon">💶</div>
+        <div class="info">
+          <div class="label">Encaissement du jour</div>
+          <div class="value" id="totalAmount">1.250 €</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="icon">🎭</div>
+        <div class="info">
+          <div class="label">Taux de remplissage</div>
+          <div class="value" id="fillRate">75%</div>
+          <div class="alerts" id="alerts">3 alertes ⚠️</div>
+        </div>
+      </div>
+
+      <div class="section-title">Ventes de billets</div>
+      <div class="actions">
+        <button>🎟️ Nouvelle vente</button>
+        <button>🔍 Vérifier billet</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  // 🔥 même configuration Firebase que dans salle.html
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // === 🔢 Met à jour le total encaissé depuis Firebase ===
+  const seatsRef = ref(db, "seats");
+
+  onValue(seatsRef, (snapshot) => {
+    const seats = snapshot.val() || {};
+    let total = 0;
+
+    for (const data of Object.values(seats)) {
+      if (data.paid) {
+        if (data.type === "adulte") total += 14;
+        else if (data.type === "enfant") total += 10;
+      }
+    }
+
+    document.getElementById("totalAmount").textContent = total.toFixed(2) + " €";
+  });
+
+  // === 🧭 Navigation des boutons ===
+  document.querySelector("button:nth-of-type(1)").onclick = () => window.location.href = "salle.html";
+  document.querySelector("button:nth-of-type(2)").onclick = () => window.location.href = "scanner.html";
+</script>
+
+</body>
+</html>
+
 </body>
 </html>
