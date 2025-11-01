@@ -1,237 +1,269 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎭 Tableau de bord – Théâtre Saint Martin</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tableau de bord – Théâtre Saint Martin</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: "Poppins", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #6d0019, #1a0006 90%);
-      color: #fff8e1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
+<style>
+  :root{
+    --gold: #d7b33a;
+    --gold-soft:#e3c86a;
+    --burgundy:#3a0c0c;
+    --burgundy-deep:#240606;
+    --card:#f6ead6;     /* beige doux des cartes */
+    --ink:#2b1b16;      /* texte brun foncé */
+    --accent:#8e1c1c;   /* rouge icônes */
+    --shadow: rgba(0,0,0,.45);
+  }
 
-    header {
-      background: linear-gradient(90deg, #b71c1c, #880e4f);
-      width: 100%;
-      text-align: center;
-      padding: 15px 0;
-      font-weight: 700;
-      font-size: 1.3rem;
-      color: #ffeb3b;
-      letter-spacing: 1px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    }
+  /* ---- Fond rideaux & assombrissement léger pour contraste ---- */
+  body{
+    margin:0;
+    font-family: "Poppins","Segoe UI",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+    color:var(--ink);
+    background:
+      linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.55)),
+      url("https://images.unsplash.com/photo-1606761568499-6e7187c8b47e?auto=format&fit=crop&w=1600&q=80")
+      center top / cover no-repeat fixed;
+    display:flex; flex-direction:column; align-items:center;
+  }
 
-    .dashboard {
-      margin-top: 25px;
-      width: 90%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+  /* ---- Bandeau doré ---- */
+  header{
+    width:100%;
+    background: linear-gradient(90deg, #ffda59, #ffbe2e);
+    color:#5a0c0c;
+    text-align:center;
+    font-weight:800;
+    letter-spacing:.5px;
+    padding:14px 12px;
+    font-size:1.25rem;
+    text-shadow:0 1px 0 #fff6c9;
+    box-shadow:0 2px 10px var(--shadow);
+  }
 
-    .card {
-      background: linear-gradient(145deg, #b71c1c, #4a0010);
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #fff8e1;
-      transition: transform 0.2s ease;
-    }
-    .card:hover {
-      transform: scale(1.02);
-    }
+  /* ---- Container façon “téléphone” sombre ---- */
+  .phone{
+    width:min(430px, 92vw);
+    background: #2a0a0a;
+    border-radius:28px;
+    box-shadow:0 18px 40px var(--shadow), inset 0 0 0 3px rgba(0,0,0,.3);
+    margin:22px auto 28px;
+    padding:18px 16px 22px;
+  }
 
-    .card .icon {
-      width: 38px;
-      height: 38px;
-      fill: #ffeb3b;
-      flex-shrink: 0;
-    }
-    .card .info {
-      text-align: right;
-    }
-    .card .title {
-      font-size: 0.9rem;
-      opacity: 0.9;
-    }
-    .card .value {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #fffde7;
-    }
+  /* ---- Titre “TABLEAU DE BORD” doré dans le cadre sombre ---- */
+  .title{
+    color: var(--gold);
+    font-weight:900;
+    font-size:1.3rem;
+    text-align:center;
+    margin:4px 0 12px;
+    letter-spacing:.6px;
+  }
 
-    .alerts {
-      background: rgba(255,255,255,0.08);
-      border-radius: 12px;
-      width: 90%;
-      max-width: 420px;
-      padding: 10px 15px;
-      margin-top: 20px;
-      font-size: 0.95rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
+  /* ---- Cartes beiges arrondies ---- */
+  .card{
+    display:flex; align-items:center;
+    gap:16px;
+    background:var(--card);
+    border-radius:18px;
+    padding:16px;
+    box-shadow: 0 10px 20px rgba(0,0,0,.22);
+    border: 1px solid rgba(0,0,0,.08);
+    margin:12px 6px;
+  }
+  .icon{
+    flex:0 0 54px; height:54px; width:54px;
+    display:grid; place-items:center;
+    border-radius:12px;
+    background: #f3d4c9;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,.08);
+  }
+  .icon svg{ width:32px; height:32px; fill: var(--accent); }
 
-    .actions {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 25px;
-      width: 90%;
-      max-width: 420px;
-    }
-    .actions button {
-      flex: 1;
-      background: linear-gradient(90deg, #c62828, #ad1457);
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      padding: 12px 0;
-      font-weight: 600;
-      font-size: 0.95rem;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-      cursor: pointer;
-      transition: opacity 0.2s ease;
-    }
-    .actions button:hover {
-      opacity: 0.85;
-    }
+  .text{
+    display:flex; justify-content:space-between; align-items:center;
+    gap:10px; width:100%;
+  }
+  .label{
+    color:#4a2b21; font-weight:700; font-size:1.05rem;
+  }
+  .value{
+    color:#1c1310; font-weight:900; font-size:1.65rem;
+  }
 
-    footer {
-      margin-top: auto;
-      padding: 15px 0;
-      font-size: 0.75rem;
-      opacity: 0.7;
-    }
-  </style>
+  /* ---- Ligne d’alerte en bas de la 3e carte ---- */
+  .meta{
+    color:#a22020; font-weight:800; font-size:.95rem;
+  }
+
+  /* ---- Panneau d’alertes hors des cartes (texte simple) ---- */
+  .alerts{
+    margin:8px 10px 0;
+    color:#f4e7c7;
+    font-weight:600;
+    font-size:.95rem;
+  }
+
+  /* ---- Bandeau “VENTES DE BILLETS” ---- */
+  .section{
+    margin:16px 10px 10px;
+    color: var(--gold);
+    font-weight:900;
+    text-align:center;
+    font-size:1.15rem;
+    letter-spacing:.5px;
+  }
+
+  /* ---- Boutons rouges arrondis ---- */
+  .actions{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    margin:6px 10px 4px;
+  }
+  .btn{
+    background: linear-gradient(180deg, #8f2323, #6c1717);
+    color: #f8e6b2;
+    border:none; border-radius:16px;
+    padding:14px 10px; font-weight:800; font-size:.98rem;
+    box-shadow: 0 8px 18px rgba(0,0,0,.35), inset 0 -2px 0 rgba(0,0,0,.25);
+    cursor:pointer; transition: transform .06s ease, filter .15s ease;
+  }
+  .btn:active{ transform: translateY(1px); filter:brightness(.95); }
+
+  footer{
+    color:#f1d9d0; opacity:.85; font-size:.8rem; margin-bottom:16px;
+    text-shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+
+  @media (min-width: 480px){
+    .value{ font-size:1.9rem }
+    .label{ font-size:1.1rem }
+  }
+</style>
 </head>
 
 <body>
-  <header>🎭 TABLEAU DE BORD ADMIN</header>
+  <header>Tableau de bord – Théâtre Saint Martin</header>
 
-  <section class="dashboard">
+  <main class="phone">
+    <div class="title">TABLEAU DE BORD</div>
+
+    <!-- Carte 1 : Réservations -->
     <div class="card">
-      <svg class="icon" viewBox="0 0 24 24">
-        <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 
-        2v14c0 1.1.9 2 2 2h14c1.1 0 
-        2-.9 2-2V6c0-1.1-.9-2-2-2zm0 
-        16H5V9h14v11zM7 11h5v5H7z"/>
-      </svg>
-      <div class="info">
-        <div class="title">Réservations</div>
-        <div class="value" id="totalReserved">0</div>
+      <div class="icon" aria-hidden="true">
+        <!-- Calendrier -->
+        <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>
+      </div>
+      <div class="text">
+        <div class="label">Réservations</div>
+        <div class="value" id="val-res">0</div>
       </div>
     </div>
 
+    <!-- Carte 2 : Encaissement global -->
     <div class="card">
-      <svg class="icon" viewBox="0 0 24 24">
-        <path d="M12 1C5.925 1 1 5.925 1 
-        12s4.925 11 11 11 11-4.925 
-        11-11S18.075 1 12 1zm0 
-        20c-4.97 0-9-4.03-9-9s4.03-9 
-        9-9 9 4.03 9 9-4.03 9-9 
-        9zm.5-13h-1v4.25l3.5 
-        2.1.5-.85-3-1.8V8z"/>
-      </svg>
-      <div class="info">
-        <div class="title">Encaissement global</div>
-        <div class="value" id="totalAmount">0 €</div>
+      <div class="icon" aria-hidden="true">
+        <!-- Euro rond -->
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1.9 14.5a4.9 4.9 0 0 1-4.7-3.5H7.5v-1h1.4a5.1 5.1 0 0 1 0-1H7.5v-1h1.7a4.9 4.9 0 0 1 4.7-3.5c.7 0 1.4.1 2 .3l-.3 1.3c-.6-.2-1.2-.3-1.8-.3-1.7 0-3 .9-3.6 2.2h3.1v1H9.9l0 .5 0 .5h3.3v1H8.8c.6 1.4 2 2.3 3.6 2.3.6 0 1.2-.1 1.8-.3l.3 1.3c-.6.2-1.3.3-2 .3z"/></svg>
+      </div>
+      <div class="text">
+        <div class="label">Encaissement global</div>
+        <div class="value" id="val-amount">0 €</div>
       </div>
     </div>
 
+    <!-- Carte 3 : Taux de remplissage + alertes -->
     <div class="card">
-      <svg class="icon" viewBox="0 0 24 24">
-        <path d="M12 2C8.13 2 5 5.13 5 
-        9c0 5.25 7 13 7 13s7-7.75 
-        7-13c0-3.87-3.13-7-7-7zm0 
-        9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 
-        2.5-2.5 2.5 1.12 2.5 
-        2.5-1.12 2.5-2.5 2.5z"/>
-      </svg>
-      <div class="info">
-        <div class="title">Taux de remplissage</div>
-        <div class="value" id="fillRate">0%</div>
+      <div class="icon" aria-hidden="true">
+        <!-- Masque théâtre -->
+        <svg viewBox="0 0 24 24"><path d="M12 3C7 3 3 5 3 5v6c0 3.9 3.1 7 7 7 .9 0 1.7-.2 2.5-.5.8.3 1.6.5 2.5.5 3.9 0 7-3.1 7-7V5s-4-2-10-2zm-3.2 7.2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6.4 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM7.5 13c1.2 1 2.6 1.5 4.1 1.5S14.5 14 15.7 13l-.7 1.5c-1.3.8-2.8 1.2-4.4 1.2s-3.1-.4-4.4-1.2L7.5 13z"/></svg>
+      </div>
+      <div class="text">
+        <div class="label">Taux de remplissage</div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end;">
+          <div class="value" id="val-fill">0%</div>
+          <div class="meta" id="val-alerts">0 alerte</div>
+        </div>
       </div>
     </div>
-  </section>
 
-  <div class="alerts" id="alerts">
-    Chargement des données...
-  </div>
+    <!-- Panneau d’alertes -->
+    <div class="alerts" id="alerts">Chargement des données...</div>
 
-  <div class="actions">
-    <button id="btnNew">Nouvelle vente</button>
-    <button id="btnScan">Vérifier billet</button>
-  </div>
+    <!-- Bandeau & boutons -->
+    <div class="section">Ventes de billets</div>
+    <div class="actions">
+      <button class="btn" id="btnNew">NOUVELLE VENTE</button>
+      <button class="btn" id="btnScan">VÉRIFIER BILLET</button>
+    </div>
+  </main>
 
   <footer>© Théâtre Saint Martin – Tableau de bord admin</footer>
 
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyXXXX_TON_API_KEY",
-      authDomain: "theatre-saint-martin.firebaseapp.com",
-      databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "theatre-saint-martin",
-      storageBucket: "theatre-saint-martin.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcd1234efgh"
-    };
+  /* ⚠️ Mets tes vraies valeurs comme dans ton app principale */
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const seatsRef = ref(db, "seats");
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const seatsRef = ref(db, "seats");
 
-    const TOTAL_SEATS = 304;
+  const TOTAL_SEATS = 304;
+  const PRICE_ADULT = 14;
+  const PRICE_CHILD = 10;
 
-    onValue(seatsRef, snapshot => {
-      const seats = snapshot.val() || {};
-      const values = Object.values(seats);
+  onValue(seatsRef, snap=>{
+    const seats = snap.val()||{};
+    const list = Object.values(seats);
 
-      const reserved = values.length;
-      const paid = values.filter(s => s.paid);
-      const unpaid = values.filter(s => !s.paid);
-      
-      let totalPaid = 0;
-      for (const s of paid) {
-        if (s.type === "adulte") totalPaid += 14;
-        if (s.type === "enfant") totalPaid += 10;
-      }
+    // Réservations
+    const totalReserved = list.length;
 
-      document.getElementById("totalReserved").textContent = reserved;
-      document.getElementById("totalAmount").textContent = totalPaid.toFixed(2) + " €";
-      const fill = ((reserved / TOTAL_SEATS) * 100).toFixed(1);
-      document.getElementById("fillRate").textContent = fill + "%";
-
-      updateAlerts(fill, unpaid.length);
-    });
-
-    function updateAlerts(fillRate, unpaid) {
-      const alerts = [];
-      if (fillRate >= 90) alerts.push("🚨 Salle presque complète !");
-      else if (fillRate >= 70) alerts.push("⚠️ Salle bientôt pleine.");
-      if (unpaid > 0) alerts.push(`💳 ${unpaid} réservation(s) non payée(s).`);
-      if (alerts.length === 0) alerts.push("✅ Aucun problème détecté.");
-      document.getElementById("alerts").innerHTML = alerts.map(a => `<div>${a}</div>`).join("");
+    // Encaissement global = uniquement sièges payés (adultes/enfants)
+    let totalAmount = 0;
+    for(const s of list){
+      if(!s.paid) continue;
+      if(s.type==="adulte") totalAmount += PRICE_ADULT;
+      else if(s.type==="enfant") totalAmount += PRICE_CHILD;
     }
 
-    // Navigation (optionnelle)
-    document.getElementById("btnNew").onclick = () => alert("Fonction en lecture seule");
-    document.getElementById("btnScan").onclick = () => alert("Fonction en lecture seule");
-  </script>
+    // Taux & alertes
+    const fill = TOTAL_SEATS>0 ? (totalReserved/TOTAL_SEATS*100) : 0;
+    const unpaidCount = list.filter(s=>!s.paid).length;
+
+    // UI
+    document.getElementById("val-res").textContent = totalReserved.toString();
+    document.getElementById("val-amount").textContent = totalAmount.toFixed(2)+" €";
+    document.getElementById("val-fill").textContent = fill.toFixed(0)+"%";
+    document.getElementById("val-alerts").textContent =
+      `${unpaidCount} ${unpaidCount>1?"alertes":"alerte"}`;
+
+    // Panneau d’alertes textuel
+    const alerts = [];
+    if(fill>=90) alerts.push("🚨 Salle presque complète.");
+    else if(fill>=70) alerts.push("⚠️ Salle bientôt pleine.");
+    if(unpaidCount>0) alerts.push(`💳 ${unpaidCount} réservation(s) non payée(s).`);
+    if(alerts.length===0) alerts.push("✅ Aucun problème détecté.");
+    document.getElementById("alerts").innerHTML = alerts.map(a=>`<div>${a}</div>`).join("");
+  });
+
+  // Lecture seule
+  document.getElementById("btnNew").onclick = ()=>alert("Lecture seule – action désactivée.");
+  document.getElementById("btnScan").onclick = ()=>alert("Lecture seule – action désactivée.");
+</script>
 </body>
 </html>
