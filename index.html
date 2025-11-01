@@ -243,22 +243,22 @@ h1 {
 @media (max-width: 420px) {
   body {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
-    height: auto;
-    min-height: 100vh;
-    padding-top: 8vh; /* crée un centrage visuel vertical */
-    padding-bottom: 6vh;
+    min-height: 100dvh; /* ✅ utilise la hauteur visible (dvh = dynamic viewport height) */
+    padding: 0;
+    margin: 0;
   }
 
   .phone {
-    width: 88vw;         /* largeur fluide (88% de la largeur de l’écran) */
-    height: auto;        /* hauteur automatique selon le contenu */
-    min-height: 640px;   /* garde un minimum esthétique */
-    padding: 10px 10px;
-    margin: 0 auto;
+    width: 88vw;
+    height: auto;
+    min-height: 640px;
+    padding: 10px;
+    margin: 0;
   }
+}
+
 
   .screen {
     inset: 8px;
