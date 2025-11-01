@@ -42,12 +42,15 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: linear-gradient(145deg, #4d0b0b 0%, #250101 50%, #4d0b0b 100%);
+  background-image:
+    linear-gradient(145deg, #4d0b0b 0%, #250101 50%, #4d0b0b 100%);
   animation: dropIn 1.8s ease-out forwards;
   transform: translateY(-120px);
   opacity: 0;
-  margin-bottom: 60px;
-  overflow: hidden; /* ✅ empêche le dépassement de .screen */
+  .phone {
+  margin-bottom: 60px; /* ✅ espace sous le téléphone visible */
+}
+
 }
 
 @keyframes dropIn {
@@ -87,11 +90,7 @@ body {
 /* === ÉCRAN === */
 .screen {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 90%;
-  height: 92%;
-  transform: translate(-50%, -50%); /* ✅ centre parfaitement */
+  inset: 12px;
   border-radius: 38px;
   background: linear-gradient(180deg, #5b0c0c 0%, #3a0707 100%);
   box-shadow:
@@ -267,19 +266,11 @@ h1 {
     padding: 10px;
   }
 
-
   .screen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 92%;
-    height: 94%;
-    transform: translate(-50%, -50%);
+    inset: 8px;
     border-radius: 32px;
     padding: 20px 0;
   }
-
-
 
   h1 {
     font-size: 1.15rem;
