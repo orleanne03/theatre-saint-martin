@@ -586,45 +586,6 @@ h1 {
     </div>
   </div>
 
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-  // 🔥 même configuration Firebase que dans salle.html
-  const firebaseConfig = {
-    apiKey: "AIzaSyXXXX_TON_API_KEY",
-    authDomain: "theatre-saint-martin.firebaseapp.com",
-    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "theatre-saint-martin",
-    storageBucket: "theatre-saint-martin.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcd1234efgh"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  // === 🔢 Met à jour le total encaissé depuis Firebase ===
-  const seatsRef = ref(db, "seats");
-
-  onValue(seatsRef, (snapshot) => {
-    const seats = snapshot.val() || {};
-    let total = 0;
-
-    for (const data of Object.values(seats)) {
-      if (data.paid) {
-        if (data.type === "adulte") total += 14;
-        else if (data.type === "enfant") total += 10;
-      }
-    }
-
-    document.getElementById("totalAmount").textContent = total.toFixed(2) + " €";
-  });
-
-  // === 🧭 Navigation des boutons ===
-  document.querySelector("button:nth-of-type(1)").onclick = () => window.location.href = "salle.html";
-  document.querySelector("button:nth-of-type(2)").onclick = () => window.location.href = "scanner.html";
-</script>
 
 </body>
 </html>
