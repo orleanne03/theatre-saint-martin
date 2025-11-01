@@ -16,10 +16,7 @@
     text-align: center;
     background: linear-gradient(180deg, #f9f9f9, #e3f2fd);
   }
-  h1 {
-    color: #0d47a1;
-    margin: 6px 0;
-  }
+  h1 { color: #0d47a1; margin: 6px 0; }
   #reader {
     width: 320px;
     margin: 12px auto;
@@ -86,25 +83,22 @@
     <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
   </div>
 
-  <!-- === Tableau de bord en accordéon === -->
+  <!-- === Tableau visible en permanence === -->
   <div class="panel">
-    <button id="toggleDashboard" class="violet" style="width:100%;text-align:left;font-size:16px;">
-      📋 Historique des billets scannés ▼
-    </button>
-
-    <div id="dashboardPanel" style="display:none;margin-top:10px;">
-      <table id="scanTable">
-        <thead>
-          <tr>
-            <th>Nom</th>
-            <th>Sièges</th>
-            <th>Date</th>
-            <th>🗑️</th>
-          </tr>
-        </thead>
-        <tbody id="scanTableBody"></tbody>
-      </table>
-    </div>
+    <h2>📋 Historique des billets scannés</h2>
+    <table id="scanTable">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Sièges</th>
+          <th>Date</th>
+          <th>🗑️</th>
+        </tr>
+      </thead>
+      <tbody id="scanTableBody">
+        <tr><td colspan="4" style="padding:10px;color:#777;">Aucun billet scanné</td></tr>
+      </tbody>
+    </table>
   </div>
 
 <script>
@@ -118,13 +112,11 @@ const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 const newScanBtn = document.getElementById("newScanBtn");
 
-// === Compteur ===
 function updateCounter(){
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   counterEl.textContent = "Billets scannés : " + scanned.length;
 }
 
-// === Démarrage du scanner ===
 async function startScanner(){
   if (scanning) return;
   scanning = true;
@@ -141,7 +133,6 @@ async function startScanner(){
 
   try {
     await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
-    console.log("✅ Caméra démarrée");
     updateCounter();
     newScanBtn.style.display = "none";
   } catch (err) {
@@ -151,21 +142,15 @@ async function startScanner(){
 
 async function stopScanner(){
   if (!scanner) return;
-  try {
-    await scanner.stop();
-    scanning = false;
-    console.log("⏸️ Scanner en pause");
-  } catch(e){ console.error(e); }
+  try { await scanner.stop(); scanning = false; } catch(e){ console.error(e); }
 }
 
 function safeDecode(str){
-  try {
-    if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str);
-  } catch(e){}
+  try { if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str); } catch(e){}
   return str;
 }
 
-// === Lorsqu'un QR est scanné ===
+// === Quand un QR est scanné ===
 async function onScanSuccess(text){
   const now = Date.now();
   if (text === lastScanText && now - lastScanTime < 3000) return;
@@ -181,7 +166,6 @@ async function onScanSuccess(text){
   const nom = data?.nom || "(inconnu)";
   const sieges = data?.sieges || "(non précisé)";
   const date = new Date().toLocaleString("fr-FR");
-
   const already = scanned.some(item => item.raw === text);
 
   if (already) {
@@ -210,14 +194,14 @@ async function onScanSuccess(text){
   loadDashboard();
 }
 
-// === Flash visuel ===
-function flash(color) {
+// === Effet flash ===
+function flash(color){
   const overlay = document.createElement("div");
   Object.assign(overlay.style, {
     position:"fixed", inset:"0", background:color, opacity:"0.25", zIndex:"99",
   });
   document.body.append(overlay);
-  setTimeout(() => overlay.remove(), 150);
+  setTimeout(()=>overlay.remove(),150);
 }
 
 // === Nouveau scan ===
@@ -231,7 +215,7 @@ newScanBtn.onclick = () => {
 // === Accueil ===
 document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
 
-// === Réinitialisation protégée ===
+// === Réinitialiser ===
 const resetScanBtn = document.getElementById("resetScanBtn");
 if (resetScanBtn) {
   resetScanBtn.onclick = () => {
@@ -253,31 +237,18 @@ if (resetScanBtn) {
   };
 }
 
-// === Accordéon tableau de bord ===
-const dashboardPanel = document.getElementById("dashboardPanel");
+// === Tableau dynamique ===
 const scanTableBody = document.getElementById("scanTableBody");
-const toggleDashboard = document.getElementById("toggleDashboard");
-
-toggleDashboard.onclick = () => {
-  const open = dashboardPanel.style.display === "block";
-  dashboardPanel.style.display = open ? "none" : "block";
-  toggleDashboard.textContent = open
-    ? "📋 Historique des billets scannés ▼"
-    : "📋 Historique des billets scannés ▲";
-};
 
 function loadDashboard(){
   const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
   scanTableBody.innerHTML = "";
 
   if (scanned.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucun billet scanné</td>`;
-    scanTableBody.appendChild(tr);
+    scanTableBody.innerHTML = "<tr><td colspan='4' style='padding:10px;color:#777;'>Aucun billet scanné</td></tr>";
     return;
   }
 
-  // Tri du plus récent au plus ancien
   const sorted = [...scanned].sort((a,b)=> new Date(b.date) - new Date(a.date));
 
   sorted.forEach((item, index) => {
@@ -303,6 +274,7 @@ function deleteScan(index){
   loadDashboard();
 }
 
+// === Initialisation ===
 window.addEventListener("load", () => {
   startScanner();
   loadDashboard();
