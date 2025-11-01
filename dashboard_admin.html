@@ -17,8 +17,7 @@
 /* === FOND === */
 body {
   margin: 0;
-  height: 100vh;
-  height: 100dvh; /* ✅ prend en compte la hauteur réelle visible sur mobile */
+  height: 100dvh; /* ✅ prend en compte la hauteur visible réelle sur mobile */
   background: url("https://raw.githubusercontent.com/orleanne03/theatre-saint-martin/refs/heads/main/rideau.png")
     center center / cover no-repeat;
   background-color: #1a0000;
@@ -28,7 +27,6 @@ body {
   align-items: center;
   overflow: hidden;
   position: relative;
-  -webkit-overflow-scrolling: touch; /* ✅ pour un scroll fluide sur iOS */
 }
 
 /* === ZONE ÉCRAN DU TÉLÉPHONE === */
@@ -39,15 +37,14 @@ body {
   transform: translate(-50%, -50%);
   width: 29.5%;
   height: 69%;
-  background: transparent;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-between; /* ✅ espacement uniforme verticalement */
   box-sizing: border-box;
-  padding: 2.5vh 0;
   opacity: 0;
   animation: fadeInPanel 1.2s ease-out forwards;
   z-index: 2;
+  padding: 2vh 0; /* petit coussin haut/bas */
 }
 
 @keyframes fadeInPanel {
@@ -55,13 +52,14 @@ body {
   to { transform: translate(-50%, -50%); opacity: 1; }
 }
 
-/* === CONTENU CENTRAL === */
+/* === CONTENU === */
 .content {
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: space-between; /* ✅ répartit tous les éléments sur la hauteur */
+  align-items: stretch;
   height: 100%;
-  gap: 1.6vh;
+  gap: 1vh;
   padding: 0 20px;
   box-sizing: border-box;
 }
@@ -123,7 +121,7 @@ h1 {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding: 0 22px 0;
+  width: 100%;
 }
 .actions button {
   width: 100%;
