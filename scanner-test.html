@@ -273,5 +273,79 @@ if (resetScanBtn) {
 
 window.addEventListener("load", startScanner);
 </script>
+  <!-- === Tableau de bord des billets scannés === -->
+<div class="panel" id="dashboardPanel" style="display:none;">
+  <h2>📋 Historique des billets scannés</h2>
+  <table id="scanTable" style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#e3f2fd;">
+        <th style="padding:8px;border:1px solid #ccc;">Nom</th>
+        <th style="padding:8px;border:1px solid #ccc;">Email</th>
+        <th style="padding:8px;border:1px solid #ccc;">Téléphone</th>
+        <th style="padding:8px;border:1px solid #ccc;">Sièges</th>
+        <th style="padding:8px;border:1px solid #ccc;">Date</th>
+        <th style="padding:8px;border:1px solid #ccc;">🗑️</th>
+      </tr>
+    </thead>
+    <tbody id="scanTableBody"></tbody>
+  </table>
+</div>
+
+<script>
+// === TABLEAU DE BORD ===
+const dashboardPanel = document.getElementById("dashboardPanel");
+const scanTableBody = document.getElementById("scanTableBody");
+
+function loadDashboard(){
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  if (scanned.length === 0) {
+    dashboardPanel.style.display = "none";
+    return;
+  }
+
+  dashboardPanel.style.display = "block";
+  scanTableBody.innerHTML = "";
+
+  scanned.forEach((raw, index) => {
+    let data, decoded;
+    try { decoded = safeDecode(raw); data = JSON.parse(decoded); } catch(e){ data = null; }
+    const dateStr = new Date().toLocaleString("fr-FR");
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="border:1px solid #ccc;padding:6px;">${data?.nom || "(inconnu)"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data?.email || "-"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data?.tel || "-"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${data?.sieges || "-"}</td>
+      <td style="border:1px solid #ccc;padding:6px;">${dateStr}</td>
+      <td style="border:1px solid #ccc;padding:6px;text-align:center;">
+        <button class="violet" style="padding:4px 8px;font-size:12px;" onclick="deleteScan(${index})">✖</button>
+      </td>
+    `;
+    scanTableBody.appendChild(tr);
+  });
+}
+
+function deleteScan(index){
+  if (!confirm("Supprimer ce scan ?")) return;
+  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  scanned.splice(index,1);
+  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+  updateCounter();
+  loadDashboard();
+}
+
+// recharge le tableau après chaque scan
+const originalOnScanSuccess = onScanSuccess;
+onScanSuccess = async function(text) {
+  await originalOnScanSuccess(text);
+  loadDashboard();
+};
+
+// affiche le tableau au chargement
+window.addEventListener("load", loadDashboard);
+</script>
+
 </body>
 </html>
+
