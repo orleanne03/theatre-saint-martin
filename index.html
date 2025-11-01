@@ -246,18 +246,18 @@ h1 {
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    height: auto;
     min-height: 100vh;
-    padding-top: 8vh; /* crée un centrage visuel vertical */
-    padding-bottom: 6vh;
+    padding-top: 8vh;    /* centrage visuel vers le haut */
+    padding-bottom: 8vh; /* ✅ marge visible sous le téléphone */
+    height: auto;
   }
 
   .phone {
-    width: 88vw;         /* largeur fluide (88% de la largeur de l’écran) */
-    height: auto;        /* hauteur automatique selon le contenu */
-    min-height: 640px;   /* garde un minimum esthétique */
-    padding: 10px 10px;
+    width: 88vw;
+    height: auto;
+    min-height: 640px;
     margin: 0 auto;
+    padding: 10px;
   }
 
   .screen {
@@ -282,6 +282,7 @@ h1 {
     padding: 0 18px 18px;
   }
 }
+
 
 
 
