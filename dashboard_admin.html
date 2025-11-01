@@ -17,7 +17,7 @@
 /* === FOND === */
 body {
   margin: 0;
-  height: 100dvh; /* ✅ prend en compte la hauteur visible réelle sur mobile */
+  height: 100dvh; /* ✅ prend la hauteur visible réelle sur mobile */
   background: url("https://raw.githubusercontent.com/orleanne03/theatre-saint-martin/refs/heads/main/rideau.png")
     center center / cover no-repeat;
   background-color: #1a0000;
@@ -39,12 +39,12 @@ body {
   height: 69%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* ✅ espacement uniforme verticalement */
+  justify-content: space-between;
   box-sizing: border-box;
   opacity: 0;
   animation: fadeInPanel 1.2s ease-out forwards;
   z-index: 2;
-  padding: 2vh 0; /* petit coussin haut/bas */
+  padding: 2vh 0;
 }
 
 @keyframes fadeInPanel {
@@ -56,7 +56,7 @@ body {
 .content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* ✅ répartit tous les éléments sur la hauteur */
+  justify-content: space-between; /* ✅ espace homogène */
   align-items: stretch;
   height: 100%;
   gap: 1vh;
@@ -115,7 +115,7 @@ h1 {
   font-size: 1.15rem;
 }
 
-/* === BOUTONS (VERTICAUX ET ESTHÉTIQUES) === */
+/* === BOUTONS === */
 .actions {
   display: flex;
   flex-direction: column;
@@ -216,10 +216,21 @@ h1 {
       </div>
 
       <div class="actions">
-        <button class="btn-vente">🎟️ Nouvelle vente</button>
-        <button class="btn-verif">🔍 Vérifier billet</button>
+        <button id="btnVente">🎟️ Nouvelle vente</button>
+        <button id="btnVerif">🔍 Vérifier billet</button>
       </div>
     </div>
   </div>
+
+  <!-- ✅ SCRIPT DE REDIRECTION -->
+  <script>
+    document.getElementById("btnVente").addEventListener("click", () => {
+      window.location.href = "salle.html";
+    });
+
+    document.getElementById("btnVerif").addEventListener("click", () => {
+      window.location.href = "scanner.html";
+    });
+  </script>
 </body>
 </html>
