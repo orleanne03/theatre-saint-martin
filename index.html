@@ -3,145 +3,340 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎭 Théâtre Saint Martin</title>
+<title>🎭 Tableau de bord – Théâtre Saint Martin</title>
 
 <style>
-* { box-sizing: border-box; }
+:root {
+  --gold: #f7d65a;
+  --beige: #faecd0;
+  --red: #a21c1c;
+  --bordo: #4b0c0c;
+  --bordo-dark: #2a0202;
+}
+
+/* === FOND === */
 body {
   margin: 0;
   height: 100vh;
-  overflow: hidden;
+  background: url("https://img.freepik.com/vecteurs-libre/scene-theatre-velours-rouge-ouvert_1284-12643.jpg")
+    center top / cover no-repeat fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   font-family: "Poppins", "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+/* === SMARTPHONE === */
+.phone {
+  position: relative;
+  width: 360px;
+  height: 740px;
+  background: radial-gradient(circle at 30% 10%, #420909 0%, #1a0000 90%);
+  border-radius: 48px;
+  box-shadow:
+    0 0 50px rgba(0,0,0,0.85),
+    inset 0 2px 4px rgba(255,255,255,0.05),
+    inset 0 -3px 8px rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image:
+    linear-gradient(145deg, #4d0b0b 0%, #250101 50%, #4d0b0b 100%);
+  animation: dropIn 1.8s ease-out forwards;
+  transform: translateY(-120px);
+  opacity: 0;
+}
+
+@keyframes dropIn {
+  0% { transform: translateY(-200px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(20px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* halo doré subtil */
+.phone::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 40px;
+  background: linear-gradient(145deg, #2b0202 0%, #5e0f0f 45%, #1c0000 100%);
+  box-shadow:
+    inset 0 8px 18px rgba(0,0,0,0.7),
+    inset 0 -5px 10px rgba(255,255,255,0.05);
+  z-index: 0;
+}
+
+/* haut-parleur */
+.phone::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 5px;
+  background: #111;
+  border-radius: 3px;
+  opacity: 0.7;
+  z-index: 2;
+}
+
+/* === ÉCRAN === */
+.screen {
+  position: absolute;
+  inset: 12px;
+  border-radius: 38px;
+  background: linear-gradient(180deg, #5b0c0c 0%, #3a0707 100%);
+  box-shadow:
+    inset 0 12px 22px rgba(0,0,0,0.5),
+    inset 0 -4px 10px rgba(255,255,255,0.05);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at center, #000000 30%, #111 100%);
-  color: #fff;
-  text-align: center;
-  position: relative;
+  justify-content: space-between;
+  padding: 28px 0;
+  z-index: 1;
 }
 
-/* Rideaux rouges animés */
-.curtain {
-  position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(to bottom, #b71c1c, #7f0000);
-  z-index: 2;
-  transition: transform 2s ease-in-out;
-}
-.curtain.left { left: 0; transform: translateX(0); }
-.curtain.right { right: 0; transform: translateX(0); }
-
-/* Contenu central */
-#content {
-  position: relative;
-  z-index: 3;
-  opacity: 0;
-  transition: opacity 1.5s ease;
-}
-
+/* === TITRE === */
 h1 {
-  font-size: 2.8rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 8px rgba(255,255,255,0.2);
+  text-align: center;
+  color: var(--gold);
+  font-weight: 900;
+  font-size: 1.35rem;
+  margin-bottom: 18px;
+  letter-spacing: 0.4px;
+  animation: fadeIn 2s ease 0.6s forwards;
+  opacity: 0;
 }
 
-p {
-  font-size: 1.2rem;
-  margin-bottom: 40px;
-  color: #ffebee;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-button {
-  margin: 10px;
-  padding: 15px 25px;
+/* === CARTES === */
+.card {
+  background: linear-gradient(180deg, #fff7e8 0%, #faecd0 100%);
+  margin: 14px 28px;
+  border-radius: 16px;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  transform: translateY(30px);
+  opacity: 0;
+  animation: cardIn 1.2s ease forwards;
+  transition: all 0.35s ease;
+}
+
+.card:nth-of-type(2) { animation-delay: 0.4s; }
+.card:nth-of-type(3) { animation-delay: 0.8s; }
+
+@keyframes cardIn {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(255, 220, 150, 0.4);
+  filter: brightness(1.03);
+}
+
+/* === ICONES === */
+.icon {
+  font-size: 42px;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: pulse 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.15));
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.12); filter: brightness(1.2); }
+}
+
+/* === INFOS === */
+.info {
+  text-align: right;
+  color: var(--bordo-dark);
+}
+.info .label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.info .value {
+  font-weight: 900;
+  font-size: 1.3rem;
+}
+
+/* === ALERTE GLOBALE === */
+.alerts {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  margin: 10px 20px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.alerts.good {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.15);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.15);
+}
+
+/* === TITRE SECTION === */
+.section-title {
+  color: var(--gold);
+  font-weight: 800;
+  text-align: center;
+  font-size: 1.05rem;
+  margin: 12px 0 8px;
+}
+
+/* === BOUTONS === */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 28px 24px;
+}
+.actions button {
+  flex: 1;
+  background: linear-gradient(180deg, #b22, #7b0d0d);
+  color: #ffeeba;
+  font-weight: 700;
+  font-size: 0.9rem;
   border: none;
   border-radius: 10px;
-  font-size: 1.2rem;
-  color: #fff;
+  padding: 10px 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  width: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transition: transform 0.1s ease, filter 0.2s ease;
 }
-
-.btn-reserver {
-  background: #1976d2;
-}
-.btn-reserver:hover {
-  background: #0d47a1;
+.actions button:hover {
+  filter: brightness(1.1);
   transform: scale(1.05);
 }
-.btn-scanner {
-  background: #2e7d32;
-}
-.btn-scanner:hover {
-  background: #1b5e20;
-  transform: scale(1.05);
-}
-
-/* Éclairage de scène */
-.spotlight {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(ellipse at center, rgba(255,255,200,0.3) 0%, transparent 80%);
-  transform: translateX(-50%);
-  z-index: 1;
-  animation: glow 4s ease-in-out infinite alternate;
-}
-@keyframes glow {
-  0% { opacity: 0.3; transform: translateX(-50%) scale(1); }
-  100% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
-}
-
-footer {
-  position: absolute;
-  bottom: 15px;
-  font-size: 0.9rem;
-  color: #ccc;
-}
-
-/* Responsive */
-@media (max-width: 600px) {
-  h1 { font-size: 2rem; }
-  button { width: 200px; font-size: 1rem; }
+.actions button:active {
+  transform: scale(0.97);
 }
 </style>
 </head>
+
 <body>
+  <div class="phone">
+    <div class="screen">
+      <h1>TABLEAU DE BORD</h1>
 
-<!-- Rideaux -->
-<div class="curtain left"></div>
-<div class="curtain right"></div>
+      <div class="card">
+        <div class="icon">📅</div>
+        <div class="info">
+          <div class="label">Réservations</div>
+          <div class="value" id="totalReserved">0</div>
+        </div>
+      </div>
 
-<!-- Éclairage -->
-<div class="spotlight"></div>
+      <div class="card">
+        <div class="icon">💶</div>
+        <div class="info">
+          <div class="label">Encaissement total</div>
+          <div class="value" id="totalAmount">0.00 €</div>
+        </div>
+      </div>
 
-<!-- Contenu -->
-<div id="content">
-  <h1>🎭 Théâtre Saint Martin</h1>
-  <p>Bienvenue sur la scène</p>
-  <button class="btn-reserver" onclick="location.href='salle.html'">🎟️ Réserver des places</button>
-  <button class="btn-scanner" onclick="location.href='scanner.html'">📱 Scanner les billets</button>
-</div>
+      <div class="card">
+        <div class="icon">🎭</div>
+        <div class="info">
+          <div class="label">Taux de remplissage</div>
+          <div class="value" id="fillRate">0%</div>
+        </div>
+      </div>
 
-<footer>© 2025 Théâtre Saint Martin</footer>
+      <div class="alerts" id="alerts">Tous les billets sont payés ✅</div>
 
-<script>
-// Animation d’ouverture du rideau
-window.addEventListener("load", () => {
-  document.querySelector(".curtain.left").style.transform = "translateX(-100%)";
-  document.querySelector(".curtain.right").style.transform = "translateX(100%)";
-  setTimeout(() => {
-    document.getElementById("content").style.opacity = "1";
-  }, 1800);
-});
-</script>
+      <div class="section-title">Ventes de billets</div>
+      <div class="actions">
+        <button>🎟️ Nouvelle vente</button>
+        <button>🔍 Vérifier billet</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- === SCRIPT FIREBASE UNIQUE === -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXX_TON_API_KEY",
+      authDomain: "theatre-saint-martin.firebaseapp.com",
+      databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "theatre-saint-martin",
+      storageBucket: "theatre-saint-martin.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcd1234efgh"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const seatsRef = ref(db, "seats");
+
+    onValue(seatsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      let totalEncaisse = 0;
+      let totalReservations = 0;
+      let billetsNonPayes = 0;
+      const totalPlacesMax = 200;
+
+      for (const seatId in data) {
+        const seat = data[seatId];
+        if (!seat) continue;
+        if (seat.reserved) totalReservations++;
+        if (seat.paid) {
+          totalEncaisse += seat.type === "adulte" ? 14 :
+                           seat.type === "enfant" ? 10 : 0;
+        } else if (seat.reserved) {
+          billetsNonPayes++;
+        }
+      }
+
+      const tauxRemplissage = Math.round((totalReservations / totalPlacesMax) * 100);
+      document.getElementById("totalReserved").textContent = totalReservations;
+      document.getElementById("totalAmount").textContent = totalEncaisse.toFixed(2) + " €";
+      document.getElementById("fillRate").textContent = tauxRemplissage + "%";
+
+      const alertDiv = document.getElementById("alerts");
+      if (billetsNonPayes === 0) {
+        alertDiv.textContent = "Tous les billets sont payés ✅";
+        alertDiv.classList.add("good");
+      } else {
+        alertDiv.textContent = `${billetsNonPayes} billet${billetsNonPayes > 1 ? "s" : ""} non payé${billetsNonPayes > 1 ? "s" : ""} ⚠️`;
+        alertDiv.classList.remove("good");
+      }
+    });
+
+    document.querySelector("button:nth-of-type(1)").onclick = () => window.location.href = "salle.html";
+    document.querySelector("button:nth-of-type(2)").onclick = () => window.location.href = "scanner.html";
+  </script>
 </body>
 </html>
