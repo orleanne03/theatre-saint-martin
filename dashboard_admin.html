@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎭 Théâtre Saint Martin – Tableau de bord admin</title>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window._firebaseDB = db;
+  window._firebaseRef = ref;
+  window._firebaseOnValue = onValue;
+</script>
+
+<style>
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #7b1fa2 0%, #311b92 100%);
+  margin: 0;
+  color: #fff;
+  text-align: center;
+}
+
+header {
+  background: linear-gradient(90deg, #b71c1c, #880e4f);
+  color: #ffeb3b;
+  padding: 15px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+#stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px auto;
+  width: 90%;
+  max-width: 420px;
+}
+
+.card {
+  background: linear-gradient(135deg, #d32f2f, #880e4f);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  text-align: left;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+}
+.card h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #ffeb3b;
+}
+.card p {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 6px 0 0;
+}
+
+.alerts {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 15px;
+  width: 90%;
+  margin: 0 auto 15px;
+  text-align: left;
+}
+.alert {
+  background: rgba(255,255,255,0.2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin: 5px 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.alert.warning { background: rgba(255,193,7,0.25); color: #fff59d; }
+.alert.danger { background: rgba(244,67,54,0.3); color: #ffebee; }
+.alert.info { background: rgba(33,150,243,0.25); color: #bbdefb; }
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button#back { background: #424242; }
+button#scan { background: #d32f2f; }
+button#back:hover, button#scan:hover { opacity: 0.85; }
+
+footer {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 20px 0;
+}
+</style>
+</head>
+
+<body>
+<header>🎭 Tableau de bord – Théâtre Saint Martin</header>
+
+<section class="alerts" id="alerts">
+  <div class="alert info">ℹ️ Chargement des données...</div>
+</section>
+
+<section id="stats">
+  <div class="card">
+    <h3>💰 Total encaissé</h3>
+    <p id="totalAmount">0 €</p>
+  </div>
+  <div class="card">
+    <h3>🎟️ Places réservées</h3>
+    <p id="totalReserved">0</p>
+  </div>
+  <div class="card">
+    <h3>🧍 Adultes</h3>
+    <p id="totalAdults">0</p>
+  </div>
+  <div class="card">
+    <h3>🧒 Enfants</h3>
+    <p id="totalChildren">0</p>
+  </div>
+  <div class="card">
+    <h3>🍼 Moins de 8 ans</h3>
+    <p id="totalBabies">0</p>
+  </div>
+  <div class="card">
+    <h3>📈 Taux de remplissage</h3>
+    <p id="fillRate">0%</p>
+  </div>
+</section>
+
+<div class="actions">
+  <button id="back">⬅️ Retour</button>
+  <button id="scan">🎫 Scanner un billet</button>
+</div>
+
+<footer>© Théâtre Saint Martin – Tableau de bord admin</footer>
+
+<script type="module">
+await new Promise(resolve => {
+  const check = () => window._firebaseDB ? resolve() : setTimeout(check, 100);
+  check();
+});
+
+const db = window._firebaseDB;
+const ref = window._firebaseRef;
+const onValue = window._firebaseOnValue;
+
+const TOTAL_SEATS = 342; // 19 rangées × 18 sièges
+
+const seatsRef = ref(db, "seats");
+onValue(seatsRef, snapshot => {
+  const seats = snapshot.val() || {};
+  updateDashboard(seats);
+});
+
+function updateDashboard(seats) {
+  const values = Object.values(seats);
+  const reserved = values.length;
+  const adults = values.filter(s => s.type === "adulte").length;
+  const children = values.filter(s => s.type === "enfant").length;
+  const babies = values.filter(s => s.type === "moins8").length;
+
+  const paidSeats = values.filter(s => s.paid);
+  let totalPaid = 0;
+  for (const s of paidSeats) {
+    if (s.type === "adulte") totalPaid += 14;
+    if (s.type === "enfant") totalPaid += 10;
+  }
+
+  document.getElementById("totalAmount").textContent = `${totalPaid.toFixed(2)} €`;
+  document.getElementById("totalReserved").textContent = reserved;
+  document.getElementById("totalAdults").textContent = adults;
+  document.getElementById("totalChildren").textContent = children;
+  document.getElementById("totalBabies").textContent = babies;
+
+  const fillRate = ((reserved / TOTAL_SEATS) * 100).toFixed(1);
+  document.getElementById("fillRate").textContent = `${fillRate}%`;
+
+  updateAlerts(fillRate, values);
+}
+
+function updateAlerts(fillRate, values) {
+  const alerts = [];
+  const unpaid = values.filter(s => !s.paid).length;
+
+  if (fillRate > 90)
+    alerts.push(`<div class="alert danger">🚨 Taux de remplissage élevé : ${fillRate}%</div>`);
+  else if (fillRate > 70)
+    alerts.push(`<div class="alert warning">⚠️ Salle bientôt pleine (${fillRate}%)</div>`);
+
+  if (unpaid > 0)
+    alerts.push(`<div class="alert warning">💳 ${unpaid} réservation(s) non payée(s)</div>`);
+
+  if (values.length === 0)
+    alerts.push(`<div class="alert info">ℹ️ Aucune réservation enregistrée</div>`);
+
+  if (alerts.length === 0)
+    alerts.push(`<div class="alert info">✅ Tout est en ordre</div>`);
+
+  document.getElementById("alerts").innerHTML = alerts.join("");
+}
+
+// Navigation
+document.getElementById("back").onclick = () => window.location.href = "index.html";
+document.getElementById("scan").onclick = () => window.location.href = "scanner.html";
+</script>
+
+</body>
+</html>
