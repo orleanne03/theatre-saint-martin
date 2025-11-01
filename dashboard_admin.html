@@ -18,6 +18,7 @@
 body {
   margin: 0;
   height: 100vh;
+  height: 100dvh; /* ✅ prend en compte la hauteur réelle visible sur mobile */
   background: url("https://raw.githubusercontent.com/orleanne03/theatre-saint-martin/refs/heads/main/rideau.png")
     center center / cover no-repeat;
   background-color: #1a0000;
@@ -27,6 +28,7 @@ body {
   align-items: center;
   overflow: hidden;
   position: relative;
+  -webkit-overflow-scrolling: touch; /* ✅ pour un scroll fluide sur iOS */
 }
 
 /* === ZONE ÉCRAN DU TÉLÉPHONE === */
@@ -123,7 +125,6 @@ h1 {
   gap: 14px;
   padding: 0 22px 0;
 }
-
 .actions button {
   width: 100%;
   background: linear-gradient(180deg, #c92a2a, #7b0d0d);
@@ -142,8 +143,6 @@ h1 {
   position: relative;
   overflow: hidden;
 }
-
-/* Légère lueur dorée autour au survol */
 .actions button:hover {
   background: linear-gradient(180deg, #d23030, #891111);
   transform: translateY(-2px) scale(1.03);
@@ -152,8 +151,6 @@ h1 {
     0 0 15px rgba(247, 214, 90, 0.4);
   border-color: rgba(247, 214, 90, 0.6);
 }
-
-/* Effet de brillance qui traverse le bouton */
 .actions button::after {
   content: "";
   position: absolute;
@@ -168,8 +165,6 @@ h1 {
 .actions button:hover::after {
   left: 130%;
 }
-
-/* Cliqué */
 .actions button:active {
   transform: scale(0.97);
   filter: brightness(0.95);
