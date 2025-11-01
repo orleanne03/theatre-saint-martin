@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>🎟️ Scanner — Théâtre Saint Martin</title>
 
 <!-- Librairie QR -->
@@ -16,9 +16,11 @@
     text-align: center;
     background: linear-gradient(180deg, #f9f9f9, #e3f2fd);
   }
-  h1 { color: #0d47a1; margin: 6px 0; }
+  h1 { color: #0d47a1; margin: 6px 0; font-size: 1.3em; }
+  p { margin: 4px 0 10px; }
   #reader {
-    width: 320px;
+    width: 90%;
+    max-width: 320px;
     margin: 12px auto;
     border-radius: 10px;
     overflow: hidden;
@@ -42,6 +44,7 @@
     color: #fff;
     cursor: pointer;
     margin: 6px;
+    font-size: 15px;
   }
   .violet { background: #8e24aa; }
   .violet:hover { background: #6a1b9a; }
@@ -60,10 +63,24 @@
   #newScanBtn { display: none; margin-top: 10px; }
   #resetScanBtn { background: #f57c00; }
   #resetScanBtn:hover { background: #e65100; }
+
   table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   th, td { border: 1px solid #ccc; padding: 6px; }
   th { background: #e3f2fd; }
-  @media (max-width: 420px) { #reader { width: 260px; } }
+
+  /* --- Amélioration mobile --- */
+  @media (max-width: 600px) {
+    body { padding: 8px; }
+    .panel { padding: 10px; }
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    button { font-size: 14px; padding: 8px 10px; }
+    #details { font-size: 14px; }
+  }
 </style>
 </head>
 
@@ -80,25 +97,26 @@
 
     <button id="newScanBtn" class="green">🎬 Nouveau scan</button>
     <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
-    <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
   </div>
 
-  <!-- === Tableau visible en permanence === -->
+  <!-- === Tableau visible sur toutes tailles d’écran === -->
   <div class="panel">
     <h2>📋 Historique des billets scannés</h2>
-    <table id="scanTable">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Sièges</th>
-          <th>Date</th>
-          <th>🗑️</th>
-        </tr>
-      </thead>
-      <tbody id="scanTableBody">
-        <tr><td colspan="4" style="padding:10px;color:#777;">Aucun billet scanné</td></tr>
-      </tbody>
-    </table>
+    <div style="overflow-x:auto;">
+      <table id="scanTable">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Sièges</th>
+            <th>Date</th>
+            <th>🗑️</th>
+          </tr>
+        </thead>
+        <tbody id="scanTableBody">
+          <tr><td colspan="4" style="padding:10px;color:#777;">Aucun billet scanné</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 <script>
@@ -111,12 +129,25 @@ const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 const newScanBtn = document.getElementById("newScanBtn");
+const scanTableBody = document.getElementById("scanTableBody");
 
+// --- Fonction sécurisée localStorage (iOS friendly) ---
+function safeStorageGet(key){
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); }
+  catch(e){ return []; }
+}
+function safeStorageSet(key, val){
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch(e){ console.warn("Stockage désactivé sur cet appareil."); }
+}
+
+// === Compteur ===
 function updateCounter(){
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = safeStorageGet("scannedTickets");
   counterEl.textContent = "Billets scannés : " + scanned.length;
 }
 
+// === Scanner ===
 async function startScanner(){
   if (scanning) return;
   scanning = true;
@@ -132,7 +163,7 @@ async function startScanner(){
   };
 
   try {
-    await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
+    await scanner.start({ facingMode: { ideal: "environment" } }, config, onScanSuccess);
     updateCounter();
     newScanBtn.style.display = "none";
   } catch (err) {
@@ -158,7 +189,7 @@ async function onScanSuccess(text){
 
   await stopScanner();
 
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = safeStorageGet("scannedTickets");
   const decoded = safeDecode(text);
   let data = null;
   try { data = JSON.parse(decoded); } catch(e){ data = null; }
@@ -173,7 +204,7 @@ async function onScanSuccess(text){
     flash("red");
   } else {
     scanned.push({ raw: text, nom, sieges, date });
-    localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+    safeStorageSet("scannedTickets", scanned);
     updateCounter();
     statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
     flash("lime");
@@ -212,45 +243,36 @@ newScanBtn.onclick = () => {
   startScanner();
 };
 
-// === Accueil ===
-document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
-
 // === Réinitialiser ===
-const resetScanBtn = document.getElementById("resetScanBtn");
-if (resetScanBtn) {
-  resetScanBtn.onclick = () => {
-    const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
-    if (pwd === "admin123") {
-      if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
-        localStorage.removeItem("scannedTickets");
-        updateCounter();
-        detailsEl.style.display = "none";
-        statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
-        newScanBtn.style.display = "none";
-        flash("lime");
-        loadDashboard();
-      }
-    } else if (pwd !== null) {
-      alert("❌ Mot de passe incorrect.");
-      flash("red");
+document.getElementById("resetScanBtn").onclick = () => {
+  const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
+  if (pwd === "admin123") {
+    if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
+      localStorage.removeItem("scannedTickets");
+      updateCounter();
+      detailsEl.style.display = "none";
+      statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
+      newScanBtn.style.display = "none";
+      flash("lime");
+      loadDashboard();
     }
-  };
-}
+  } else if (pwd !== null) {
+    alert("❌ Mot de passe incorrect.");
+    flash("red");
+  }
+};
 
 // === Tableau dynamique ===
-const scanTableBody = document.getElementById("scanTableBody");
-
 function loadDashboard(){
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = safeStorageGet("scannedTickets");
   scanTableBody.innerHTML = "";
 
-  if (scanned.length === 0) {
+  if (!Array.isArray(scanned) || scanned.length === 0) {
     scanTableBody.innerHTML = "<tr><td colspan='4' style='padding:10px;color:#777;'>Aucun billet scanné</td></tr>";
     return;
   }
 
   const sorted = [...scanned].sort((a,b)=> new Date(b.date) - new Date(a.date));
-
   sorted.forEach((item, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -266,15 +288,13 @@ function loadDashboard(){
 }
 
 function deleteScan(index){
-  if (!confirm("Supprimer ce scan ?")) return;
-  const scanned = JSON.parse(localStorage.getItem("scannedTickets") || "[]");
+  const scanned = safeStorageGet("scannedTickets");
   scanned.splice(index,1);
-  localStorage.setItem("scannedTickets", JSON.stringify(scanned));
+  safeStorageSet("scannedTickets", scanned);
   updateCounter();
   loadDashboard();
 }
 
-// === Initialisation ===
 window.addEventListener("load", () => {
   startScanner();
   loadDashboard();
