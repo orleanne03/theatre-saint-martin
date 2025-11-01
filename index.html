@@ -241,15 +241,27 @@ h1 {
   transform: scale(0.97);
 }
 @media (max-width: 420px) {
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: auto;
+    min-height: 100vh;
+    padding-top: 8vh; /* crée un centrage visuel vertical */
+    padding-bottom: 6vh;
+  }
+
   .phone {
     width: 88vw;         /* largeur fluide (88% de la largeur de l’écran) */
     height: auto;        /* hauteur automatique selon le contenu */
     min-height: 640px;   /* garde un minimum esthétique */
     padding: 10px 10px;
+    margin: 0 auto;
   }
 
   .screen {
-    inset: 8px;          /* réduit les marges internes */
+    inset: 8px;
     border-radius: 32px;
     padding: 20px 0;
   }
@@ -270,6 +282,7 @@ h1 {
     padding: 0 18px 18px;
   }
 }
+
 
 </style>
 </head>
