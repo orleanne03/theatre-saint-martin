@@ -6,51 +6,22 @@
 <title>🎭 Cabaret de Printemps – Réservations</title>
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <style>
-body {
-  font-family:"Segoe UI",sans-serif;
-  background:#fff8e1;
-  margin:0;text-align:center;color:#212121;padding:20px;
-}
+body {font-family:"Segoe UI",sans-serif;background:#fff8e1;margin:0;text-align:center;color:#212121;padding:20px;}
 h1{color:#d32f2f;margin-bottom:5px;display:flex;justify-content:center;align-items:center;gap:8px;}
 h1::before{content:"🎭";}
 h2{color:#424242;font-weight:500;margin-bottom:20px;}
-form{
-  background:#fff;max-width:400px;margin:0 auto;padding:20px;
-  border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.15);
-}
-input,button{
-  width:90%;margin:8px auto;padding:10px;border:1px solid #ccc;
-  border-radius:8px;font-size:15px;display:block;text-align:center;
-}
-button{
-  background:#d32f2f;color:white;font-weight:600;border:none;
-  cursor:pointer;transition:0.3s;
-}
+form{background:#fff;max-width:400px;margin:0 auto;padding:20px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+input,button{width:90%;margin:8px auto;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:15px;display:block;text-align:center;}
+button{background:#d32f2f;color:white;font-weight:600;border:none;cursor:pointer;transition:0.3s;}
 button:hover{background:#b71c1c;}
 #remaining{font-size:1.2rem;color:#2e7d32;font-weight:700;margin-bottom:10px;}
-#progressContainer{
-  width:90%;max-width:400px;margin:10px auto 20px;background:#eee;
-  border-radius:8px;height:20px;overflow:hidden;
-}
-#progressBar{
-  height:100%;width:0%;background:linear-gradient(90deg,#81c784,#388e3c);
-  transition:width 0.5s;
-}
-#list{
-  margin-top:25px;max-width:700px;margin-left:auto;margin-right:auto;
-  background:#fafafa;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1);
-  padding:15px;text-align:left;
-}
-.res-item{
-  border-bottom:1px solid #eee;padding:6px 0;font-size:0.95rem;
-  display:flex;justify-content:space-between;align-items:center;
-}
+#progressContainer{width:90%;max-width:400px;margin:10px auto 20px;background:#eee;border-radius:8px;height:20px;overflow:hidden;}
+#progressBar{height:100%;width:0%;background:linear-gradient(90deg,#81c784,#388e3c);transition:width 0.5s;}
+#list{margin-top:25px;max-width:700px;margin-left:auto;margin-right:auto;background:#fafafa;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1);padding:15px;text-align:left;}
+.res-item{border-bottom:1px solid #eee;padding:6px 0;font-size:0.95rem;display:flex;justify-content:space-between;align-items:center;}
 .paid{color:#2e7d32;font-weight:600;}
 .unpaid{color:#e91e63;font-weight:600;}
-.delete-btn{
-  background:#ef5350;border:none;color:white;border-radius:6px;
-  padding:4px 8px;cursor:pointer;
-}
+.delete-btn{background:#ef5350;border:none;color:white;border-radius:6px;padding:4px 8px;cursor:pointer;}
 .delete-btn:hover{background:#c62828;}
 .admin-btn{background:#1565c0;margin-top:20px;}
 .admin-btn:hover{background:#0d47a1;}
@@ -82,7 +53,7 @@ button:hover{background:#b71c1c;}
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
 
-<!-- Boutons admin cachés par défaut -->
+<!-- Boutons admin -->
 <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
 <button class="export-btn" id="exportBtn" style="display:none;">⬇️ Export CSV</button>
 <button class="clearall-btn" id="clearAllBtn" style="display:none;">🗑 Supprimer toutes les réservations</button>
@@ -138,7 +109,7 @@ onValue(refSpectacle,snap=>{
   const data=snap.val()||{};
   reservations=data.reservations||{};
   maxPlaces=data.maxPlaces||100;
-  document.getElementById("capacityLabel").textContent=maxPlaces; // ✅ met à jour le titre
+  document.getElementById("capacityLabel").textContent=maxPlaces;
   updateUI();
 });
 
@@ -153,6 +124,7 @@ function sendEmail(data){
   });
 }
 
+// ✅ Correction ici
 document.getElementById("resForm").onsubmit=async e=>{
   e.preventDefault();
   const name=document.getElementById("name").value.trim().toUpperCase();
@@ -168,7 +140,8 @@ document.getElementById("resForm").onsubmit=async e=>{
   const id=Date.now();
   const amount=nbA*priceAdult+nbC*priceChild;
   const newRes={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount,paid};
-  await update(refSpectacle,{[`reservations/${id}`]:newRes});
+  // ✅ set() direct vers la réservation
+  await set(ref(db, `spectacles/cabaret_printemps/reservations/${id}`), newRes);
   sendEmail(newRes);
   alert("✅ Réservation enregistrée !");
   e.target.reset();adultInput.value="Adulte";childInput.value="Enfant";updateTotal();
@@ -177,7 +150,6 @@ document.getElementById("resForm").onsubmit=async e=>{
 function updateUI(){
   const total=Object.values(reservations).reduce((s,r)=>s+(r.nbPlaces||0),0);
   const remaining=maxPlaces-total;
-  // ⚡ On met uniquement à jour le span, pas tout le texte :
   document.getElementById("capacityLabel").textContent=maxPlaces;
   document.getElementById("remaining").textContent=remaining;
   document.getElementById("progressBar").style.width=(total/maxPlaces*100)+"%";
@@ -203,7 +175,7 @@ window.deleteRes=async id=>{
     await remove(ref(db,`spectacles/cabaret_printemps/reservations/${id}`));
 };
 
-// --- ⚙️ Mode Admin ---
+// --- Mode Admin ---
 document.getElementById("adminToggle").onclick=()=>{
   if(!adminMode){
     const pass=prompt("Mot de passe admin :");
@@ -221,7 +193,7 @@ document.getElementById("adminToggle").onclick=()=>{
   renderList();
 };
 
-// --- 💵 Modifier tarifs ---
+// --- Modifier tarifs ---
 document.getElementById("priceBtn").onclick=()=>{
   if(!adminMode)return;
   const pA=prompt("Tarif adulte (€)",priceAdult);
@@ -232,20 +204,20 @@ document.getElementById("priceBtn").onclick=()=>{
   }
 };
 
-// --- 🧮 Modifier capacité ---
+// --- Modifier capacité ---
 document.getElementById("capacityBtn").onclick=async ()=>{
   if(!adminMode)return;
   const newCap=prompt("Nouvelle capacité maximale :",maxPlaces);
   if(newCap && !isNaN(newCap)){
     maxPlaces=parseInt(newCap);
     await update(refSpectacle,{maxPlaces:maxPlaces});
-    document.getElementById("capacityLabel").textContent=maxPlaces; // ✅ Mise à jour immédiate
+    document.getElementById("capacityLabel").textContent=maxPlaces;
     alert(`Capacité mise à jour : ${maxPlaces} places maximum`);
     updateUI();
   }
 };
 
-// --- 🗑 Supprimer toutes les réservations ---
+// --- Supprimer toutes les réservations ---
 document.getElementById("clearAllBtn").onclick=async ()=>{
   if(!adminMode)return;
   if(confirm("⚠️ Supprimer TOUTES les réservations ?")){
@@ -254,7 +226,7 @@ document.getElementById("clearAllBtn").onclick=async ()=>{
   }
 };
 
-// --- ⬇️ Export CSV ---
+// --- Export CSV ---
 document.getElementById("exportBtn").onclick=()=>{
   const rows=[["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé"]];
   Object.values(reservations).forEach(r=>{
