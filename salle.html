@@ -1114,7 +1114,7 @@ const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 
 let seats = {}, selected = [], admin = false;
-let EMAIL_TEST_MODE = true; // ✅ true = simulation, false = envoi réel
+
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
 const adminBtn = document.getElementById("admin");
@@ -2283,16 +2283,47 @@ document.getElementById("savePrices").onclick = () => {
   }
 };
 
-// === 💌 Bouton de test Email ===
+// === 💌 Bouton de test Email (avec sauvegarde persistante) ===
 const emailTestBtn = document.getElementById("toggleEmailTest");
 
-emailTestBtn.onclick = () => {
-  EMAIL_TEST_MODE = !EMAIL_TEST_MODE;
+// 🔄 Charge la préférence sauvegardée dans le navigateur
+let EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "false" ? false : true;
+
+// ⚙️ Fonction pour mettre à jour l’apparence du bouton
+function updateEmailTestButton() {
+  const banner = document.getElementById("emailModeBanner");
+
+  // Met à jour le texte et la couleur du bouton admin
   emailTestBtn.textContent = EMAIL_TEST_MODE
     ? "✉️ Mode email : TEST"
     : "✉️ Mode email : RÉEL";
   emailTestBtn.style.background = EMAIL_TEST_MODE ? "#607d8b" : "#2e7d32";
-  alert(`🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (EmailJS actif)"}`);
+
+  // 💡 Affiche le bandeau uniquement quand le mode TEST est actif
+  if (EMAIL_TEST_MODE) {
+    banner.textContent = "✉️ Mode email : TEST (aucun envoi)";
+    banner.style.background = "#607d8b";
+    banner.style.display = "block";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+
+
+// 🧩 Clique sur le bouton pour basculer le mode
+emailTestBtn.onclick = () => {
+  EMAIL_TEST_MODE = !EMAIL_TEST_MODE;
+
+  // 💾 Sauvegarde la préférence dans localStorage
+  localStorage.setItem("EMAIL_TEST_MODE", EMAIL_TEST_MODE);
+
+  // 🔄 Met à jour le bouton
+  updateEmailTestButton();
+
+  alert(
+    `🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (EmailJS actif)"}`
+  );
 };
 
 // ➕ Affiche le bouton seulement en mode admin
@@ -2302,12 +2333,13 @@ function toggleAdminUI() {
   emailTestBtn.style.display = isAdmin ? "inline-block" : "none";
 }
 
-
-/* === Initialisation === */
+// 🔹 Initialisation de l’interface
 editPricesBtn.onclick = openPriceModal;
 updatePriceLabels();
 toggleAdminUI();
 
+// 🧩 Met à jour le texte du bouton au démarrage
+updateEmailTestButton();
 
 
   // 🔹 Regroupe par client
@@ -2558,9 +2590,26 @@ async function askEmailConfirmation(email) {
   });
 </script>
 
+<!-- 📨 Indicateur visuel du mode email -->
+<div id="emailModeBanner" style="
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #607d8b;
+  color: white;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: none;
+">
+  ✉️ Mode email : TEST
+</div>
 
 </body>
 </html>
+
 
 
 
