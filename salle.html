@@ -2287,7 +2287,9 @@ document.getElementById("savePrices").onclick = () => {
 const emailTestBtn = document.getElementById("toggleEmailTest");
 
 // 🔄 Charge la préférence sauvegardée dans le navigateur
-let EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "false" ? false : true;
+// Désactivé par défaut, activé uniquement si "true" est enregistré
+let EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "true";
+
 
 // ⚙️ Fonction pour mettre à jour l’apparence du bouton
 function updateEmailTestButton() {
@@ -2609,6 +2611,7 @@ async function askEmailConfirmation(email) {
 
 </body>
 </html>
+
 
 
 
