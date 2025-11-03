@@ -58,8 +58,8 @@ button:hover{background:#b71c1c;}
   <input id="name" placeholder="Nom complet" required>
   <input id="email" placeholder="Email" type="email" required>
   <input id="phone" placeholder="Téléphone" required>
-  <input id="adult" value="Adulte" type="text">
-  <input id="child" value="Enfant" type="text">
+  <input id="adult" type="number" min="0" step="1" placeholder="Adulte">
+  <input id="child" type="number" min="0" step="1" placeholder="Enfant">
   <p id="totalPrice">Total : 0 €</p>
   <label style="display:flex;align-items:center;gap:8px;justify-content:center;">
     <input type="checkbox" id="paid"> Paiement reçu 💶
@@ -80,7 +80,7 @@ button:hover{background:#b71c1c;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-// ✅ Config Firebase
+// ✅ Configuration Firebase
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -98,7 +98,7 @@ let adminMode = false;
 let priceAdult = 15;
 let priceChild = 10;
 
-// --- MAJ auto majuscule/minuscule/format téléphone ---
+// --- Normalisation des saisies ---
 const nameInput = document.getElementById("name");
 const emailInput = document.getElementById("email");
 const phoneInput = document.getElementById("phone");
@@ -107,7 +107,9 @@ nameInput.addEventListener("input",()=>{ nameInput.value = nameInput.value.toUpp
 emailInput.addEventListener("input",()=>{ emailInput.value = emailInput.value.toLowerCase(); });
 phoneInput.addEventListener("input",()=>{
   let digits = phoneInput.value.replace(/\D/g,'');
-  if (digits.length > 10) digits = digits.substring(0,10);
+  if (digits.startsWith("33")) digits = "0" + digits.slice(2);
+  if (digits.startsWith("0033")) digits = "0" + digits.slice(4);
+  digits = digits.slice(0,10);
   phoneInput.value = digits.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 });
 
@@ -115,51 +117,60 @@ const adultInput=document.getElementById("adult");
 const childInput=document.getElementById("child");
 const totalPriceEl=document.getElementById("totalPrice");
 
-function clearFieldOnFocus(input,label){
-  input.addEventListener("focus",()=>{if(input.value===label)input.value="";});
-  input.addEventListener("blur",()=>{if(input.value.trim()==="")input.value=label;});
-}
-clearFieldOnFocus(adultInput,"Adulte");
-clearFieldOnFocus(childInput,"Enfant");
-
 function updateTotal(){
-  const nbA=isNaN(parseInt(adultInput.value))?0:parseInt(adultInput.value);
-  const nbC=isNaN(parseInt(childInput.value))?0:parseInt(childInput.value);
-  totalPriceEl.textContent=`Total : ${(nbA*priceAdult+nbC*priceChild).toFixed(2)} €`;
+  const nbA = Number(adultInput.value) || 0;
+  const nbC = Number(childInput.value) || 0;
+  totalPriceEl.textContent = `Total : ${(nbA*priceAdult + nbC*priceChild).toFixed(2)} €`;
 }
-adultInput.addEventListener("input",updateTotal);
-childInput.addEventListener("input",updateTotal);
+adultInput.addEventListener("input", updateTotal);
+childInput.addEventListener("input", updateTotal);
 
-// --- Lecture des réservations ---
+// --- Lecture des réservations en direct ---
 onValue(refSpectacle, snap=>{
   reservations = snap.val() || {};
   renderList();
 });
 
 // --- Enregistrement d'une réservation ---
-document.getElementById("resForm").onsubmit = async e =>{
+document.getElementById("resForm").onsubmit = async (e) =>{
   e.preventDefault();
+
   const name = nameInput.value.trim().toUpperCase();
   const email = emailInput.value.trim().toLowerCase();
   const phone = phoneInput.value.trim();
-  const nbA = parseInt(adultInput.value) || 0;
-  const nbC = parseInt(childInput.value) || 0;
+  const nbA = Number(adultInput.value) || 0;
+  const nbC = Number(childInput.value) || 0;
   const total = nbA + nbC;
   const paid = document.getElementById("paid").checked;
-  if(!name||!email||!phone||total===0) return alert("Veuillez remplir tous les champs correctement !");
+
+  if(!name || !email || !phone || total === 0){
+    alert("❌ Veuillez remplir tous les champs correctement !");
+    return;
+  }
+
   const id = Date.now();
   const amount = nbA*priceAdult + nbC*priceChild;
   const data = { name, email, phone, nbAdult: nbA, nbChild: nbC, nbPlaces: total, amount, paid };
-  await set(ref(db,`spectacles/salle_bessay/${id}`), data);
-  alert("✅ Réservation enregistrée !");
-  e.target.reset(); adultInput.value="Adulte"; childInput.value="Enfant"; updateTotal();
+
+  try {
+    await set(ref(db, `spectacles/salle_bessay/${id}`), data);
+    alert("✅ Réservation enregistrée !");
+    e.target.reset();
+    updateTotal();
+  } catch (err) {
+    console.error("Erreur Firebase:", err);
+    alert(`❌ Erreur lors de l’enregistrement : ${err.message}`);
+  }
 };
 
 // --- Affichage des réservations ---
 function renderList(){
   const container=document.getElementById("list");
   const entries=Object.entries(reservations);
-  if(!entries.length){container.innerHTML="<p>Aucune réservation pour l’instant.</p>";return;}
+  if(!entries.length){
+    container.innerHTML="<p>Aucune réservation pour l’instant.</p>";
+    return;
+  }
   container.innerHTML="<h3>📋 Réservations</h3>";
   entries.sort((a,b)=>b[0]-a[0]).forEach(([id,r])=>{
     container.innerHTML+=`
@@ -195,7 +206,9 @@ document.getElementById("priceBtn").onclick = ()=>{
   if(!adminMode)return;
   const pA=prompt("Tarif adulte (€)",priceAdult);
   const pC=prompt("Tarif enfant (€)",priceChild);
-  if(pA&&pC){priceAdult=parseFloat(pA);priceChild=parseFloat(pC);
+  if(pA&&pC){
+    priceAdult=parseFloat(pA);
+    priceChild=parseFloat(pC);
     alert(`Tarifs mis à jour : Adultes ${priceAdult} €, Enfants ${priceChild} €`);
     updateTotal();
   }
