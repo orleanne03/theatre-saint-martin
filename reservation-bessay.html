@@ -43,7 +43,7 @@ button:hover {background:#b71c1c;}
 .unpaid {color:#e91e63;font-weight:600;}
 .delete-btn {
   background:#ef5350;border:none;color:white;border-radius:6px;
-  padding:4px 8px;cursor:pointer;margin-top:8px;
+  padding:5px 10px;cursor:pointer;margin-top:8px;
 }
 .delete-btn:hover {background:#c62828;}
 .admin-btn {background:#1565c0;margin-top:20px;}
@@ -73,6 +73,8 @@ button:hover {background:#b71c1c;}
   justify-content: space-between;
   align-items: center;
   color: #333;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 6px;
 }
 .accordion-header:hover {
   color: #d32f2f;
@@ -90,6 +92,20 @@ button:hover {background:#b71c1c;}
 }
 .accordion-body p {
   margin: 5px 0;
+}
+
+/* --- Boutons admin supplémentaires --- */
+.toggle-paid-btn {
+  background:#43a047;
+  border:none;
+  color:white;
+  border-radius:6px;
+  padding:5px 10px;
+  cursor:pointer;
+  margin-right:8px;
+}
+.toggle-paid-btn:hover {
+  background:#2e7d32;
 }
 </style>
 </head>
@@ -206,7 +222,7 @@ document.getElementById("resForm").onsubmit = async (e) =>{
   }
 };
 
-// --- Accordéon : bascule ouverture/fermeture ---
+// --- Accordéon ---
 window.toggleAccordion = function(id) {
   const body = document.getElementById(`body-${id}`);
   body.classList.toggle("open");
@@ -228,6 +244,7 @@ function renderList() {
     .forEach(([id, r]) => {
       const paidClass = r.paid ? "paid" : "unpaid";
       const paidText = r.paid ? "✅ Payé" : "❌ Non payé";
+      const toggleText = r.paid ? "Annuler paiement" : "Marquer comme payé";
 
       const card = document.createElement("div");
       card.className = "accordion-card";
@@ -241,16 +258,37 @@ function renderList() {
           <p>📧 <strong>Email :</strong> ${r.email}</p>
           <p>👨‍👩‍👧 <strong>Détail :</strong> ${r.nbAdult} adulte${r.nbAdult>1?"s":""} / ${r.nbChild} enfant${r.nbChild>1?"s":""}</p>
           <p>💰 <strong>Montant total :</strong> ${r.amount.toFixed(2)} €</p>
-          ${adminMode?`<button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
+          ${
+            adminMode
+              ? `
+                <button class="toggle-paid-btn" onclick="togglePaid('${id}', ${!r.paid})">💶 ${toggleText}</button>
+                <button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>
+              `
+              : ""
+          }
         </div>
       `;
       container.appendChild(card);
     });
 }
 
+// --- Supprimer une réservation ---
 window.deleteRes = async id=>{
   if(confirm("Supprimer cette réservation ?"))
     await remove(ref(db,`spectacles/salle_bessay/${id}`));
+};
+
+// --- Changer statut payé ---
+window.togglePaid = async (id, newStatus) => {
+  const item = reservations[id];
+  if (!item) return;
+  try {
+    await set(ref(db, `spectacles/salle_bessay/${id}`), { ...item, paid: newStatus });
+    alert(newStatus ? "✅ Paiement validé" : "❌ Paiement annulé");
+  } catch (err) {
+    console.error("Erreur lors du changement de paiement :", err);
+    alert("Erreur lors de la mise à jour du paiement.");
+  }
 };
 
 // --- Mode admin ---
