@@ -3,108 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎉 Salle de Bessay – Réservations</title>
+<title>🎭 Salle de Bessay – Réservations</title>
 
-<!-- Librairies externes -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
 body {
   font-family:"Segoe UI",sans-serif;
   background:#fff8e1;
-  margin:0;text-align:center;color:#212121;padding:20px;
-  transition: background 0.3s ease;
+  color:#212121;
+  margin:0;
+  padding:20px;
+  text-align:center;
+  transition:background 0.3s ease;
 }
-body.admin-mode {background:#ffe4ec;}
-h1 {color:#d32f2f;margin-bottom:5px;}
-h2 {color:#424242;font-weight:600;margin-bottom:20px;font-style:italic;}
+body.admin-mode { background:#ffe4ec; }
+h1 { color:#d32f2f; margin-bottom:5px; }
+h2 { color:#424242; font-weight:600; font-style:italic; margin-bottom:20px; }
+
 form {
-  background:#fff;max-width:400px;margin:0 auto;padding:20px;
-  border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.15);
+  background:#fff;
+  max-width:400px;
+  margin:0 auto;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.15);
+  text-align:left;
 }
-input,button {
-  width:90%;margin:8px auto;padding:10px;border:1px solid #ccc;
-  border-radius:8px;font-size:15px;display:block;text-align:center;
+form input, form button {
+  width:95%;
+  margin:8px auto;
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  font-size:15px;
+  display:block;
 }
-button {
-  background:#d32f2f;color:white;font-weight:600;border:none;
-  cursor:pointer;transition:0.3s;
+form input { text-align:left; }
+form button {
+  background:#d32f2f;
+  color:white;
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+  transition:0.3s;
+  text-align:center;
 }
-button:hover {background:#b71c1c;}
-#list {margin-top:25px;max-width:700px;margin-left:auto;margin-right:auto;
-  background:transparent;border-radius:10px;padding:15px;text-align:left;}
-.paid {color:#2e7d32;font-weight:600;}
-.unpaid {color:#e91e63;font-weight:600;}
-.delete-btn {
-  background:#ef5350;border:none;color:white;border-radius:6px;
-  padding:5px 10px;cursor:pointer;margin-top:8px;
+form button:hover { background:#b71c1c; }
+#totalPrice { font-weight:bold; color:#388e3c; margin-top:10px; text-align:center; }
+
+#list { margin-top:30px; max-width:700px; margin-left:auto; margin-right:auto; }
+
+.accordion-card {
+  background:#fff;
+  border-radius:10px;
+  margin:12px auto;
+  padding:12px 15px;
+  max-width:600px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
-.delete-btn:hover {background:#c62828;}
-.admin-btn {background:#1565c0;margin-top:20px;}
-.admin-btn:hover {background:#0d47a1;}
-.clearall-btn {background:#8e24aa;}
-.clearall-btn:hover {background:#6a1b9a;}
-#totalPrice {font-weight:bold;color:#388e3c;margin-top:10px;}
-.accordion-card {background:#fff;border-radius:10px;margin:10px auto;
-  padding:10px 15px;max-width:600px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .accordion-header {
-  font-size:1rem;font-weight:600;cursor:pointer;
-  display:flex;justify-content:space-between;align-items:center;
-  color:#333;border-bottom:1px solid #f0f0f0;padding-bottom:6px;
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid #f0f0f0;
+  padding-bottom:6px;
+  cursor:pointer;
 }
-.accordion-header:hover {color:#d32f2f;}
-.accordion-body {display:none;font-size:0.95rem;margin-top:10px;
-  border-top:1px solid #eee;padding-top:10px;text-align:left;}
-.accordion-body.open {display:block;}
+.accordion-body {
+  display:none;
+  margin-top:10px;
+  text-align:left;
+  font-size:0.95rem;
+}
+.accordion-body.open { display:block; }
+.paid { color:#2e7d32; font-weight:600; }
+.unpaid { color:#e91e63; font-weight:600; }
+
+.delete-btn, .toggle-paid-btn {
+  width:90%;
+  display:block;
+  margin:8px auto;
+  border:none;
+  border-radius:8px;
+  color:white;
+  padding:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.toggle-paid-btn { background:#2e7d32; }
+.delete-btn { background:#e53935; }
+.toggle-paid-btn:hover { background:#1b5e20; }
+.delete-btn:hover { background:#b71c1c; }
+
+.admin-btn {
+  background:#1565c0;
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:10px 16px;
+  font-weight:600;
+  margin:10px 5px;
+  cursor:pointer;
+}
+.admin-btn:hover { background:#0d47a1; }
+
+#emailModal {
+  position:fixed;
+  inset:0;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  z-index:1000;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity 0.3s ease;
+}
+#emailModal.show { display:flex!important; opacity:1!important; visibility:visible!important; }
+
+#emailModalContent {
+  background:#fff;
+  border-radius:10px;
+  padding:25px 30px;
+  max-width:600px;
+  width:90%;
+  text-align:left;
+  box-shadow:0 5px 12px rgba(0,0,0,0.3);
+}
+#emailPreview { font-size:0.95rem; line-height:1.5; }
+
+#testNotice {
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#2196f3;
+  color:white;
+  padding:10px 20px;
+  border-radius:30px;
+  display:none;
+  font-weight:600;
+  box-shadow:0 3px 8px rgba(0,0,0,0.25);
+}
 #adminNotice {
-  position:fixed;top:20px;right:20px;background:#d81b60;color:white;
-  font-weight:600;padding:10px 16px;border-radius:50px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.2);
-  z-index:9999;display:none;
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:#d81b60;
+  color:white;
+  padding:10px 18px;
+  border-radius:30px;
+  display:none;
+  font-weight:600;
+  box-shadow:0 3px 8px rgba(0,0,0,0.25);
 }
-body.admin-mode #adminToggle {background:#d32f2f !important;}
 </style>
 </head>
+
 <body>
 
-<div id="adminNotice">👑 Vous êtes en mode administrateur</div>
-
-<h1>🎉 Salle de Bessay – Réservations</h1>
-<h2>🎟️ Spectacle du 23 janvier 2026</h2>
+<h1>🎟️ Salle de Bessay – Réservations</h1>
+<h2>🎭 Spectacle du 23 janvier 2026</h2>
 
 <form id="resForm">
   <input id="name" placeholder="Nom complet" required>
   <input id="email" placeholder="Email" type="email" required>
   <input id="phone" placeholder="Téléphone" required>
-  <input id="adult" type="number" min="0" step="1" placeholder="Adulte">
-  <input id="child" type="number" min="0" step="1" placeholder="Enfant">
-  <input id="infant" type="number" min="0" step="1" placeholder="Moins de 8 ans">
+  <input id="adult" type="number" min="0" placeholder="Adulte(s)">
+  <input id="child" type="number" min="0" placeholder="Enfant(s)">
   <p id="totalPrice">Total : 0 €</p>
-  <label style="display:flex;align-items:center;gap:8px;justify-content:center;">
-    <input type="checkbox" id="paid"> Paiement reçu 💶
-  </label>
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
 
 <div id="list"></div>
 
 <!-- Boutons admin -->
-<button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
-<button class="admin-btn clearall-btn" id="clearAllBtn" style="display:none;">🗑 Supprimer toutes les réservations</button>
-<button class="admin-btn" id="emailTestBtn" style="display:none;">✉️ Mode email : TEST</button>
+<div style="margin-top:25px;">
+  <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
+  <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
+  <button class="admin-btn" id="testEmailBtn" style="display:none;">✉️ Mode Email : TEST</button>
+  <button class="admin-btn" id="exportBtn" style="display:none;">💾 Enregistrer les réservations</button>
+</div>
 
-<button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
-<button class="admin-btn" onclick="window.location.href='index.html'">🏠 Retour</button>
+<div id="testNotice">✉️ Mode TEST activé</div>
+<div id="adminNotice">👑 Vous êtes en mode administrateur</div>
 
-<!-- ✅ Script principal -->
+<!-- Fenêtre modale -->
+<div id="emailModal">
+  <div id="emailModalContent">
+    <h3 style="text-align:center;">📧 Aperçu de l’e-mail</h3>
+    <div id="emailPreview"></div>
+    <button style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;" onclick="closeModal()">Fermer la fenêtre</button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
 emailjs.init("E4g_UFzGYQZBNH07m");
 
-// 🔥 Config Firebase
+// Firebase config
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -117,82 +219,66 @@ const app = initializeApp({
 const db = getDatabase(app);
 const refSpectacle = ref(db, "spectacles/salle_bessay");
 
-let reservations={},adminMode=false,emailTestMode=false;
-let priceAdult=15,priceChild=10,priceInfant=0;
+let reservations={}, adminMode=false, emailTestMode=false;
+let priceAdult=15, priceChild=10;
 
-// ✏️ Formatage
-const nameInput=document.getElementById("name"),emailInput=document.getElementById("email"),phoneInput=document.getElementById("phone");
+// Formatage entrées
+const nameInput=document.getElementById("name"),
+      emailInput=document.getElementById("email"),
+      phoneInput=document.getElementById("phone");
+
 nameInput.addEventListener("input",()=>nameInput.value=nameInput.value.toUpperCase());
 emailInput.addEventListener("input",()=>emailInput.value=emailInput.value.toLowerCase());
-phoneInput.addEventListener("input",()=>{let d=phoneInput.value.replace(/\D/g,'');if(d.startsWith("33"))d="0"+d.slice(2);if(d.startsWith("0033"))d="0"+d.slice(4);phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();});
+phoneInput.addEventListener("input",()=>{
+  let d=phoneInput.value.replace(/\D/g,'');
+  if(d.startsWith("33"))d="0"+d.slice(2);
+  if(d.startsWith("0033"))d="0"+d.slice(4);
+  phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+});
 
-// 💶 Total
-const aI=document.getElementById("adult"),cI=document.getElementById("child"),iI=document.getElementById("infant"),totalEl=document.getElementById("totalPrice");
-function updateTotal(){const a=+aI.value||0,c=+cI.value||0,i=+iI.value||0;totalEl.textContent=`Total : ${(a*priceAdult+c*priceChild+i*priceInfant).toFixed(2)} €`;}
-[aI,cI,iI].forEach(e=>e.addEventListener("input",updateTotal));
+// Total
+const aI=document.getElementById("adult"),cI=document.getElementById("child"),totalEl=document.getElementById("totalPrice");
+function updateTotal(){const a=+aI.value||0,c=+cI.value||0;totalEl.textContent=`Total : ${(a*priceAdult+c*priceChild).toFixed(2)} €`;}
+[aI,cI].forEach(e=>e.addEventListener("input",updateTotal));
 
 onValue(refSpectacle,snap=>{reservations=snap.val()||{};renderList();});
 
-// ✅ Envoi email + QR + modal TEST
-async function sendEmailTicket(data){
-  try{
-    if(!window.QRCode || !window.QRCode.toCanvas){
-      await new Promise((resolve)=>{
-        const existing=document.querySelector("script[data-qrcode]");
-        if(existing)return existing.addEventListener("load",resolve);
-        const s=document.createElement("script");
-        s.src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
-        s.async=false;
-        s.dataset.qrcode="true";
-        s.onload=resolve;
-        document.head.appendChild(s);
-      });
-    }
+// Envoi Email
+async function sendEmail(data){
+  if(emailTestMode){showEmailPreview(`
+    <div style="font-family:'Segoe UI',sans-serif;color:#222;">
+      <h2 style="color:#d32f2f;text-align:center;">🎭 Théâtre Saint Martin</h2>
+      <p style="text-align:center;color:#555;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
+      <hr style="border:1px solid #d32f2f;margin:10px 0;">
+      <p>Bonjour <strong>${data.name}</strong>,</p>
+      <p>Merci pour votre réservation à la <strong>Salle de Bessay</strong> !</p>
+      <p>👨‍👩‍👧 Adulte(s) : ${data.nbAdult}<br>🧒 Enfant(s) : ${data.nbChild}<br>💺 Total places : ${data.nbPlaces}<br>💶 Montant : <strong>${data.amount.toFixed(2)} €</strong></p>
+      <p>Veuillez présenter cet e-mail le soir du spectacle (imprimé ou sur votre téléphone).</p>
+      <p style="margin-top:20px;">À très bientôt,<br><strong>L’équipe du Théâtre Saint Martin</strong></p>
+    </div>`);return;}
 
-    if(!window.QRCode || !window.QRCode.toCanvas){
-      alert("⚠️ Impossible de charger la librairie QRCode.");
-      return;
-    }
-
-    const canvas=document.createElement("canvas");
-    await window.QRCode.toCanvas(canvas,`Nom:${data.name}\nEmail:${data.email}\nPlaces:${data.nbPlaces}`,{width:150});
-    const qr=canvas.toDataURL();
-
-    const msg=`
-Bonjour ${data.name},<br><br>
-Merci pour votre réservation à la Salle de Bessay !<br>
-Voici votre ticket pour le spectacle du <b>23 janvier 2026</b>.<br><br>
-🎟️ <b>Places :</b> ${data.nbPlaces}<br><br>
-<img src="${qr}" style="width:150px;margin-top:10px;"/><br><br>
-À bientôt !<br>
-— Théâtre Saint Martin`;
-
-    if(emailTestMode){window.showEmailModal(msg);return;}
-
-    await emailjs.send("service_0lqs9k7","template_hzfgnxs",{to_email:data.email,to_name:data.name,subject:"🎉 Salle de Bessay – Réservations",message:msg});
-    alert("✉️ Ticket envoyé !");
-  }catch(err){
-    console.error("Erreur Email:",err);
-    alert("Erreur pendant l’envoi.");
-  }
+  await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
+    to_email:data.email,to_name:data.name,
+    nbAdult:data.nbAdult,nbChild:data.nbChild,
+    nbPlaces:data.nbPlaces,amount:data.amount.toFixed(2)
+  });
+  alert("✉️ E-mail envoyé !");
 }
 
-// 🧾 Soumission
+// Formulaire
 document.getElementById("resForm").onsubmit=async e=>{
   e.preventDefault();
   const name=nameInput.value.trim().toUpperCase(),email=emailInput.value.trim().toLowerCase(),phone=phoneInput.value.trim();
-  const nbA=+aI.value||0,nbC=+cI.value||0,nbI=+iI.value||0,total=nbA+nbC+nbI,paid=document.getElementById("paid").checked;
+  const nbA=+aI.value||0,nbC=+cI.value||0,total=nbA+nbC;
   if(!name||!email||!phone||total===0)return alert("❌ Formulaire incomplet !");
-  const id=Date.now(),amount=nbA*priceAdult+nbC*priceChild+nbI*priceInfant;
-  const data={name,email,phone,nbAdult:nbA,nbChild:nbC,nbInfant:nbI,nbPlaces:total,amount,paid};
-  await set(ref(db,`spectacles/salle_bessay/${id}`),data);
+  const data={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount:(nbA*priceAdult+nbC*priceChild),paid:false};
+  await set(ref(db,`spectacles/salle_bessay/${Date.now()}`),data);
   alert("✅ Réservation enregistrée !");
-  sendEmailTicket(data);
+  sendEmail(data);
   e.target.reset();updateTotal();
 };
 
-// 🔽 Liste
-window.toggleAccordion=id=>document.getElementById(`body-${id}`).classList.toggle("open");
+// Liste
 function renderList(){
   const c=document.getElementById("list"),entries=Object.entries(reservations);
   if(!entries.length){c.innerHTML="<p>Aucune réservation.</p>";return;}
@@ -201,57 +287,96 @@ function renderList(){
     const p=r.paid?"paid":"unpaid",txt=r.paid?"✅ Payé":"❌ Non payé";
     c.innerHTML+=`
 <div class="accordion-card">
- <div class="accordion-header" onclick="toggleAccordion('${id}')"><span><b>${r.name}</b> – ${r.nbPlaces} places</span><span class="${p}">${txt}</span></div>
+ <div class="accordion-header" onclick="document.getElementById('body-${id}').classList.toggle('open')">
+   <span><b>${r.name}</b> – ${r.nbPlaces} places</span>
+   <span class="${p}">${txt}</span>
+ </div>
  <div class="accordion-body" id="body-${id}">
-  <p>📞 ${r.phone}</p><p>📧 ${r.email}</p>
-  <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s), ${r.nbInfant} -8 ans</p>
-  ${adminMode?`<button class="toggle-paid-btn" onclick="togglePaid('${id}',${!r.paid})">💶 Basculer paiement</button><button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
+   <p>📞 ${r.phone}</p><p>📧 ${r.email}</p>
+   <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
+   ${adminMode?`<button class="toggle-paid-btn" onclick="togglePaid('${id}',${!r.paid})">💶 Basculer paiement</button><button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
  </div></div>`;
   });
 }
 
-// ⚙️ Admin
+// Fonctions admin
 window.togglePaid=async(id,s)=>{const r=reservations[id];await set(ref(db,`spectacles/salle_bessay/${id}`),{...r,paid:s});renderList();};
 window.deleteRes=async id=>{if(confirm("Supprimer ?"))await remove(ref(db,`spectacles/salle_bessay/${id}`));};
+
 document.getElementById("adminToggle").onclick=()=>{
-  const n=document.getElementById("adminNotice");
+  const notice=document.getElementById("adminNotice");
   if(!adminMode){
-    const pass=prompt("Mot de passe admin :");if(pass!=="admin123")return alert("Mot de passe incorrect !");
-    adminMode=true;document.body.classList.add("admin-mode");n.style.display="block";
+    const pass=prompt("Mot de passe admin :");
+    if(pass!=="admin123")return alert("Mot de passe incorrect !");
+    adminMode=true;
+    document.body.classList.add("admin-mode");
+    notice.style.display="block";
     document.getElementById("adminToggle").textContent="🚪 Sortir du mode admin";
-    ["priceBtn","clearAllBtn","emailTestBtn"].forEach(i=>document.getElementById(i).style.display="inline-block");
+    ["priceBtn","testEmailBtn","exportBtn"].forEach(i=>document.getElementById(i).style.display="inline-block");
   }else{
-    adminMode=false;document.body.classList.remove("admin-mode");n.style.display="none";
+    adminMode=false;
+    emailTestMode=false;
+    document.body.classList.remove("admin-mode");
+    notice.style.display="none";
     document.getElementById("adminToggle").textContent="🔐 Mode Admin";
-    ["priceBtn","clearAllBtn","emailTestBtn"].forEach(i=>document.getElementById(i).style.display="none");
-    window.toggleEmailTestIndicator(false);
+    ["priceBtn","testEmailBtn","exportBtn"].forEach(i=>document.getElementById(i).style.display="none");
+    document.getElementById("testNotice").style.display="none";
   }
   renderList();
 };
-document.getElementById("emailTestBtn").onclick=()=>{if(!adminMode)return;emailTestMode=!emailTestMode;document.getElementById("emailTestBtn").textContent=emailTestMode?"✉️ Mode email : RÉEL":"✉️ Mode email : TEST";window.toggleEmailTestIndicator(emailTestMode);};
-</script>
 
-<!-- ✅ Modal aperçu d’e-mail -->
-<div id="emailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
- background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
- <div style="background:#fff;border-radius:10px;padding:20px 25px;max-width:500px;width:90%;
- max-height:80vh;overflow:auto;text-align:left;position:relative;">
-  <button id="closeModal" style="position:absolute;top:10px;right:10px;background:#d32f2f;color:white;
-  border:none;border-radius:5px;padding:5px 10px;cursor:pointer;">✖</button>
-  <h3>📧 Aperçu de l’e-mail</h3>
-  <div id="emailPreview" style="font-size:0.95rem;line-height:1.4;"></div>
- </div>
-</div>
+document.getElementById("priceBtn").onclick=()=>{
+  const a=parseFloat(prompt("Tarif adulte (€)",priceAdult))||priceAdult;
+  const c=parseFloat(prompt("Tarif enfant (€)",priceChild))||priceChild;
+  priceAdult=a;priceChild=c;alert("Tarifs mis à jour !");updateTotal();
+};
 
-<!-- ✅ Bulle mode test -->
-<div id="testNotice" style="display:none;position:fixed;top:20px;left:20px;background:#2196f3;
- color:white;font-weight:600;padding:10px 16px;border-radius:50px;
- box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:9999;">✉️ Mode TEST email activé</div>
+document.getElementById("testEmailBtn").onclick=()=>{
+  emailTestMode=!emailTestMode;
+  document.getElementById("testNotice").style.display=emailTestMode?"block":"none";
+  document.getElementById("testEmailBtn").textContent=emailTestMode?"✉️ Mode Email : RÉEL":"✉️ Mode Email : TEST";
+};
 
-<script>
-window.showEmailModal=function(html){document.getElementById("emailPreview").innerHTML=html;document.getElementById("emailModal").style.display="flex";};
-document.getElementById("closeModal").onclick=()=>{document.getElementById("emailModal").style.display="none";};
-window.toggleEmailTestIndicator=function(active){document.getElementById("testNotice").style.display=active?"block":"none";};
+// === Export CSV des réservations ===
+document.getElementById("exportBtn").onclick = () => {
+  if (!Object.keys(reservations).length) {
+    alert("Aucune réservation à exporter.");
+    return;
+  }
+
+  const lignes = [
+    ["Nom", "Email", "Téléphone", "Adultes", "Enfants", "Total places", "Montant (€)", "Payé"]
+  ];
+
+  Object.values(reservations).forEach(r => {
+    lignes.push([
+      r.name,
+      r.email,
+      r.phone,
+      r.nbAdult,
+      r.nbChild,
+      r.nbPlaces,
+      r.amount.toFixed(2),
+      r.paid ? "Oui" : "Non"
+    ]);
+  });
+
+  const contenu = lignes.map(l => l.join(";")).join("\n");
+  const blob = new Blob([contenu], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  const date = new Date().toISOString().split("T")[0];
+  a.download = `reservations_bessay_${date}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+// Modale
+window.showEmailPreview=html=>{const m=document.getElementById("emailModal");document.getElementById("emailPreview").innerHTML=html;m.classList.add("show");};
+window.closeModal=()=>document.getElementById("emailModal").classList.remove("show");
 </script>
 
 </body>
