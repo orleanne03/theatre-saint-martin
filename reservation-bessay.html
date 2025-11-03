@@ -3,25 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎭 Cabaret de Printemps – Réservations</title>
+<title>🎭 Salle de Bessay – Réservations</title>
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <style>
-body {font-family:"Segoe UI",sans-serif;background:#fff8e1;margin:0;text-align:center;color:#212121;padding:20px;}
-h1{color:#d32f2f;margin-bottom:5px;display:flex;justify-content:center;align-items:center;gap:8px;}
-h1::before{content:"🎭";}
-h2{color:#424242;font-weight:500;margin-bottom:20px;}
-form{background:#fff;max-width:400px;margin:0 auto;padding:20px;border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
-input,button{width:90%;margin:8px auto;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:15px;display:block;text-align:center;}
-button{background:#d32f2f;color:white;font-weight:600;border:none;cursor:pointer;transition:0.3s;}
+body {
+  font-family:"Segoe UI",sans-serif;
+  background:#fff8e1;
+  margin:0;text-align:center;color:#212121;padding:20px;
+}
+h1{color:#d32f2f;margin-bottom:5px;}
+form{
+  background:#fff;max-width:400px;margin:0 auto;padding:20px;
+  border-radius:10px;box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+input,button{
+  width:90%;margin:8px auto;padding:10px;border:1px solid #ccc;
+  border-radius:8px;font-size:15px;display:block;text-align:center;
+}
+button{
+  background:#d32f2f;color:white;font-weight:600;border:none;
+  cursor:pointer;transition:0.3s;
+}
 button:hover{background:#b71c1c;}
-#remaining{font-size:1.2rem;color:#2e7d32;font-weight:700;margin-bottom:10px;}
-#progressContainer{width:90%;max-width:400px;margin:10px auto 20px;background:#eee;border-radius:8px;height:20px;overflow:hidden;}
-#progressBar{height:100%;width:0%;background:linear-gradient(90deg,#81c784,#388e3c);transition:width 0.5s;}
-#list{margin-top:25px;max-width:700px;margin-left:auto;margin-right:auto;background:#fafafa;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1);padding:15px;text-align:left;}
-.res-item{border-bottom:1px solid #eee;padding:6px 0;font-size:0.95rem;display:flex;justify-content:space-between;align-items:center;}
+#list{
+  margin-top:25px;max-width:700px;margin-left:auto;margin-right:auto;
+  background:#fafafa;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.1);
+  padding:15px;text-align:left;
+}
+.res-item{
+  border-bottom:1px solid #eee;padding:6px 0;font-size:0.95rem;
+  display:flex;justify-content:space-between;align-items:center;
+}
 .paid{color:#2e7d32;font-weight:600;}
 .unpaid{color:#e91e63;font-weight:600;}
-.delete-btn{background:#ef5350;border:none;color:white;border-radius:6px;padding:4px 8px;cursor:pointer;}
+.delete-btn{
+  background:#ef5350;border:none;color:white;border-radius:6px;
+  padding:4px 8px;cursor:pointer;
+}
 .delete-btn:hover{background:#c62828;}
 .admin-btn{background:#1565c0;margin-top:20px;}
 .admin-btn:hover{background:#0d47a1;}
@@ -29,16 +47,12 @@ button:hover{background:#b71c1c;}
 .export-btn:hover{background:#004d40;}
 .clearall-btn{background:#8e24aa;}
 .clearall-btn:hover{background:#6a1b9a;}
-.capacity-btn{background:#f57c00;}
-.capacity-btn:hover{background:#e65100;}
 #totalPrice{font-weight:bold;color:#388e3c;margin-top:10px;}
 </style>
 </head>
 <body>
-<h1>Cabaret de Printemps</h1>
-<h2>Réservation (<span id="capacityLabel">100</span> places maximum)</h2>
-<p>Places restantes : <span id="remaining">—</span></p>
-<div id="progressContainer"><div id="progressBar"></div></div>
+<h1>🎭 Salle de Bessay</h1>
+<h2>Réservations sans limitation de places</h2>
 
 <form id="resForm">
   <input id="name" placeholder="Nom complet" required>
@@ -53,11 +67,9 @@ button:hover{background:#b71c1c;}
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
 
-<!-- Boutons admin -->
 <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
 <button class="export-btn" id="exportBtn" style="display:none;">⬇️ Export CSV</button>
 <button class="clearall-btn" id="clearAllBtn" style="display:none;">🗑 Supprimer toutes les réservations</button>
-<button class="capacity-btn" id="capacityBtn" style="display:none;">🧮 Modifier la capacité maximale</button>
 
 <div id="list"></div>
 
@@ -66,8 +78,9 @@ button:hover{background:#b71c1c;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+// ✅ Config Firebase
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -77,14 +90,26 @@ const app = initializeApp({
   messagingSenderId:"1234567890",
   appId:"1:1234567890:web:abcd1234efgh"
 });
-const db=getDatabase(app);
-const refSpectacle=ref(db,"spectacles/cabaret_printemps");
+const db = getDatabase(app);
+const refSpectacle = ref(db, "spectacles/salle_bessay");
 
-let maxPlaces=100;
-let reservations={};
-let adminMode=false;
-let priceAdult=15;
-let priceChild=10;
+let reservations = {};
+let adminMode = false;
+let priceAdult = 15;
+let priceChild = 10;
+
+// --- MAJ auto majuscule/minuscule/format téléphone ---
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+
+nameInput.addEventListener("input",()=>{ nameInput.value = nameInput.value.toUpperCase(); });
+emailInput.addEventListener("input",()=>{ emailInput.value = emailInput.value.toLowerCase(); });
+phoneInput.addEventListener("input",()=>{
+  let digits = phoneInput.value.replace(/\D/g,'');
+  if (digits.length > 10) digits = digits.substring(0,10);
+  phoneInput.value = digits.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+});
 
 const adultInput=document.getElementById("adult");
 const childInput=document.getElementById("child");
@@ -105,96 +130,68 @@ function updateTotal(){
 adultInput.addEventListener("input",updateTotal);
 childInput.addEventListener("input",updateTotal);
 
-onValue(refSpectacle,snap=>{
-  const data=snap.val()||{};
-  reservations=data.reservations||{};
-  maxPlaces=data.maxPlaces||100;
-  document.getElementById("capacityLabel").textContent=maxPlaces;
-  updateUI();
+// --- Lecture des réservations ---
+onValue(refSpectacle, snap=>{
+  reservations = snap.val() || {};
+  renderList();
 });
 
-function sendEmail(data){
-  emailjs.init("E4g_UFzGYQZBNH07m");
-  emailjs.send("service_0lqs9k7","template_hzfgnxs",{
-    to_email:data.email,
-    subject:"🎭 Réservation – Cabaret de Printemps",
-    message_html:`<h2>🎭 Confirmation</h2><p>Bonjour ${data.name},</p>
-      <p>Adultes : ${data.nbAdult}<br>Enfants : ${data.nbChild}<br>
-      Total : ${data.amount.toFixed(2)} €<br>Statut : ${data.paid?"✅ Payé":"❌ Non payé"}</p>`
-  });
-}
-
-// ✅ Correction ici
-document.getElementById("resForm").onsubmit=async e=>{
+// --- Enregistrement d'une réservation ---
+document.getElementById("resForm").onsubmit = async e =>{
   e.preventDefault();
-  const name=document.getElementById("name").value.trim().toUpperCase();
-  const email=document.getElementById("email").value.trim().toLowerCase();
-  const phone=document.getElementById("phone").value.trim();
-  const nbA=parseInt(adultInput.value)||0;
-  const nbC=parseInt(childInput.value)||0;
-  const total=nbA+nbC;
-  const paid=document.getElementById("paid").checked;
-  if(!name||!email||!phone||total===0)return alert("Remplissez tous les champs !");
-  const totalRes=Object.values(reservations).reduce((s,r)=>s+(r.nbPlaces||0),0);
-  if(totalRes+total>maxPlaces)return alert("❌ Plus assez de places.");
-  const id=Date.now();
-  const amount=nbA*priceAdult+nbC*priceChild;
-  const newRes={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount,paid};
-  // ✅ set() direct vers la réservation
-  await set(ref(db, `spectacles/cabaret_printemps/reservations/${id}`), newRes);
-  sendEmail(newRes);
+  const name = nameInput.value.trim().toUpperCase();
+  const email = emailInput.value.trim().toLowerCase();
+  const phone = phoneInput.value.trim();
+  const nbA = parseInt(adultInput.value) || 0;
+  const nbC = parseInt(childInput.value) || 0;
+  const total = nbA + nbC;
+  const paid = document.getElementById("paid").checked;
+  if(!name||!email||!phone||total===0) return alert("Veuillez remplir tous les champs correctement !");
+  const id = Date.now();
+  const amount = nbA*priceAdult + nbC*priceChild;
+  const data = { name, email, phone, nbAdult: nbA, nbChild: nbC, nbPlaces: total, amount, paid };
+  await set(ref(db,`spectacles/salle_bessay/${id}`), data);
   alert("✅ Réservation enregistrée !");
-  e.target.reset();adultInput.value="Adulte";childInput.value="Enfant";updateTotal();
+  e.target.reset(); adultInput.value="Adulte"; childInput.value="Enfant"; updateTotal();
 };
 
-function updateUI(){
-  const total=Object.values(reservations).reduce((s,r)=>s+(r.nbPlaces||0),0);
-  const remaining=maxPlaces-total;
-  document.getElementById("capacityLabel").textContent=maxPlaces;
-  document.getElementById("remaining").textContent=remaining;
-  document.getElementById("progressBar").style.width=(total/maxPlaces*100)+"%";
-  renderList();
-}
-
+// --- Affichage des réservations ---
 function renderList(){
   const container=document.getElementById("list");
   const entries=Object.entries(reservations);
-  if(!entries.length){container.innerHTML="<p>Aucune réservation.</p>";return;}
+  if(!entries.length){container.innerHTML="<p>Aucune réservation pour l’instant.</p>";return;}
   container.innerHTML="<h3>📋 Réservations</h3>";
   entries.sort((a,b)=>b[0]-a[0]).forEach(([id,r])=>{
     container.innerHTML+=`
       <div class="res-item">
         <span><strong>${r.name}</strong> – ${r.nbPlaces} places (${r.amount.toFixed(2)} €)
-          – <span class="${r.paid?"paid":"unpaid"}">${r.paid?"Payé":"Non payé"}</span></span>
+        – <span class="${r.paid?"paid":"unpaid"}">${r.paid?"Payé":"Non payé"}</span></span>
         ${adminMode?`<button class="delete-btn" onclick="deleteRes('${id}')">🗑</button>`:""}
       </div>`;
   });
 }
-window.deleteRes=async id=>{
+
+window.deleteRes = async id=>{
   if(confirm("Supprimer cette réservation ?"))
-    await remove(ref(db,`spectacles/cabaret_printemps/reservations/${id}`));
+    await remove(ref(db,`spectacles/salle_bessay/${id}`));
 };
 
-// --- Mode Admin ---
-document.getElementById("adminToggle").onclick=()=>{
+// --- Mode admin ---
+document.getElementById("adminToggle").onclick = ()=>{
   if(!adminMode){
     const pass=prompt("Mot de passe admin :");
     if(pass!=="admin123")return alert("Mot de passe incorrect !");
     adminMode=true;
-    ["exportBtn","priceBtn","clearAllBtn","capacityBtn"].forEach(id=>{
-      document.getElementById(id).style.display="inline-block";
-    });
+    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>document.getElementById(id).style.display="inline-block");
   }else{
     adminMode=false;
-    ["exportBtn","priceBtn","clearAllBtn","capacityBtn"].forEach(id=>{
-      document.getElementById(id).style.display="none";
-    });
+    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>document.getElementById(id).style.display="none");
   }
   renderList();
 };
 
 // --- Modifier tarifs ---
-document.getElementById("priceBtn").onclick=()=>{
+document.getElementById("priceBtn").onclick = ()=>{
   if(!adminMode)return;
   const pA=prompt("Tarif adulte (€)",priceAdult);
   const pC=prompt("Tarif enfant (€)",priceChild);
@@ -204,30 +201,17 @@ document.getElementById("priceBtn").onclick=()=>{
   }
 };
 
-// --- Modifier capacité ---
-document.getElementById("capacityBtn").onclick=async ()=>{
-  if(!adminMode)return;
-  const newCap=prompt("Nouvelle capacité maximale :",maxPlaces);
-  if(newCap && !isNaN(newCap)){
-    maxPlaces=parseInt(newCap);
-    await update(refSpectacle,{maxPlaces:maxPlaces});
-    document.getElementById("capacityLabel").textContent=maxPlaces;
-    alert(`Capacité mise à jour : ${maxPlaces} places maximum`);
-    updateUI();
-  }
-};
-
 // --- Supprimer toutes les réservations ---
-document.getElementById("clearAllBtn").onclick=async ()=>{
+document.getElementById("clearAllBtn").onclick = async ()=>{
   if(!adminMode)return;
   if(confirm("⚠️ Supprimer TOUTES les réservations ?")){
-    await remove(ref(db,`spectacles/cabaret_printemps/reservations`));
+    await remove(refSpectacle);
     alert("Toutes les réservations ont été supprimées !");
   }
 };
 
 // --- Export CSV ---
-document.getElementById("exportBtn").onclick=()=>{
+document.getElementById("exportBtn").onclick = ()=>{
   const rows=[["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé"]];
   Object.values(reservations).forEach(r=>{
     rows.push([r.name,r.email,r.phone,r.nbAdult,r.nbChild,r.nbPlaces,r.amount.toFixed(2),r.paid?"OUI":"NON"]);
@@ -236,7 +220,7 @@ document.getElementById("exportBtn").onclick=()=>{
   const blob=new Blob([csv],{type:"text/csv"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download="cabaret_printemps_reservations.csv";
+  a.download="salle_bessay_reservations.csv";
   a.click();
 };
 </script>
