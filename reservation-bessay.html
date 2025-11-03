@@ -10,6 +10,10 @@ body {
   font-family:"Segoe UI",sans-serif;
   background:#fff8e1;
   margin:0;text-align:center;color:#212121;padding:20px;
+  transition: background 0.3s ease;
+}
+body.admin-mode {
+  background:#ffe4ec;
 }
 h1 {
   color:#d32f2f;
@@ -107,9 +111,31 @@ button:hover {background:#b71c1c;}
 .toggle-paid-btn:hover {
   background:#2e7d32;
 }
+
+/* --- Bulle d'information admin --- */
+#adminNotice {
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:#d81b60;
+  color:white;
+  font-weight:600;
+  padding:10px 16px;
+  border-radius:50px;
+  box-shadow:0 3px 8px rgba(0,0,0,0.2);
+  z-index:9999;
+  display:none;
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn {
+  from {opacity:0; transform:translateY(-10px);}
+  to {opacity:1; transform:translateY(0);}
+}
 </style>
 </head>
 <body>
+<div id="adminNotice">👑 Vous êtes en mode administrateur</div>
+
 <h1>🎭 Salle de Bessay</h1>
 <h2>🎟️ Spectacle du 23 janvier 2026</h2>
 
@@ -126,12 +152,15 @@ button:hover {background:#b71c1c;}
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
 
+<!-- ✅ Liste des réservations -->
+<div id="list"></div>
+
+<!-- 🔐 Boutons admin -->
 <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
 <button class="export-btn" id="exportBtn" style="display:none;">⬇️ Export CSV</button>
 <button class="clearall-btn" id="clearAllBtn" style="display:none;">🗑 Supprimer toutes les réservations</button>
 
-<div id="list"></div>
-
+<!-- 🧭 Contrôles bas de page -->
 <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
 <button class="admin-btn" onclick="window.location.href='index.html'">🏠 Retour</button>
 
@@ -184,7 +213,7 @@ function updateTotal(){
 adultInput.addEventListener("input", updateTotal);
 childInput.addEventListener("input", updateTotal);
 
-// --- Lecture des réservations en direct ---
+// --- Lecture des réservations ---
 onValue(refSpectacle, snap=>{
   reservations = snap.val() || {};
   renderList();
@@ -239,37 +268,29 @@ function renderList() {
 
   container.innerHTML = "<h3>📋 Réservations</h3>";
 
-  entries
-    .sort((a, b) => b[0] - a[0])
-    .forEach(([id, r]) => {
-      const paidClass = r.paid ? "paid" : "unpaid";
-      const paidText = r.paid ? "✅ Payé" : "❌ Non payé";
-      const toggleText = r.paid ? "Annuler paiement" : "Marquer comme payé";
+  entries.sort((a,b)=>b[0]-a[0]).forEach(([id,r])=>{
+    const paidClass = r.paid ? "paid" : "unpaid";
+    const paidText = r.paid ? "✅ Payé" : "❌ Non payé";
+    const toggleText = r.paid ? "Annuler paiement" : "Marquer comme payé";
 
-      const card = document.createElement("div");
-      card.className = "accordion-card";
-      card.innerHTML = `
-        <div class="accordion-header" onclick="toggleAccordion('${id}')">
-          <span><strong>${r.name}</strong> – ${r.nbPlaces} place${r.nbPlaces>1?"s":""} (${r.amount.toFixed(2)} €)</span>
-          <span class="${paidClass}">${paidText}</span>
-        </div>
-        <div class="accordion-body" id="body-${id}">
-          <p>📞 <strong>Téléphone :</strong> ${r.phone}</p>
-          <p>📧 <strong>Email :</strong> ${r.email}</p>
-          <p>👨‍👩‍👧 <strong>Détail :</strong> ${r.nbAdult} adulte${r.nbAdult>1?"s":""} / ${r.nbChild} enfant${r.nbChild>1?"s":""}</p>
-          <p>💰 <strong>Montant total :</strong> ${r.amount.toFixed(2)} €</p>
-          ${
-            adminMode
-              ? `
-                <button class="toggle-paid-btn" onclick="togglePaid('${id}', ${!r.paid})">💶 ${toggleText}</button>
-                <button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>
-              `
-              : ""
-          }
-        </div>
-      `;
-      container.appendChild(card);
-    });
+    const card = document.createElement("div");
+    card.className = "accordion-card";
+    card.innerHTML = `
+      <div class="accordion-header" onclick="toggleAccordion('${id}')">
+        <span><strong>${r.name}</strong> – ${r.nbPlaces} place${r.nbPlaces>1?"s":""} (${r.amount.toFixed(2)} €)</span>
+        <span class="${paidClass}">${paidText}</span>
+      </div>
+      <div class="accordion-body" id="body-${id}">
+        <p>📞 <strong>Téléphone :</strong> ${r.phone}</p>
+        <p>📧 <strong>Email :</strong> ${r.email}</p>
+        <p>👨‍👩‍👧 <strong>Détail :</strong> ${r.nbAdult} adulte${r.nbAdult>1?"s":""} / ${r.nbChild} enfant${r.nbChild>1?"s":""}</p>
+        <p>💰 <strong>Montant total :</strong> ${r.amount.toFixed(2)} €</p>
+        ${adminMode ? `
+          <button class="toggle-paid-btn" onclick="togglePaid('${id}', ${!r.paid})">💶 ${toggleText}</button>
+          <button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>` : ""}
+      </div>`;
+    container.appendChild(card);
+  });
 }
 
 // --- Supprimer une réservation ---
@@ -279,29 +300,46 @@ window.deleteRes = async id=>{
 };
 
 // --- Changer statut payé ---
-window.togglePaid = async (id, newStatus) => {
+window.togglePaid = async (id,newStatus)=>{
   const item = reservations[id];
-  if (!item) return;
+  if(!item) return;
   try {
-    await set(ref(db, `spectacles/salle_bessay/${id}`), { ...item, paid: newStatus });
-    alert(newStatus ? "✅ Paiement validé" : "❌ Paiement annulé");
-  } catch (err) {
-    console.error("Erreur lors du changement de paiement :", err);
+    await set(ref(db,`spectacles/salle_bessay/${id}`),{...item,paid:newStatus});
+    alert(newStatus?"✅ Paiement validé":"❌ Paiement annulé");
+  }catch(err){
+    console.error("Erreur:",err);
     alert("Erreur lors de la mise à jour du paiement.");
   }
 };
 
 // --- Mode admin ---
 document.getElementById("adminToggle").onclick = ()=>{
+  const adminNotice = document.getElementById("adminNotice");
+
   if(!adminMode){
-    const pass=prompt("Mot de passe admin :");
-    if(pass!=="admin123")return alert("Mot de passe incorrect !");
-    adminMode=true;
-    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>document.getElementById(id).style.display="inline-block");
-  }else{
-    adminMode=false;
-    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>document.getElementById(id).style.display="none");
+    const pass = prompt("Mot de passe admin :");
+    if(pass !== "admin123") return alert("Mot de passe incorrect !");
+    adminMode = true;
+
+    document.body.classList.add("admin-mode");
+    adminNotice.style.display = "block";
+    document.getElementById("adminToggle").textContent = "🚪 Sortir du mode admin";
+
+    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>
+      document.getElementById(id).style.display="inline-block"
+    );
+  } else {
+    adminMode = false;
+
+    document.body.classList.remove("admin-mode");
+    adminNotice.style.display = "none";
+    document.getElementById("adminToggle").textContent = "🔐 Mode Admin";
+
+    ["exportBtn","priceBtn","clearAllBtn"].forEach(id=>
+      document.getElementById(id).style.display="none"
+    );
   }
+
   renderList();
 };
 
