@@ -136,30 +136,18 @@ form button:hover { background:#b71c1c; }
 }
 #emailPreview { font-size:0.95rem; line-height:1.5; }
 
-#testNotice {
+#testNotice, #adminNotice {
   position:fixed;
   top:15px;
-  left:15px;
-  background:#2196f3;
-  color:white;
-  padding:10px 20px;
-  border-radius:30px;
-  display:none;
   font-weight:600;
-  box-shadow:0 3px 8px rgba(0,0,0,0.25);
-}
-#adminNotice {
-  position:fixed;
-  top:15px;
-  right:15px;
-  background:#d81b60;
-  color:white;
   padding:10px 18px;
   border-radius:30px;
-  display:none;
-  font-weight:600;
   box-shadow:0 3px 8px rgba(0,0,0,0.25);
+  color:white;
+  display:none;
 }
+#testNotice { left:15px; background:#2196f3; }
+#adminNotice { right:15px; background:#d81b60; }
 </style>
 </head>
 
@@ -180,7 +168,6 @@ form button:hover { background:#b71c1c; }
 
 <div id="list"></div>
 
-<!-- Boutons admin -->
 <div style="margin-top:25px;">
   <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
   <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
@@ -191,12 +178,11 @@ form button:hover { background:#b71c1c; }
 <div id="testNotice">✉️ Mode TEST activé</div>
 <div id="adminNotice">👑 Vous êtes en mode administrateur</div>
 
-<!-- Fenêtre modale -->
 <div id="emailModal">
   <div id="emailModalContent">
     <h3 style="text-align:center;">📧 Aperçu de l’e-mail</h3>
     <div id="emailPreview"></div>
-    <button style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;" onclick="closeModal()">Fermer la fenêtre</button>
+    <button style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;" onclick="closeModal()">Fermer</button>
   </div>
 </div>
 
@@ -206,7 +192,6 @@ import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/
 
 emailjs.init("E4g_UFzGYQZBNH07m");
 
-// Firebase config
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -222,7 +207,7 @@ const refSpectacle = ref(db, "spectacles/salle_bessay");
 let reservations={}, adminMode=false, emailTestMode=false;
 let priceAdult=15, priceChild=10;
 
-// Formatage entrées
+// ======= Entrées & formatage =======
 const nameInput=document.getElementById("name"),
       emailInput=document.getElementById("email"),
       phoneInput=document.getElementById("phone");
@@ -236,27 +221,23 @@ phoneInput.addEventListener("input",()=>{
   phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 });
 
-// Total
+// ======= Calcul total =======
 const aI=document.getElementById("adult"),cI=document.getElementById("child"),totalEl=document.getElementById("totalPrice");
 function updateTotal(){const a=+aI.value||0,c=+cI.value||0;totalEl.textContent=`Total : ${(a*priceAdult+c*priceChild).toFixed(2)} €`;}
 [aI,cI].forEach(e=>e.addEventListener("input",updateTotal));
 
-onValue(refSpectacle,snap=>{reservations=snap.val()||{};renderList();});
+// ======= Chargement des réservations =======
+onValue(refSpectacle,snap=>{
+  reservations=snap.val()||{};
+  renderList();
+});
 
-// Envoi Email
+// ======= Envoi d'email =======
 async function sendEmail(data){
-  if(emailTestMode){showEmailPreview(`
-    <div style="font-family:'Segoe UI',sans-serif;color:#222;">
-      <h2 style="color:#d32f2f;text-align:center;">🎭 Théâtre Saint Martin</h2>
-      <p style="text-align:center;color:#555;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
-      <hr style="border:1px solid #d32f2f;margin:10px 0;">
-      <p>Bonjour <strong>${data.name}</strong>,</p>
-      <p>Merci pour votre réservation à la <strong>Salle de Bessay</strong> !</p>
-      <p>👨‍👩‍👧 Adulte(s) : ${data.nbAdult}<br>🧒 Enfant(s) : ${data.nbChild}<br>💺 Total places : ${data.nbPlaces}<br>💶 Montant : <strong>${data.amount.toFixed(2)} €</strong></p>
-      <p>Veuillez présenter cet e-mail le soir du spectacle (imprimé ou sur votre téléphone).</p>
-      <p style="margin-top:20px;">À très bientôt,<br><strong>L’équipe du Théâtre Saint Martin</strong></p>
-    </div>`);return;}
-
+  if(emailTestMode){
+    showEmailPreview(`<div style='font-family:sans-serif'><h2>🎭 Théâtre Saint Martin</h2><p>Merci ${data.name} pour votre réservation : ${data.nbPlaces} places (${data.amount} €)</p></div>`);
+    return;
+  }
   await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
     to_email:data.email,to_name:data.name,
     nbAdult:data.nbAdult,nbChild:data.nbChild,
@@ -265,10 +246,12 @@ async function sendEmail(data){
   alert("✉️ E-mail envoyé !");
 }
 
-// Formulaire
+// ======= Formulaire =======
 document.getElementById("resForm").onsubmit=async e=>{
   e.preventDefault();
-  const name=nameInput.value.trim().toUpperCase(),email=emailInput.value.trim().toLowerCase(),phone=phoneInput.value.trim();
+  const name=nameInput.value.trim().toUpperCase(),
+        email=emailInput.value.trim().toLowerCase(),
+        phone=phoneInput.value.trim();
   const nbA=+aI.value||0,nbC=+cI.value||0,total=nbA+nbC;
   if(!name||!email||!phone||total===0)return alert("❌ Formulaire incomplet !");
   const data={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount:(nbA*priceAdult+nbC*priceChild),paid:false};
@@ -278,7 +261,7 @@ document.getElementById("resForm").onsubmit=async e=>{
   e.target.reset();updateTotal();
 };
 
-// Liste
+// ======= Liste =======
 function renderList(){
   const c=document.getElementById("list"),entries=Object.entries(reservations);
   if(!entries.length){c.innerHTML="<p>Aucune réservation.</p>";return;}
@@ -287,19 +270,23 @@ function renderList(){
     const p=r.paid?"paid":"unpaid",txt=r.paid?"✅ Payé":"❌ Non payé";
     c.innerHTML+=`
 <div class="accordion-card">
- <div class="accordion-header" onclick="document.getElementById('body-${id}').classList.toggle('open')">
+ <div class="accordion-header" data-id="${id}">
    <span><b>${r.name}</b> – ${r.nbPlaces} places</span>
    <span class="${p}">${txt}</span>
  </div>
  <div class="accordion-body" id="body-${id}">
    <p>📞 ${r.phone}</p><p>📧 ${r.email}</p>
    <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
-   ${adminMode?`<button class="toggle-paid-btn" onclick="togglePaid('${id}',${!r.paid})">💶 Basculer paiement</button><button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
+   ${adminMode?`<button class="toggle-paid-btn" onclick="togglePaid('${id}',${!r.paid})">💶 Basculer paiement</button>
+   <button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
  </div></div>`;
+  });
+  document.querySelectorAll(".accordion-header").forEach(h=>{
+    h.onclick=()=>document.getElementById("body-"+h.dataset.id).classList.toggle("open");
   });
 }
 
-// Fonctions admin
+// ======= Admin =======
 window.togglePaid=async(id,s)=>{const r=reservations[id];await set(ref(db,`spectacles/salle_bessay/${id}`),{...r,paid:s});renderList();};
 window.deleteRes=async id=>{if(confirm("Supprimer ?"))await remove(ref(db,`spectacles/salle_bessay/${id}`));};
 
@@ -314,8 +301,7 @@ document.getElementById("adminToggle").onclick=()=>{
     document.getElementById("adminToggle").textContent="🚪 Sortir du mode admin";
     ["priceBtn","testEmailBtn","exportBtn"].forEach(i=>document.getElementById(i).style.display="inline-block");
   }else{
-    adminMode=false;
-    emailTestMode=false;
+    adminMode=false;emailTestMode=false;
     document.body.classList.remove("admin-mode");
     notice.style.display="none";
     document.getElementById("adminToggle").textContent="🔐 Mode Admin";
@@ -337,44 +323,39 @@ document.getElementById("testEmailBtn").onclick=()=>{
   document.getElementById("testEmailBtn").textContent=emailTestMode?"✉️ Mode Email : RÉEL":"✉️ Mode Email : TEST";
 };
 
-// === Export CSV des réservations ===
-document.getElementById("exportBtn").onclick = () => {
-  if (!Object.keys(reservations).length) {
-    alert("Aucune réservation à exporter.");
-    return;
-  }
+// ======= Export CSV corrigé =======
+function safeCell(v){return v==null?"":String(v).replace(/\r?\n/g," ").trim();}
+function exportReservationsCSV(obj){
+  try{
+    console.log("[EXPORT] Clic export");
+    if(!obj||!Object.keys(obj).length){alert("Aucune réservation à exporter.");return;}
+    const header=["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé"];
+    const rows=[header];
+    Object.values(obj).forEach(r=>{
+      const amountNum=Number(r?.amount||0);
+      rows.push([safeCell(r?.name),safeCell(r?.email),safeCell(r?.phone),Number(r?.nbAdult||0),Number(r?.nbChild||0),Number(r?.nbPlaces||0),amountNum.toFixed(2),r?.paid?"Oui":"Non"]);
+    });
+    const csv="\uFEFF"+rows.map(l=>l.join(";")).join("\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+    const date=new Date().toISOString().split("T")[0];
+    const filename=`reservations_bessay_${date}.csv`;
+    if(window.navigator.msSaveOrOpenBlob){window.navigator.msSaveOrOpenBlob(blob,filename);return;}
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    if("download" in HTMLAnchorElement.prototype){
+      a.href=url;a.download=filename;a.style.display="none";document.body.appendChild(a);
+      const evt=new MouseEvent("click",{bubbles:true,cancelable:true,view:window});
+      a.dispatchEvent(evt);document.body.removeChild(a);URL.revokeObjectURL(url);
+      console.log("[EXPORT] Téléchargement effectué");
+    }else{
+      window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),10000);
+      alert("Votre navigateur ne supporte pas le téléchargement direct. Le CSV s’ouvre dans un nouvel onglet.");
+    }
+  }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export. Consulte la console (F12).");}
+}
+document.getElementById("exportBtn").addEventListener("click",()=>exportReservationsCSV(reservations));
 
-  const lignes = [
-    ["Nom", "Email", "Téléphone", "Adultes", "Enfants", "Total places", "Montant (€)", "Payé"]
-  ];
-
-  Object.values(reservations).forEach(r => {
-    lignes.push([
-      r.name,
-      r.email,
-      r.phone,
-      r.nbAdult,
-      r.nbChild,
-      r.nbPlaces,
-      r.amount.toFixed(2),
-      r.paid ? "Oui" : "Non"
-    ]);
-  });
-
-  const contenu = lignes.map(l => l.join(";")).join("\n");
-  const blob = new Blob([contenu], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  const date = new Date().toISOString().split("T")[0];
-  a.download = `reservations_bessay_${date}.csv`;
-  a.click();
-
-  URL.revokeObjectURL(url);
-};
-
-// Modale
+// ======= Modale =======
 window.showEmailPreview=html=>{const m=document.getElementById("emailModal");document.getElementById("emailPreview").innerHTML=html;m.classList.add("show");};
 window.closeModal=()=>document.getElementById("emailModal").classList.remove("show");
 </script>
