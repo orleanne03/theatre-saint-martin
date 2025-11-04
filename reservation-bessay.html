@@ -196,10 +196,11 @@ form button:hover { background:#b71c1c; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
 emailjs.init("E4g_UFzGYQZBNH07m");
 
+// === Configuration Firebase ===
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -212,10 +213,11 @@ const app = initializeApp({
 const db = getDatabase(app);
 const refSpectacle = ref(db, "spectacles/salle_bessay");
 
+// === Variables globales ===
 let reservations={}, adminMode=false, emailTestMode=false;
 let priceAdult=15, priceChild=10;
 
-// ======= Entrées & formatage =======
+// === Entrées & formatage ===
 const nameInput=document.getElementById("name"),
       emailInput=document.getElementById("email"),
       phoneInput=document.getElementById("phone");
@@ -229,32 +231,79 @@ phoneInput.addEventListener("input",()=>{
   phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 });
 
-// ======= Calcul total =======
+// === Calcul total ===
 const aI=document.getElementById("adult"),cI=document.getElementById("child"),totalEl=document.getElementById("totalPrice");
 function updateTotal(){const a=+aI.value||0,c=+cI.value||0;totalEl.textContent=`Total : ${(a*priceAdult+c*priceChild).toFixed(2)} €`;}
 [aI,cI].forEach(e=>e.addEventListener("input",updateTotal));
 
-// ======= Chargement des réservations =======
+// === Chargement des réservations ===
 onValue(refSpectacle,snap=>{
   reservations=snap.val()||{};
   renderList();
 });
 
-// ======= Envoi d'email =======
-async function sendEmail(data){
-  if(emailTestMode){
-    showEmailPreview(`<div style='font-family:sans-serif'><h2>🎭 Théâtre Saint Martin</h2><p>Merci ${data.name} pour votre réservation : ${data.nbPlaces} places (${data.amount} €)</p></div>`);
-    return;
-  }
-  await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
-    to_email:data.email,to_name:data.name,
-    nbAdult:data.nbAdult,nbChild:data.nbChild,
-    nbPlaces:data.nbPlaces,amount:data.amount.toFixed(2)
-  });
-  alert("✉️ E-mail envoyé !");
+// === Modèle d’e-mail HTML ===
+function buildEmailHTML(data){
+  return `
+  <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f9f9f9; padding:20px;">
+    <div style="max-width:600px; margin:0 auto; background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); overflow:hidden;">
+      <div style="background-color:#d32f2f; color:white; text-align:center; padding:18px;">
+        <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
+        <p style="margin:0; font-size:14px;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
+      </div>
+      <div style="padding:25px;">
+        <h3 style="color:#d32f2f; margin-top:0;">Confirmation de réservation</h3>
+        <p>Bonjour <b>${data.name}</b>,</p>
+        <p>Merci pour votre réservation ! Voici le récapitulatif :</p>
+        <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:15px;">
+          <tr><td style="padding:6px 0;">🎫 <b>Adultes :</b></td><td style="text-align:right;">${data.nbAdult}</td></tr>
+          <tr><td style="padding:6px 0;">👧 <b>Enfants :</b></td><td style="text-align:right;">${data.nbChild}</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:8px 0; font-weight:bold;">Total de places</td><td style="text-align:right; font-weight:bold;">${data.nbPlaces}</td></tr>
+          <tr><td style="padding:8px 0; font-weight:bold; color:#388e3c;">Montant total</td><td style="text-align:right; font-weight:bold; color:#388e3c;">${data.amount.toFixed(2)} €</td></tr>
+        </table>
+        <div style="margin-top:20px; padding:15px; background:#fff8e1; border-radius:8px;">
+          <p style="margin:0; font-size:14px;">
+            📍 <b>Lieu :</b> Salle de Bessay<br>
+            📅 <b>Date :</b> Vendredi 23 janvier 2026 – 20h30
+          </p>
+        </div>
+        
+        <p style="font-size:14px; color:#555;">Pour toute question : 06.09.12.11.59 
+          
+        </p>
+        <p style="font-size:13px; color:#777;">À très bientôt au théâtre 🎭</p>
+      </div>
+      <div style="background-color:#f0f0f0; text-align:center; padding:10px; font-size:12px; color:#777;">
+        Théâtre Saint-Martin – Salle de Bessay<br>© 2025 – Tous droits réservés
+      </div>
+    </div>
+  </div>`;
 }
 
-// ======= Formulaire =======
+// === Envoi d’e-mail ===
+async function sendEmail(data){
+  const htmlContent = buildEmailHTML(data);  // → génère le bel e-mail HTML à partir du modèle
+  if(emailTestMode){                         // → si le mode TEST est activé (dans le panneau admin)
+    showEmailPreview(htmlContent);           // → affiche l’aperçu dans la modale
+    return;                                  // → pas d’envoi réel
+  }
+
+  // Envoi réel via EmailJS
+  await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
+    to_email: data.email,                    // destinataire
+    to_name: data.name,
+    nbAdult: data.nbAdult,
+    nbChild: data.nbChild,
+    nbPlaces: data.nbPlaces,
+    amount: data.amount.toFixed(2),
+    html_message: htmlContent                // contenu HTML complet de l’e-mail
+  });
+
+  alert("✉️ E-mail de confirmation envoyé !");
+}
+
+
+// === Formulaire ===
 document.getElementById("resForm").onsubmit=async e=>{
   e.preventDefault();
   const name=nameInput.value.trim().toUpperCase(),
@@ -263,13 +312,13 @@ document.getElementById("resForm").onsubmit=async e=>{
   const nbA=+aI.value||0,nbC=+cI.value||0,total=nbA+nbC;
   if(!name||!email||!phone||total===0)return alert("❌ Formulaire incomplet !");
   const data={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount:(nbA*priceAdult+nbC*priceChild),paid:false};
-  await set(ref(db,`spectacles/salle_bessay/${Date.now()}`),data);
+  await set(push(ref(db,"spectacles/salle_bessay")),data);
   alert("✅ Réservation enregistrée !");
   sendEmail(data);
   e.target.reset();updateTotal();
 };
 
-// ======= Liste =======
+// === Liste des réservations ===
 function renderList(){
   const c=document.getElementById("list"),entries=Object.entries(reservations);
   if(!entries.length){c.innerHTML="<p>Aucune réservation.</p>";return;}
@@ -294,7 +343,7 @@ function renderList(){
   });
 }
 
-// ======= Admin =======
+// === Admin ===
 window.togglePaid=async(id,s)=>{const r=reservations[id];await set(ref(db,`spectacles/salle_bessay/${id}`),{...r,paid:s});renderList();};
 window.deleteRes=async id=>{if(confirm("Supprimer ?"))await remove(ref(db,`spectacles/salle_bessay/${id}`));};
 
@@ -331,11 +380,10 @@ document.getElementById("testEmailBtn").onclick=()=>{
   document.getElementById("testEmailBtn").textContent=emailTestMode?"✉️ Mode Email : RÉEL":"✉️ Mode Email : TEST";
 };
 
-// ======= Export CSV corrigé =======
+// === Export CSV ===
 function safeCell(v){return v==null?"":String(v).replace(/\r?\n/g," ").trim();}
 function exportReservationsCSV(obj){
   try{
-    console.log("[EXPORT] Clic export");
     if(!obj||!Object.keys(obj).length){alert("Aucune réservation à exporter.");return;}
     const header=["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé"];
     const rows=[header];
@@ -347,23 +395,18 @@ function exportReservationsCSV(obj){
     const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
     const date=new Date().toISOString().split("T")[0];
     const filename=`reservations_bessay_${date}.csv`;
-    if(window.navigator.msSaveOrOpenBlob){window.navigator.msSaveOrOpenBlob(blob,filename);return;}
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
-    if("download" in HTMLAnchorElement.prototype){
-      a.href=url;a.download=filename;a.style.display="none";document.body.appendChild(a);
-      const evt=new MouseEvent("click",{bubbles:true,cancelable:true,view:window});
-      a.dispatchEvent(evt);document.body.removeChild(a);URL.revokeObjectURL(url);
-      console.log("[EXPORT] Téléchargement effectué");
-    }else{
-      window.open(url,"_blank");setTimeout(()=>URL.revokeObjectURL(url),10000);
-      alert("Votre navigateur ne supporte pas le téléchargement direct. Le CSV s’ouvre dans un nouvel onglet.");
-    }
-  }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export. Consulte la console (F12).");}
+    a.href=url;a.download=filename;a.style.display="none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export CSV.");}
 }
 document.getElementById("exportBtn").addEventListener("click",()=>exportReservationsCSV(reservations));
 
-// ======= Modale =======
+// === Modale d’aperçu ===
 window.showEmailPreview=html=>{const m=document.getElementById("emailModal");document.getElementById("emailPreview").innerHTML=html;m.classList.add("show");};
 window.closeModal=()=>document.getElementById("emailModal").classList.remove("show");
 </script>
