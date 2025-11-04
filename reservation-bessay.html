@@ -162,6 +162,13 @@ form button:hover { background:#b71c1c; }
   <input id="phone" placeholder="Téléphone" required>
   <input id="adult" type="number" min="0" placeholder="Adulte(s)">
   <input id="child" type="number" min="0" placeholder="Enfant(s) -14 ans">
+
+  <!-- ✅ Case à cocher Paiement reçu -->
+  <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+    <input type="checkbox" id="paid" style="width:auto;">
+    <span>Paiement reçu 💶</span>
+  </label>
+
   <p id="totalPrice">Total : 0 €</p>
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
@@ -171,13 +178,13 @@ form button:hover { background:#b71c1c; }
 <div style="margin-top:25px;">
   <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
   <!-- Nouveau bouton Accueil -->
-<div style="text-align:center; margin-top:15px;">
-  <a href="accueil.html"
-     style="display:inline-block; background-color:#6d4c41; color:#fff; text-decoration:none;
-            padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.9rem;">
-    🏠 Accueil
-  </a>
-</div>
+  <div style="text-align:center; margin-top:15px;">
+    <a href="accueil.html"
+       style="display:inline-block; background-color:#6d4c41; color:#fff; text-decoration:none;
+              padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.9rem;">
+      🏠 Accueil
+    </a>
+  </div>
   <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
   <button class="admin-btn" id="testEmailBtn" style="display:none;">✉️ Mode Email : TEST</button>
   <button class="admin-btn" id="exportBtn" style="display:none;">💾 Enregistrer les réservations</button>
@@ -215,7 +222,7 @@ const refSpectacle = ref(db, "spectacles/salle_bessay");
 
 // === Variables globales ===
 let reservations={}, adminMode=false, emailTestMode=false;
-let priceAdult=15, priceChild=10;
+let priceAdult=22, priceChild=15;
 
 // === Entrées & formatage ===
 const nameInput=document.getElementById("name"),
@@ -268,9 +275,7 @@ function buildEmailHTML(data){
           </p>
         </div>
         
-        <p style="font-size:14px; color:#555;">Pour toute question : 06.09.12.11.59 
-          
-        </p>
+        <p style="font-size:14px; color:#555;">Pour toute question : 06.09.12.11.59</p>
         <p style="font-size:13px; color:#777;">À très bientôt au théâtre 🎭</p>
       </div>
       <div style="background-color:#f0f0f0; text-align:center; padding:10px; font-size:12px; color:#777;">
@@ -282,21 +287,20 @@ function buildEmailHTML(data){
 
 // === Envoi d’e-mail ===
 async function sendEmail(data){
-  const htmlContent = buildEmailHTML(data);  // → génère le bel e-mail HTML à partir du modèle
-  if(emailTestMode){                         // → si le mode TEST est activé (dans le panneau admin)
-    showEmailPreview(htmlContent);           // → affiche l’aperçu dans la modale
-    return;                                  // → pas d’envoi réel
+  const htmlContent = buildEmailHTML(data);
+  if(emailTestMode){
+    showEmailPreview(htmlContent);
+    return;
   }
 
-  // Envoi réel via EmailJS
   await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
-    to_email: data.email,                    // destinataire
+    to_email: data.email,
     to_name: data.name,
     nbAdult: data.nbAdult,
     nbChild: data.nbChild,
     nbPlaces: data.nbPlaces,
     amount: data.amount.toFixed(2),
-    html_message: htmlContent                // contenu HTML complet de l’e-mail
+    html_message: htmlContent
   });
 
   alert("✉️ E-mail de confirmation envoyé !");
@@ -311,7 +315,12 @@ document.getElementById("resForm").onsubmit=async e=>{
         phone=phoneInput.value.trim();
   const nbA=+aI.value||0,nbC=+cI.value||0,total=nbA+nbC;
   if(!name||!email||!phone||total===0)return alert("❌ Formulaire incomplet !");
-  const data={name,email,phone,nbAdult:nbA,nbChild:nbC,nbPlaces:total,amount:(nbA*priceAdult+nbC*priceChild),paid:false};
+  const data={
+    name,email,phone,
+    nbAdult:nbA,nbChild:nbC,nbPlaces:total,
+    amount:(nbA*priceAdult+nbC*priceChild),
+    paid:document.getElementById("paid").checked
+  };
   await set(push(ref(db,"spectacles/salle_bessay")),data);
   alert("✅ Réservation enregistrée !");
   sendEmail(data);
@@ -409,6 +418,9 @@ document.getElementById("exportBtn").addEventListener("click",()=>exportReservat
 // === Modale d’aperçu ===
 window.showEmailPreview=html=>{const m=document.getElementById("emailModal");document.getElementById("emailPreview").innerHTML=html;m.classList.add("show");};
 window.closeModal=()=>document.getElementById("emailModal").classList.remove("show");
+
+// Init affichages
+updateTotal();
 </script>
 
 </body>
