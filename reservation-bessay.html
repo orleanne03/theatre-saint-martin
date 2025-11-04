@@ -1,53 +1,37 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎭 Salle de Bessay – Réservations</title>
 
+<!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
 body {
   font-family:"Segoe UI",sans-serif;
-  background:#fff8e1;
-  color:#212121;
-  margin:0;
-  padding:20px;
-  text-align:center;
-  transition:background 0.3s ease;
+  background:#fff8e1; color:#212121;
+  margin:0; padding:20px; text-align:center;
+  transition:background .3s ease;
 }
 body.admin-mode { background:#ffe4ec; }
+
 h1 { color:#d32f2f; margin-bottom:5px; }
 h2 { color:#424242; font-weight:600; font-style:italic; margin-bottom:20px; }
 
 form {
-  background:#fff;
-  max-width:400px;
-  margin:0 auto;
-  padding:20px;
-  border-radius:10px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.15);
+  background:#fff; max-width:400px; margin:0 auto; padding:20px;
+  border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,.15);
   text-align:left;
 }
 form input, form button {
-  width:95%;
-  margin:8px auto;
-  padding:10px;
-  border:1px solid #ccc;
-  border-radius:8px;
-  font-size:15px;
-  display:block;
+  width:95%; margin:8px auto; padding:10px; border:1px solid #ccc;
+  border-radius:8px; font-size:15px; display:block;
 }
-form input { text-align:left; }
 form button {
-  background:#d32f2f;
-  color:white;
-  border:none;
-  font-weight:bold;
-  cursor:pointer;
-  transition:0.3s;
-  text-align:center;
+  background:#d32f2f; color:#fff; border:none; font-weight:bold;
+  cursor:pointer; transition:0.3s;
 }
 form button:hover { background:#b71c1c; }
 #totalPrice { font-weight:bold; color:#388e3c; margin-top:10px; text-align:center; }
@@ -61,6 +45,11 @@ form button:hover { background:#b71c1c; }
   padding:12px 15px;
   max-width:600px;
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  transition:background 0.3s ease, border-color .3s ease;
+}
+.accordion-card.present-card {
+  background-color:#e8f5e9 !important;
+  border:2px solid #2e7d32 !important;
 }
 .accordion-header {
   font-weight:600;
@@ -81,7 +70,7 @@ form button:hover { background:#b71c1c; }
 .paid { color:#2e7d32; font-weight:600; }
 .unpaid { color:#e91e63; font-weight:600; }
 
-.delete-btn, .toggle-paid-btn {
+.delete-btn, .action-btn {
   width:90%;
   display:block;
   margin:8px auto;
@@ -92,9 +81,9 @@ form button:hover { background:#b71c1c; }
   font-weight:bold;
   cursor:pointer;
 }
-.toggle-paid-btn { background:#2e7d32; }
+.action-btn { background:#2e7d32; }
+.action-btn:hover { background:#1b5e20; }
 .delete-btn { background:#e53935; }
-.toggle-paid-btn:hover { background:#1b5e20; }
 .delete-btn:hover { background:#b71c1c; }
 
 .admin-btn {
@@ -110,41 +99,20 @@ form button:hover { background:#b71c1c; }
 .admin-btn:hover { background:#0d47a1; }
 
 #emailModal {
-  position:fixed;
-  inset:0;
-  display:none;
-  justify-content:center;
-  align-items:center;
-  background:rgba(0,0,0,0.5);
-  backdrop-filter:blur(6px);
-  -webkit-backdrop-filter:blur(6px);
-  z-index:1000;
-  opacity:0;
-  visibility:hidden;
-  transition:opacity 0.3s ease;
+  position:fixed; inset:0; display:none; justify-content:center; align-items:center;
+  background:rgba(0,0,0,0.5); backdrop-filter:blur(6px);
+  z-index:1000; transition:opacity 0.3s ease;
 }
-#emailModal.show { display:flex!important; opacity:1!important; visibility:visible!important; }
-
+#emailModal.show { display:flex!important; }
 #emailModalContent {
-  background:#fff;
-  border-radius:10px;
-  padding:25px 30px;
-  max-width:600px;
-  width:90%;
-  text-align:left;
-  box-shadow:0 5px 12px rgba(0,0,0,0.3);
+  background:#fff; border-radius:10px; padding:25px 30px; max-width:600px; width:90%;
+  text-align:left; box-shadow:0 5px 12px rgba(0,0,0,0.3);
 }
 #emailPreview { font-size:0.95rem; line-height:1.5; }
 
 #testNotice, #adminNotice {
-  position:fixed;
-  top:15px;
-  font-weight:600;
-  padding:10px 18px;
-  border-radius:30px;
-  box-shadow:0 3px 8px rgba(0,0,0,0.25);
-  color:white;
-  display:none;
+  position:fixed; top:15px; font-weight:600; padding:10px 18px;
+  border-radius:30px; box-shadow:0 3px 8px rgba(0,0,0,0.25); color:white; display:none;
 }
 #testNotice { left:15px; background:#2196f3; }
 #adminNotice { right:15px; background:#d81b60; }
@@ -162,13 +130,10 @@ form button:hover { background:#b71c1c; }
   <input id="phone" placeholder="Téléphone" required>
   <input id="adult" type="number" min="0" placeholder="Adulte(s)">
   <input id="child" type="number" min="0" placeholder="Enfant(s) -12 ans">
-
-  <!-- ✅ Case à cocher Paiement reçu -->
   <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
     <input type="checkbox" id="paid" style="width:auto;">
     <span>Paiement reçu 💶</span>
   </label>
-
   <p id="totalPrice">Total : 0 €</p>
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
@@ -177,7 +142,6 @@ form button:hover { background:#b71c1c; }
 
 <div style="margin-top:25px;">
   <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
-  <!-- Nouveau bouton Accueil -->
   <div style="text-align:center; margin-top:15px;">
     <a href="accueil.html"
        style="display:inline-block; background-color:#6d4c41; color:#fff; text-decoration:none;
@@ -193,21 +157,24 @@ form button:hover { background:#b71c1c; }
 <div id="testNotice">✉️ Mode TEST activé</div>
 <div id="adminNotice">👑 Vous êtes en mode administrateur</div>
 
+<!-- Modale email -->
 <div id="emailModal">
   <div id="emailModalContent">
     <h3 style="text-align:center;">📧 Aperçu de l’e-mail</h3>
     <div id="emailPreview"></div>
-    <button style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;" onclick="closeModal()">Fermer</button>
+    <button id="closeModalBtn" style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;">Fermer</button>
   </div>
 </div>
 
 <script type="module">
+/* ================== Imports ================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+/* ================== EmailJS ================== */
 emailjs.init("E4g_UFzGYQZBNH07m");
 
-// === Configuration Firebase ===
+/* ================== Firebase ================== */
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -220,15 +187,30 @@ const app = initializeApp({
 const db = getDatabase(app);
 const refSpectacle = ref(db, "spectacles/salle_bessay");
 
-// === Variables globales ===
-let reservations={}, adminMode=false, emailTestMode=false;
-let priceAdult=22, priceChild=15;
+/* ================== État ================== */
+let reservations = {};
+let adminMode = false;
+let emailTestMode = false;
+let priceAdult = 22, priceChild = 15;
 
-// === Entrées & formatage ===
-const nameInput=document.getElementById("name"),
-      emailInput=document.getElementById("email"),
-      phoneInput=document.getElementById("phone");
+/* ================== DOM refs ================== */
+const list = document.getElementById("list");
+const adminToggleBtn = document.getElementById("adminToggle");
+const priceBtn = document.getElementById("priceBtn");
+const testEmailBtn = document.getElementById("testEmailBtn");
+const exportBtn = document.getElementById("exportBtn");
+const testNotice = document.getElementById("testNotice");
+const adminNotice = document.getElementById("adminNotice");
+const resForm = document.getElementById("resForm");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+const aI = document.getElementById("adult");
+const cI = document.getElementById("child");
+const totalEl = document.getElementById("totalPrice");
+const closeModalBtn = document.getElementById("closeModalBtn");
 
+/* ================== Formatage entrées ================== */
 nameInput.addEventListener("input",()=>nameInput.value=nameInput.value.toUpperCase());
 emailInput.addEventListener("input",()=>emailInput.value=emailInput.value.toLowerCase());
 phoneInput.addEventListener("input",()=>{
@@ -238,18 +220,22 @@ phoneInput.addEventListener("input",()=>{
   phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 });
 
-// === Calcul total ===
-const aI=document.getElementById("adult"),cI=document.getElementById("child"),totalEl=document.getElementById("totalPrice");
-function updateTotal(){const a=+aI.value||0,c=+cI.value||0;totalEl.textContent=`Total : ${(a*priceAdult+c*priceChild).toFixed(2)} €`;}
-[aI,cI].forEach(e=>e.addEventListener("input",updateTotal));
+/* ================== Total ================== */
+function updateTotal(){
+  const a=+aI.value||0, c=+cI.value||0;
+  totalEl.textContent = `Total : ${(a*priceAdult + c*priceChild).toFixed(2)} €`;
+}
+aI.addEventListener("input",updateTotal);
+cI.addEventListener("input",updateTotal);
+updateTotal();
 
-// === Chargement des réservations ===
-onValue(refSpectacle,snap=>{
-  reservations=snap.val()||{};
+/* ================== Live data ================== */
+onValue(refSpectacle, snap => {
+  reservations = snap.val() || {};
   renderList();
 });
 
-// === Modèle d’e-mail HTML ===
+/* ================== Email HTML ================== */
 function buildEmailHTML(data){
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f9f9f9; padding:20px;">
@@ -274,7 +260,6 @@ function buildEmailHTML(data){
             📅 <b>Date :</b> Vendredi 23 janvier 2026 – 20h30
           </p>
         </div>
-        
         <p style="font-size:14px; color:#555;">Pour toute question : 06.09.12.11.59</p>
         <p style="font-size:13px; color:#777;">À très bientôt au théâtre 🎭</p>
       </div>
@@ -285,120 +270,159 @@ function buildEmailHTML(data){
   </div>`;
 }
 
-// === Envoi d’e-mail ===
+/* ================== Email envoi / preview ================== */
 async function sendEmail(data){
   const htmlContent = buildEmailHTML(data);
-  if(emailTestMode){
-    showEmailPreview(htmlContent);
+  if (emailTestMode){
+    document.getElementById("emailPreview").innerHTML = htmlContent;
+    document.getElementById("emailModal").classList.add("show");
     return;
   }
-
   await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
-    to_email: data.email,
-    to_name: data.name,
-    nbAdult: data.nbAdult,
-    nbChild: data.nbChild,
-    nbPlaces: data.nbPlaces,
-    amount: data.amount.toFixed(2),
-    html_message: htmlContent
+    to_email:data.email,
+    to_name:data.name,
+    nbAdult:data.nbAdult,
+    nbChild:data.nbChild,
+    nbPlaces:data.nbPlaces,
+    amount:data.amount.toFixed(2),
+    html_message:htmlContent
   });
-
   alert("✉️ E-mail de confirmation envoyé !");
 }
+closeModalBtn.addEventListener("click",()=>document.getElementById("emailModal").classList.remove("show"));
 
-
-// === Formulaire ===
-document.getElementById("resForm").onsubmit=async e=>{
+/* ================== Formulaire ================== */
+resForm.addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const name=nameInput.value.trim().toUpperCase(),
-        email=emailInput.value.trim().toLowerCase(),
-        phone=phoneInput.value.trim();
-  const nbA=+aI.value||0,nbC=+cI.value||0,total=nbA+nbC;
-  if(!name||!email||!phone||total===0)return alert("❌ Formulaire incomplet !");
-  const data={
-    name,email,phone,
-    nbAdult:nbA,nbChild:nbC,nbPlaces:total,
-    amount:(nbA*priceAdult+nbC*priceChild),
-    paid:document.getElementById("paid").checked
+  const name = nameInput.value.trim().toUpperCase();
+  const email = emailInput.value.trim().toLowerCase();
+  const phone = phoneInput.value.trim();
+  const nbAdult = +aI.value||0, nbChild = +cI.value||0;
+  const nbPlaces = nbAdult + nbChild;
+  if (!name || !email || !phone || nbPlaces===0) return alert("❌ Formulaire incomplet !");
+  const data = {
+    name, email, phone,
+    nbAdult, nbChild, nbPlaces,
+    amount: (nbAdult*priceAdult + nbChild*priceChild),
+    paid: document.getElementById("paid").checked,
+    present: false
   };
-  await set(push(ref(db,"spectacles/salle_bessay")),data);
+  await set(push(ref(db,"spectacles/salle_bessay")), data);
   alert("✅ Réservation enregistrée !");
   sendEmail(data);
-  e.target.reset();updateTotal();
-};
+  resForm.reset(); updateTotal();
+});
 
-// === Liste des réservations ===
+/* ================== Liste + Event delegation ================== */
 function renderList(){
-  const c=document.getElementById("list"),entries=Object.entries(reservations);
-  if(!entries.length){c.innerHTML="<p>Aucune réservation.</p>";return;}
-  c.innerHTML="<h3>📋 Réservations</h3>";
-  entries.sort((a,b)=>b[0]-a[0]).forEach(([id,r])=>{
-    const p=r.paid?"paid":"unpaid",txt=r.paid?"✅ Payé":"❌ Non payé";
-    c.innerHTML+=`
-<div class="accordion-card">
- <div class="accordion-header" data-id="${id}">
-   <span><b>${r.name}</b> – ${r.nbPlaces} places</span>
-   <span class="${p}">${txt}</span>
- </div>
- <div class="accordion-body" id="body-${id}">
-   <p>📞 ${r.phone}</p><p>📧 ${r.email}</p>
-   <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
-   ${adminMode?`<button class="toggle-paid-btn" onclick="togglePaid('${id}',${!r.paid})">💶 Basculer paiement</button>
-   <button class="delete-btn" onclick="deleteRes('${id}')">🗑 Supprimer</button>`:""}
- </div></div>`;
-  });
-  document.querySelectorAll(".accordion-header").forEach(h=>{
-    h.onclick=()=>document.getElementById("body-"+h.dataset.id).classList.toggle("open");
-  });
-}
-
-// === Admin ===
-window.togglePaid=async(id,s)=>{const r=reservations[id];await set(ref(db,`spectacles/salle_bessay/${id}`),{...r,paid:s});renderList();};
-window.deleteRes=async id=>{if(confirm("Supprimer ?"))await remove(ref(db,`spectacles/salle_bessay/${id}`));};
-
-document.getElementById("adminToggle").onclick=()=>{
-  const notice=document.getElementById("adminNotice");
-  if(!adminMode){
-    const pass=prompt("Mot de passe admin :");
-    if(pass!=="admin123")return alert("Mot de passe incorrect !");
-    adminMode=true;
-    document.body.classList.add("admin-mode");
-    notice.style.display="block";
-    document.getElementById("adminToggle").textContent="🚪 Sortir du mode admin";
-    ["priceBtn","testEmailBtn","exportBtn"].forEach(i=>document.getElementById(i).style.display="inline-block");
-  }else{
-    adminMode=false;emailTestMode=false;
-    document.body.classList.remove("admin-mode");
-    notice.style.display="none";
-    document.getElementById("adminToggle").textContent="🔐 Mode Admin";
-    ["priceBtn","testEmailBtn","exportBtn"].forEach(i=>document.getElementById(i).style.display="none");
-    document.getElementById("testNotice").style.display="none";
+  const entries = Object.entries(reservations);
+  if (!entries.length){
+    list.innerHTML = "<p>Aucune réservation.</p>";
+    return;
   }
-  renderList();
-};
+  let html = "<h3>📋 Réservations</h3>";
+  for (const [id, r] of entries){
+    const payClass = r.paid ? "paid" : "unpaid";
+    const payTxt   = r.paid ? "✅ Payé" : "❌ Non payé";
+    const presClass= r.present ? "paid" : "unpaid";
+    const presTxt  = r.present ? "🎟️ Présent" : "🚫 Absent";
+    html += `
+      <div class="accordion-card ${r.present ? 'present-card' : ''}" data-card="${id}">
+        <div class="accordion-header" data-toggle="${id}">
+          <span><b>${r.name}</b> – ${r.nbPlaces} places</span>
+          <span class="${payClass}">${payTxt}</span>
+        </div>
+        <div class="accordion-body" id="body-${id}">
+          <p>📞 ${r.phone}</p>
+          <p>📧 ${r.email}</p>
+          <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
+          <p><b>🎟️ Statut :</b> <span class="${presClass}">${presTxt}</span></p>
+          ${adminMode ? `
+            <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
+            <button class="action-btn" style="background:#8e24aa;" data-action="toggle-present" data-id="${id}" data-next="${!r.present}">🎟️ Valider billet</button>
+            <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
+          ` : ""}
+        </div>
+      </div>`;
+  }
+  list.innerHTML = html;
+}
+// Ouvrir/fermer les cartes + actions admin via délégation
+list.addEventListener("click", async (e)=>{
+  const header = e.target.closest("[data-toggle]");
+  if (header){
+    const id = header.getAttribute("data-toggle");
+    document.getElementById(`body-${id}`).classList.toggle("open");
+    return;
+  }
+  const btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  const action = btn.getAttribute("data-action");
+  const id = btn.getAttribute("data-id");
+  if (action==="toggle-paid"){
+    const next = btn.getAttribute("data-next")==="true";
+    const r = reservations[id];
+    await set(ref(db,`spectacles/salle_bessay/${id}`), { ...r, paid: next });
+  } else if (action==="toggle-present"){
+    const next = btn.getAttribute("data-next")==="true";
+    const r = reservations[id];
+    await set(ref(db,`spectacles/salle_bessay/${id}`), { ...r, present: next });
+  } else if (action==="delete"){
+    if (confirm("Supprimer ?")){
+      await remove(ref(db,`spectacles/salle_bessay/${id}`));
+    }
+  }
+});
 
-document.getElementById("priceBtn").onclick=()=>{
-  const a=parseFloat(prompt("Tarif adulte (€)",priceAdult))||priceAdult;
-  const c=parseFloat(prompt("Tarif enfant (€)",priceChild))||priceChild;
-  priceAdult=a;priceChild=c;alert("Tarifs mis à jour !");updateTotal();
-};
+/* ================== Bouton Admin ================== */
+adminToggleBtn.addEventListener("click", ()=>{
+  if (!adminMode){
+    const pass = prompt("Mot de passe admin :");
+    if (pass !== "admin123") { alert("Mot de passe incorrect !"); return; }
+    adminMode = true;
+    document.body.classList.add("admin-mode");
+    adminNotice.style.display = "block";
+    adminToggleBtn.textContent = "🚪 Sortir du mode admin";
+    [priceBtn,testEmailBtn,exportBtn].forEach(b=>b.style.display="inline-block");
+  } else {
+    adminMode = false;
+    emailTestMode = false;
+    document.body.classList.remove("admin-mode");
+    adminNotice.style.display = "none";
+    adminToggleBtn.textContent = "🔐 Mode Admin";
+    [priceBtn,testEmailBtn,exportBtn].forEach(b=>b.style.display="none");
+    testNotice.style.display = "none";
+  }
+  renderList(); // rafraîchit l’affichage des boutons dans chaque carte
+});
 
-document.getElementById("testEmailBtn").onclick=()=>{
-  emailTestMode=!emailTestMode;
-  document.getElementById("testNotice").style.display=emailTestMode?"block":"none";
-  document.getElementById("testEmailBtn").textContent=emailTestMode?"✉️ Mode Email : RÉEL":"✉️ Mode Email : TEST";
-};
+/* ================== Boutons Admin (actions) ================== */
+priceBtn.addEventListener("click", ()=>{
+  const a = parseFloat(prompt("Tarif adulte (€)", priceAdult));
+  const c = parseFloat(prompt("Tarif enfant (€)", priceChild));
+  if (!isNaN(a)) priceAdult = a;
+  if (!isNaN(c)) priceChild = c;
+  alert(`Tarifs mis à jour :\nAdulte = ${priceAdult} €\nEnfant = ${priceChild} €`);
+  updateTotal();
+});
 
-// === Export CSV ===
+testEmailBtn.addEventListener("click", ()=>{
+  emailTestMode = !emailTestMode;
+  testNotice.style.display = emailTestMode ? "block" : "none";
+  testEmailBtn.textContent = emailTestMode ? "✉️ Mode Email : RÉEL" : "✉️ Mode Email : TEST";
+});
+
 function safeCell(v){return v==null?"":String(v).replace(/\r?\n/g," ").trim();}
 function exportReservationsCSV(obj){
   try{
     if(!obj||!Object.keys(obj).length){alert("Aucune réservation à exporter.");return;}
-    const header=["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé"];
+    const header=["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé","Présent"];
     const rows=[header];
     Object.values(obj).forEach(r=>{
       const amountNum=Number(r?.amount||0);
-      rows.push([safeCell(r?.name),safeCell(r?.email),safeCell(r?.phone),Number(r?.nbAdult||0),Number(r?.nbChild||0),Number(r?.nbPlaces||0),amountNum.toFixed(2),r?.paid?"Oui":"Non"]);
+      rows.push([safeCell(r?.name),safeCell(r?.email),safeCell(r?.phone),
+        Number(r?.nbAdult||0),Number(r?.nbChild||0),Number(r?.nbPlaces||0),
+        amountNum.toFixed(2),r?.paid?"Oui":"Non",r?.present?"Oui":"Non"]);
     });
     const csv="\uFEFF"+rows.map(l=>l.join(";")).join("\n");
     const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
@@ -407,21 +431,11 @@ function exportReservationsCSV(obj){
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
     a.href=url;a.download=filename;a.style.display="none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export CSV.");}
 }
-document.getElementById("exportBtn").addEventListener("click",()=>exportReservationsCSV(reservations));
-
-// === Modale d’aperçu ===
-window.showEmailPreview=html=>{const m=document.getElementById("emailModal");document.getElementById("emailPreview").innerHTML=html;m.classList.add("show");};
-window.closeModal=()=>document.getElementById("emailModal").classList.remove("show");
-
-// Init affichages
-updateTotal();
+exportBtn.addEventListener("click", ()=>exportReservationsCSV(reservations));
 </script>
-
 </body>
 </html>
