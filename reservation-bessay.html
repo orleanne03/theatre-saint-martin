@@ -157,7 +157,7 @@ form button:hover { background:#b71c1c; }
 <div id="testNotice">✉️ Mode TEST activé</div>
 <div id="adminNotice">👑 Vous êtes en mode administrateur</div>
 
-<!-- Modale email -->
+<!-- Modale d’aperçu email -->
 <div id="emailModal">
   <div id="emailModalContent">
     <h3 style="text-align:center;">📧 Aperçu de l’e-mail</h3>
@@ -167,14 +167,13 @@ form button:hover { background:#b71c1c; }
 </div>
 
 <script type="module">
-/* ================== Imports ================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, push, update } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-/* ================== EmailJS ================== */
+/* EmailJS */
 emailjs.init("E4g_UFzGYQZBNH07m");
 
-/* ================== Firebase ================== */
+/* Firebase */
 const app = initializeApp({
   apiKey:"AIzaSyXXXX_TON_API_KEY",
   authDomain:"theatre-saint-martin.firebaseapp.com",
@@ -187,13 +186,13 @@ const app = initializeApp({
 const db = getDatabase(app);
 const refSpectacle = ref(db, "spectacles/salle_bessay");
 
-/* ================== État ================== */
+/* État */
 let reservations = {};
 let adminMode = false;
 let emailTestMode = false;
 let priceAdult = 22, priceChild = 15;
 
-/* ================== DOM refs ================== */
+/* DOM refs */
 const list = document.getElementById("list");
 const adminToggleBtn = document.getElementById("adminToggle");
 const priceBtn = document.getElementById("priceBtn");
@@ -210,7 +209,7 @@ const cI = document.getElementById("child");
 const totalEl = document.getElementById("totalPrice");
 const closeModalBtn = document.getElementById("closeModalBtn");
 
-/* ================== Formatage entrées ================== */
+/* Formatage entrées */
 nameInput.addEventListener("input",()=>nameInput.value=nameInput.value.toUpperCase());
 emailInput.addEventListener("input",()=>emailInput.value=emailInput.value.toLowerCase());
 phoneInput.addEventListener("input",()=>{
@@ -220,7 +219,7 @@ phoneInput.addEventListener("input",()=>{
   phoneInput.value=d.slice(0,10).replace(/(\d{2})(?=\d)/g,'$1 ').trim();
 });
 
-/* ================== Total ================== */
+/* Total */
 function updateTotal(){
   const a=+aI.value||0, c=+cI.value||0;
   totalEl.textContent = `Total : ${(a*priceAdult + c*priceChild).toFixed(2)} €`;
@@ -229,13 +228,13 @@ aI.addEventListener("input",updateTotal);
 cI.addEventListener("input",updateTotal);
 updateTotal();
 
-/* ================== Live data ================== */
+/* Live data */
 onValue(refSpectacle, snap => {
   reservations = snap.val() || {};
   renderList();
 });
 
-/* ================== Email HTML ================== */
+/* Email HTML (avec bouton Imprimer) */
 function buildEmailHTML(data){
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f9f9f9; padding:20px;">
@@ -260,7 +259,14 @@ function buildEmailHTML(data){
             📅 <b>Date :</b> Vendredi 23 janvier 2026 – 20h30
           </p>
         </div>
-        <p style="font-size:14px; color:#555;">Pour toute question : 06.09.12.11.59</p>
+
+        <div style="text-align:center; margin-top:20px;">
+          <!-- Ce bouton lancera l'impression dans la modale / navigateur. 
+               Dans un client mail, l'impression auto peut être bloquée mais le bouton reste visible. -->
+          <a href="#" onclick="window.print()" style="background:#388e3c; color:white; text-decoration:none; padding:10px 18px; border-radius:6px; font-weight:bold; display:inline-block;">🖨️ Imprimer mon billet</a>
+        </div>
+
+        <p style="font-size:14px; color:#555; margin-top:20px;">Pour toute question : 06.09.12.11.59</p>
         <p style="font-size:13px; color:#777;">À très bientôt au théâtre 🎭</p>
       </div>
       <div style="background-color:#f0f0f0; text-align:center; padding:10px; font-size:12px; color:#777;">
@@ -270,7 +276,7 @@ function buildEmailHTML(data){
   </div>`;
 }
 
-/* ================== Email envoi / preview ================== */
+/* Envoi / aperçu email */
 async function sendEmail(data){
   const htmlContent = buildEmailHTML(data);
   if (emailTestMode){
@@ -291,7 +297,7 @@ async function sendEmail(data){
 }
 closeModalBtn.addEventListener("click",()=>document.getElementById("emailModal").classList.remove("show"));
 
-/* ================== Formulaire ================== */
+/* Formulaire */
 resForm.addEventListener("submit", async (e)=>{
   e.preventDefault();
   const name = nameInput.value.trim().toUpperCase();
@@ -313,7 +319,7 @@ resForm.addEventListener("submit", async (e)=>{
   resForm.reset(); updateTotal();
 });
 
-/* ================== Liste + Event delegation ================== */
+/* Rendu liste + event delegation */
 function renderList(){
   const entries = Object.entries(reservations);
   if (!entries.length){
@@ -347,7 +353,6 @@ function renderList(){
   }
   list.innerHTML = html;
 }
-// Ouvrir/fermer les cartes + actions admin via délégation
 list.addEventListener("click", async (e)=>{
   const header = e.target.closest("[data-toggle]");
   if (header){
@@ -374,7 +379,7 @@ list.addEventListener("click", async (e)=>{
   }
 });
 
-/* ================== Bouton Admin ================== */
+/* Bouton Admin + boutons admin */
 adminToggleBtn.addEventListener("click", ()=>{
   if (!adminMode){
     const pass = prompt("Mot de passe admin :");
@@ -393,10 +398,9 @@ adminToggleBtn.addEventListener("click", ()=>{
     [priceBtn,testEmailBtn,exportBtn].forEach(b=>b.style.display="none");
     testNotice.style.display = "none";
   }
-  renderList(); // rafraîchit l’affichage des boutons dans chaque carte
+  renderList();
 });
 
-/* ================== Boutons Admin (actions) ================== */
 priceBtn.addEventListener("click", ()=>{
   const a = parseFloat(prompt("Tarif adulte (€)", priceAdult));
   const c = parseFloat(prompt("Tarif enfant (€)", priceChild));
