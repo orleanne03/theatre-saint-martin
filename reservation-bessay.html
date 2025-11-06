@@ -326,7 +326,26 @@ function renderList(){
     list.innerHTML = "<p>Aucune réservation.</p>";
     return;
   }
-  let html = "<h3>📋 Réservations</h3>";
+  /* --- AJOUT : Calcul des totaux --- */
+let totalAdult = 0, totalChild = 0, totalAmount = 0;
+for (const r of Object.values(reservations)){
+  totalAdult += Number(r.nbAdult||0);
+  totalChild += Number(r.nbChild||0);
+  totalAmount += Number(r.amount||0);
+}
+
+/* Affichage résumé */
+let summary = `
+  <div style="max-width:600px;margin:0 auto 15px auto;padding:12px;
+              background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);
+              font-weight:600;font-size:1rem;text-align:center;">
+    👨‍👩‍👧 Adultes : ${totalAdult} &nbsp; | &nbsp; 👧 Enfants : ${totalChild} <br>
+    💶 Total encaissé (si tous payés) : ${totalAmount.toFixed(2)} €
+  </div>
+`;
+
+  let html = summary + "<h3>📋 Réservations</h3>";
+
   for (const [id, r] of entries){
     const payClass = r.paid ? "paid" : "unpaid";
     const payTxt   = r.paid ? "✅ Payé" : "❌ Non payé";
@@ -342,6 +361,8 @@ function renderList(){
           <p>📞 ${r.phone}</p>
           <p>📧 ${r.email}</p>
           <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
+          <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
+
           <p><b>🎟️ Statut :</b> <span class="${presClass}">${presTxt}</span></p>
           ${adminMode ? `
             <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
