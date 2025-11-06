@@ -330,7 +330,15 @@ updateTotal();
 
 /* Rendu liste + event delegation */
 function renderList(){
-  const entries = Object.entries(reservations);
+  let entries = Object.entries(reservations);
+
+  // ✅ Tri alphabétique sur le champ "name"
+  entries = entries.sort((a, b) => {
+    const nameA = (a[1].name || "").toUpperCase();
+    const nameB = (b[1].name || "").toUpperCase();
+    return nameA.localeCompare(nameB);
+  });
+
   if (!entries.length){
     list.innerHTML = "<p>Aucune réservation.</p>";
     return;
