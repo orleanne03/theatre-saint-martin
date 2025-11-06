@@ -243,7 +243,8 @@ function buildEmailHTML(data){
         <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
         <p style="margin:0; font-size:14px;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
       </div>
-      <div style="padding:25px;">
+      <div style="padding:35px 30px 40px 30px; line-height:1.65;">
+
         <h3 style="color:#d32f2f; margin-top:0;">Confirmation de réservation</h3>
         <p>Bonjour <b>${data.name}</b>,</p>
         <p>Merci pour votre réservation ! Voici le récapitulatif :</p>
@@ -253,7 +254,7 @@ function buildEmailHTML(data){
           <tr style="border-top:1px solid #eee;"><td style="padding:8px 0; font-weight:bold;">Total de places</td><td style="text-align:right; font-weight:bold;">${data.nbPlaces}</td></tr>
           <tr><td style="padding:8px 0; font-weight:bold; color:#388e3c;">Montant total</td><td style="text-align:right; font-weight:bold; color:#388e3c;">${data.amount.toFixed(2)} €</td></tr>
         </table>
-        <div style="margin-top:20px; padding:15px; background:#fff8e1; border-radius:8px;">
+<div style="margin-top:32px; padding:22px; background:#fff8e1; border-radius:8px;">
           <p style="margin:0; font-size:14px;">
             📍 <b>Lieu :</b> Salle de Bessay<br>
             📅 <b>Date :</b> Vendredi 23 janvier 2026 – 20h30
@@ -263,7 +264,10 @@ function buildEmailHTML(data){
         <div style="text-align:center; margin-top:20px;">
           <!-- Ce bouton lancera l'impression dans la modale / navigateur. 
                Dans un client mail, l'impression auto peut être bloquée mais le bouton reste visible. -->
-          <a href="#" onclick="window.print()" style="background:#388e3c; color:white; text-decoration:none; padding:10px 18px; border-radius:6px; font-weight:bold; display:inline-block;">🖨️ Imprimer mon billet</a>
+<a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?id=${data.id}"
+   style="background:#388e3c; color:white; text-decoration:none; padding:10px 18px; border-radius:6px; font-weight:bold; display:inline-block;">
+   🖨️ Imprimer mon billet
+</a>
         </div>
 
         <p style="font-size:14px; color:#555; margin-top:20px;">Pour toute question : 06.09.12.11.59</p>
@@ -313,10 +317,15 @@ resForm.addEventListener("submit", async (e)=>{
     paid: document.getElementById("paid").checked,
     present: false
   };
-  await set(push(ref(db,"spectacles/salle_bessay")), data);
-  alert("✅ Réservation enregistrée !");
-  sendEmail(data);
-  resForm.reset(); updateTotal();
+  const newRef = push(ref(db, "spectacles/salle_bessay"));
+await set(newRef, { ...data, id:newRef.key });
+
+alert("✅ Réservation enregistrée !");
+sendEmail({ ...data, id:newRef.key });
+
+resForm.reset();
+updateTotal();
+
 });
 
 /* Rendu liste + event delegation */
