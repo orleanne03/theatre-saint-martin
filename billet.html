@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Billet - Salle de Bessay</title>
+
+<style>
+body {
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f9f9f9;
+  padding:20px;
+  text-align:center;
+}
+#ticket {
+  max-width:600px;
+  margin:0 auto;
+}
+</style>
+
+</head>
+<body>
+
+<div id="ticket">Chargement du billet…</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, get, ref } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+/* même config que index.html */
+const app = initializeApp({
+  apiKey:"AIzaSyXXXX_TON_API_KEY",
+  authDomain:"theatre-saint-martin.firebaseapp.com",
+  databaseURL:"https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"theatre-saint-martin",
+  storageBucket:"theatre-saint-martin.appspot.com",
+  messagingSenderId:"1234567890",
+  appId:"1:1234567890:web:abcd1234efgh"
+});
+const db = getDatabase(app);
+
+/* récupérer l’ID */
+const id = new URLSearchParams(location.search).get("id");
+if(!id){ document.getElementById("ticket").innerHTML = "Billet introuvable."; throw ""; }
+
+const snap = await get(ref(db, "spectacles/salle_bessay/" + id));
+const r = snap.val();
+
+/* construction identique à l’email */
+document.getElementById("ticket").innerHTML = `
+  <div style="background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); overflow:hidden;">
+    <div style="background-color:#d32f2f; color:white; padding:18px;">
+      <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
+      <p style="margin:0; font-size:14px;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
+    </div>
+    <div style="padding:25px;">
+      <h3 style="color:#d32f2f; margin-top:0;">Confirmation de réservation</h3>
+      <p>Bonjour <b>${r.name}</b>, voici votre billet :</p>
+      <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:15px;">
+        <tr><td>🎫 <b>Adultes :</b></td><td style="text-align:right;">${r.nbAdult}</td></tr>
+        <tr><td>👧 <b>Enfants -12 ans :</b></td><td style="text-align:right;">${r.nbChild}</td></tr>
+        <tr style="border-top:1px solid #eee;"><td style="padding-top:8px;font-weight:bold;">Total de places</td><td style="text-align:right;font-weight:bold;padding-top:8px;">${r.nbPlaces}</td></tr>
+        <tr><td style="padding-top:8px;font-weight:bold;color:#388e3c;">Montant total</td><td style="text-align:right;font-weight:bold;color:#388e3c;padding-top:8px;">${parseFloat(r.amount).toFixed(2)} €</td></tr>
+      </table>
+      <div style="margin-top:20px; padding:15px; background:#fff8e1; border-radius:8px;">
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026 – 20h30
+      </div>
+    </div>
+  </div>
+`;
+
+/* Imprimer automatiquement */
+setTimeout(()=>window.print(), 600);
+</script>
+
+</body>
+</html>
