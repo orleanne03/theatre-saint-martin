@@ -123,7 +123,7 @@ form button:hover { background:#b71c1c; }
 
 <h1>🎟️ Salle de Bessay – Réservations</h1>
 <h2>🎭 Spectacle du 23 janvier 2026</h2>
-
+<br>Adulte : 22€ / Enfant - 12 ans : 15€</br>
 <form id="resForm">
   <input id="name" placeholder="Nom et Prénom" required>
   <input id="email" placeholder="Email" type="email" required>
@@ -152,6 +152,10 @@ form button:hover { background:#b71c1c; }
   <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
   <button class="admin-btn" id="testEmailBtn" style="display:none;">✉️ Mode Email : TEST</button>
   <button class="admin-btn" id="exportBtn" style="display:none;">💾 Enregistrer les réservations</button>
+  <button id="sendBulkEmail" style="display:none;background:#ff9800;">
+  📢 Email groupé (erratum)
+</button>
+
 </div>
 
 <div id="testNotice">✉️ Mode TEST activé</div>
@@ -257,7 +261,8 @@ function buildEmailHTML(data){
 <div style="margin-top:32px; padding:22px; background:#fff8e1; border-radius:8px;">
           <p style="margin:0; font-size:14px;">
             📍 <b>Lieu :</b> Salle de Bessay<br>
-            📅 <b>Date :</b> Vendredi 23 janvier 2026 – 20h30
+            📅 <b>Date :</b> Vendredi 23 janvier 2026<br>
+            📢 <b>Heure : Présence impérative à 19h00 - début du spectacle à 20h30<br>
           </p>
         </div>
 
@@ -381,11 +386,19 @@ let summary = `
           <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
 
           <p><b>🎟️ Statut :</b> <span class="${presClass}">${presTxt}</span></p>
-          ${adminMode ? `
-            <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
-            <button class="action-btn" style="background:#8e24aa;" data-action="toggle-present" data-id="${id}" data-next="${!r.present}">🎟️ Valider billet</button>
-            <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
-          ` : ""}
+${adminMode ? `
+  <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
+  <button class="action-btn" style="background:#8e24aa;" data-action="toggle-present" data-id="${id}" data-next="${!r.present}">🎟️ Valider billet</button>
+
+  <button class="action-btn" style="background:#1976d2;"
+    data-action="resend-ticket"
+    data-id="${id}">
+    📧 Renvoyer le billet
+  </button>
+
+  <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
+` : ""}
+
         </div>
       </div>`;
   }
@@ -415,6 +428,23 @@ list.addEventListener("click", async (e)=>{
       await remove(ref(db,`spectacles/salle_bessay/${id}`));
     }
   }
+  else if (action === "resend-ticket") {
+  const r = reservations[id];
+  if (!r || !r.email) {
+    alert("❌ Email introuvable");
+    return;
+  }
+
+  if (!confirm(`📧 Renvoyer le billet à ${r.email} ?`)) return;
+
+  await sendEmail({
+    ...r,
+    id
+  });
+
+  alert("✅ Billet renvoyé");
+}
+
 });
 
 /* Bouton Admin + boutons admin */
@@ -426,14 +456,16 @@ adminToggleBtn.addEventListener("click", ()=>{
     document.body.classList.add("admin-mode");
     adminNotice.style.display = "block";
     adminToggleBtn.textContent = "🚪 Sortir du mode admin";
-    [priceBtn,testEmailBtn,exportBtn].forEach(b=>b.style.display="inline-block");
+[priceBtn,testEmailBtn,exportBtn, bulkBtn].forEach(b=>b.style.display="inline-block");
+
   } else {
     adminMode = false;
     emailTestMode = false;
     document.body.classList.remove("admin-mode");
     adminNotice.style.display = "none";
     adminToggleBtn.textContent = "🔐 Mode Admin";
-    [priceBtn,testEmailBtn,exportBtn].forEach(b=>b.style.display="none");
+[priceBtn,testEmailBtn,exportBtn, bulkBtn].forEach(b=>b.style.display="none");
+
     testNotice.style.display = "none";
   }
   renderList();
@@ -478,6 +510,179 @@ function exportReservationsCSV(obj){
   }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export CSV.");}
 }
 exportBtn.addEventListener("click", ()=>exportReservationsCSV(reservations));
+// ===================================================
+// 📢 EMAIL GROUPÉ (ERRATUM) — MODE ADMIN
+// ===================================================
+const bulkBtn = document.getElementById("sendBulkEmail");
+const bulkModal = document.getElementById("bulkEmailModal");
+
+bulkBtn.addEventListener("click", ()=>{
+  bulkModal.style.display = "flex";
+});
+
+document.getElementById("bulkCancel").onclick = ()=>{
+  bulkModal.style.display = "none";
+};
+
+document.getElementById("bulkSend").onclick = async ()=>{
+  const subject = document.getElementById("bulkSubject").value.trim();
+  const message = document.getElementById("bulkMessage").value.trim();
+
+  if (!subject || !message){
+    alert("⚠️ Sujet et message requis");
+    return;
+  }
+
+  // 🔍 Récupération des emails uniques
+  const emailsSet = new Set();
+  Object.values(reservations).forEach(r=>{
+    if (r.email) emailsSet.add(r.email.toLowerCase());
+  });
+
+  if (!emailsSet.size){
+    alert("❌ Aucun email trouvé");
+    return;
+  }
+
+  if (!confirm(`📬 Envoyer l’email à ${emailsSet.size} personnes ?`)) return;
+
+  let sent = 0;
+
+  for (const email of emailsSet){
+    const html = `
+<div style="
+  font-family:'Segoe UI',Arial,sans-serif;
+  background-color:#f4f6f8;
+  padding:20px;
+">
+  <div style="
+    max-width:600px;
+    margin:0 auto;
+    background:#ffffff;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.12);
+    overflow:hidden;
+  ">
+
+    <!-- EN-TÊTE -->
+    <div style="
+      background: linear-gradient(135deg, #1565c0, #2196f3);
+      color:white;
+      text-align:center;
+      padding:22px 20px;
+    ">
+      <h2 style="margin:0;font-size:22px;">🎭 Théâtre Saint-Martin</h2>
+      <p style="margin:6px 0 0;font-size:14px;opacity:0.95;">
+        Salle de Bessay – Spectacle du 23 janvier 2026
+      </p>
+    </div>
+
+    <!-- CONTENU -->
+    <div style="padding:28px 30px; color:#333; line-height:1.6;">
+      <h3 style="
+        margin-top:0;
+        color:#d32f2f;
+        font-size:18px;
+      ">
+        📢 Information importante
+      </h3>
+
+      <p>Bonjour,</p>
+
+      <div style="
+        background:#fff8e1;
+        border-left:5px solid #ff9800;
+        padding:14px 16px;
+        border-radius:6px;
+        margin:15px 0;
+        font-size:15px;
+      ">
+        ${message.replace(/\n/g,"<br>")}
+      </div>
+
+      <p style="margin-top:18px;">
+        Nous vous remercions de votre compréhension et restons à votre disposition.
+      </p>
+
+      <p style="margin-top:22px;">
+        🎭 <b>L’équipe du Théâtre Saint-Martin</b><br>
+        📍 Salle de Bessay<br>
+        📞 06 09 12 11 59
+      </p>
+    </div>
+
+    <!-- PIED -->
+    <div style="
+      background:#f0f0f0;
+      text-align:center;
+      padding:12px;
+      font-size:12px;
+      color:#777;
+    ">
+      Vous recevez cet email suite à votre réservation.<br>
+      © Théâtre Saint-Martin – Tous droits réservés
+    </div>
+
+  </div>
+</div>
+`;
+
+
+    if (emailTestMode){
+      console.log("🧪 TEST →", email, html);
+      document.getElementById("emailPreview").innerHTML = html;
+      document.getElementById("emailModal").classList.add("show");
+    } else {
+      await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
+        to_email: email,
+        subject,
+        html_message: html
+      });
+    }
+
+    sent++;
+  }
+
+  bulkModal.style.display = "none";
+
+  alert(
+    emailTestMode
+      ? `🧪 Mode TEST : ${sent} emails simulés`
+      : `✅ ${sent} emails envoyés`
+  );
+};
+
 </script>
+<!-- 📢 Modale Email groupé (erratum) -->
+<div id="bulkEmailModal" style="
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.5);
+  display:none; justify-content:center; align-items:center;
+  z-index:2000;
+">
+  <div style="
+    background:white; border-radius:12px;
+    padding:25px 30px; max-width:500px; width:90%;
+    box-shadow:0 5px 12px rgba(0,0,0,0.3);
+  ">
+    <h3 style="margin-top:0;">📢 Email groupé (erratum)</h3>
+
+    <input id="bulkSubject"
+      placeholder="Sujet de l’email"
+      style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+
+    <textarea id="bulkMessage"
+      placeholder="Message à envoyer"
+      style="width:100%;height:140px;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+
+    <div style="margin-top:15px;text-align:right;">
+      <button id="bulkCancel" style="margin-right:10px;">Annuler</button>
+      <button id="bulkSend" style="background:#ff9800;color:white;border:none;border-radius:8px;padding:10px 16px;font-weight:600;">
+        Envoyer
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
