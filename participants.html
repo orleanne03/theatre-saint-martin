@@ -183,10 +183,34 @@ if (editingParticipantId) {
 }
 
 
-const newParticipantRef = await push(
-  ref(db, `participants/${resId}`),
-  data
-);
+document.getElementById("participantsForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    name: formatName(pname.value.trim()),
+    email: pemail.value.trim().toLowerCase(),
+    phone: formatPhone(pphone.value.trim()),
+    createdAt: Date.now()
+  };
+
+  // ✏️ MODE MODIFICATION
+  if (editingParticipantId) {
+    await set(
+      ref(db, `participants/${resId}/${editingParticipantId}`),
+      data
+    );
+
+    editingParticipantId = null;
+    e.target.reset();
+    return; // ⛔ On ne crée PAS un nouveau participant
+  }
+
+  // ➕ MODE AJOUT
+  await push(ref(db, `participants/${resId}`), data);
+
+  e.target.reset();
+});
+
 // 🔽 Récupère la réservation principale (Firebase)
 const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
 
