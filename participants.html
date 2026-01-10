@@ -178,62 +178,7 @@ await sendParticipantTicket(data, {
 });
 
 
-// 🔔 Récupérer la réservation principale
-const snap = await fetch(
-  "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app/spectacles/salle_bessay/" +
-  resId +
-  ".json"
-);
-const reservation = await snap.json();
 
-// ❌ sécurité
-if (!reservation || !reservation.email) {
-  alert("❌ Réservation introuvable");
-  return;
-}
-
-// 📧 Envoi du billet AU PARTICIPANT
-await emailjs.send("service_0lqs9k7", "template_w2j3pqp", {
-  to_email: data.email,
-  to_name: data.name,
-  html_message: `    <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;">
-      <h2>🎟️ Votre billet – Salle de Bessay</h2>
-
-      <p>Bonjour <b>${data.name}</b>,</p>
-
-      <p>
-        Suite à la réservation effectuée par
-        <b>${reservation.name}</b>,
-        voici <b>votre billet nominatif</b>.
-      </p>
-
-      <p>
-        📍 Salle de Bessay<br>
-        📅 Vendredi 23 janvier 2026<br>
-        🕗 Présence à 19h00 – Spectacle à 20h30
-      </p>
-
-      <div style="text-align:center; margin:25px 0;">
-  <a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?resId=${resId}&email=${encodeURIComponent(data.email)}"
-     style="
-       background:#388e3c;
-       color:white;
-       text-decoration:none;
-       padding:12px 20px;
-       border-radius:6px;
-       font-weight:bold;
-       display:inline-block;
-       font-size:15px;
-     ">
-    🖨️ Imprimer mon billet
-  </a>
-</div>
-
-
-      <p>À très bientôt 🎭<br>Théâtre Saint-Martin</p>
-    </div>
-  `
-});
 
 alert("✅ Participant enregistré et billet envoyé !");
 await loadParticipantsTable();
@@ -327,6 +272,7 @@ document.getElementById("closeWindow").addEventListener("click", () => {
     window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
   }, 400);
 });
+loadParticipantsTable();
 
 
 </script>
