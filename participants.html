@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -52,8 +54,10 @@
 </form>
 
 <script type="module">
+    
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
 
   const app = initializeApp({
     apiKey: "AIzaSyXXXX_TON_API_KEY",
@@ -70,28 +74,122 @@
   // 🔑 Récupération du resId depuis l’URL
   const params = new URLSearchParams(window.location.search);
   const resId = params.get("resId");
+function formatName(str) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function formatPhone(str) {
+  const digits = str.replace(/\D/g, "").slice(0, 10);
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
 
 if (!resId) {
   alert("❌ Lien invalide ou incomplet.\nVeuillez utiliser le lien reçu par email.");
   document.getElementById("participantsForm").style.display = "none";
   throw new Error("resId manquant");
 }
+function formatName(str) {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function formatPhone(str) {
+  const digits = str.replace(/\D/g, "").slice(0, 10);
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
 
 
   document.getElementById("participantsForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const data = {
-      name: pname.value.trim(),
-      email: pemail.value.trim().toLowerCase(),
-      phone: pphone.value.trim(),
-      createdAt: Date.now()
-    };
+const data = {
+  name: formatName(pname.value.trim()),
+  email: pemail.value.trim().toLowerCase(),
+  phone: formatPhone(pphone.value.trim()),
+  createdAt: Date.now()
+};
 
-    await push(ref(db, `participants/${resId}`), data);
 
-    alert("✅ Informations enregistrées !");
-    e.target.reset();
+
+const newParticipantRef = await push(
+  ref(db, `participants/${resId}`),
+  data
+);
+// 🔽 Récupère la réservation principale (Firebase)
+const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
+
+if (!resSnap.exists()) {
+  alert("❌ Réservation introuvable");
+  return;
+}
+
+const reservationMain = resSnap.val();
+
+// ✉️ Envoi du billet AU PARTICIPANT
+await sendParticipantTicket(data, {
+  ...reservationMain,
+  id: resId
+});
+
+
+// 🔔 Récupérer la réservation principale
+const snap = await fetch(
+  "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app/spectacles/salle_bessay/" +
+  resId +
+  ".json"
+);
+const reservation = await snap.json();
+
+// ❌ sécurité
+if (!reservation || !reservation.email) {
+  alert("❌ Réservation introuvable");
+  return;
+}
+
+// 📧 Envoi du billet AU PARTICIPANT
+await emailjs.send("service_0lqs9k7", "template_w2j3pqp", {
+  to_email: data.email,
+  to_name: data.name,
+  html_message: `
+    <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;">
+      <h2>🎟️ Votre billet – Salle de Bessay</h2>
+
+      <p>Bonjour <b>${data.name}</b>,</p>
+
+      <p>
+        Suite à la réservation effectuée par
+        <b>${reservation.name}</b>,
+        voici <b>votre billet nominatif</b>.
+      </p>
+
+      <p>
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026<br>
+        🕗 Présence à 19h00 – Spectacle à 20h30
+      </p>
+
+      <p style="margin:20px 0;">
+        👉 <a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?resId=${resId}&email=${encodeURIComponent(data.email)}">
+        Accéder à mon billet</a>
+      </p>
+
+      <p>À très bientôt 🎭<br>Théâtre Saint-Martin</p>
+    </div>
+  `
+});
+
+alert("✅ Participant enregistré et billet envoyé !");
+e.target.reset();
+
   });
 </script>
 
