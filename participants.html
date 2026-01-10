@@ -1,3 +1,240 @@
+
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>🎟️ Informations des participants</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #fff8e1;
+      padding: 20px;
+      text-align: center;
+    }
+    form {
+      background: white;
+      max-width: 420px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,.15);
+      text-align: left;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>👥 Informations des participants</h2>
+
+
+
+<p>Merci de compléter les informations demandées.</p>
+
+<form id="participantsForm">
+  <input id="pname" placeholder="Nom du participant" required>
+  <input id="pemail" type="email" placeholder="Email du participant" required>
+  <input id="pphone" placeholder="Téléphone du participant" required>
+
+  <button type="submit">✅ Enregistrer</button>
+<button type="button" id="closeWindow"
+  style="
+    margin-bottom:15px;
+    background:#a10e0e;
+    color:white;
+    border:none;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    width: 100%;
+">
+  ❌ Fermer
+</button>
+
+</form>
+<!-- 📋 Liste des participants -->
+<div id="participantsList" style="margin-top:30px;">
+  <h3 style="text-align:center;">📋 Participants enregistrés</h3>
+
+<div id="participantsCards" style="max-width:420px;margin:auto;"></div>
+
+</div>
+
+<script type="module">
+    
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, ref, push, get, onValue, remove, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+
+
+  const app = initializeApp({
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  });
+
+  const db = getDatabase(app);
+
+  // 🔑 Récupération du resId depuis l’URL
+  const params = new URLSearchParams(window.location.search);
+  const resId = params.get("resId");
+  const pname = document.getElementById("pname");
+const pemail = document.getElementById("pemail");
+const pphone = document.getElementById("pphone");
+
+// ✏️ Nom → Majuscule au début de chaque mot
+pname.addEventListener("blur", () => {
+  pname.value = formatName(pname.value);
+});
+
+
+// 📧 Email → toujours en minuscules
+pemail.addEventListener("input", () => {
+  pemail.value = pemail.value.toLowerCase();
+});
+
+// 📞 Téléphone → 06 61 49 97 12
+pphone.addEventListener("input", () => {
+  const pos = pphone.selectionStart;
+  pphone.value = formatPhone(pphone.value);
+  pphone.setSelectionRange(pos, pos);
+});
+
+function formatName(str) {
+  return str
+    .toLowerCase()
+    .replace(/\s+/g, " ")        // garde les espaces
+    .replace(/(^|\s)\S/g, l => l.toUpperCase());  // majuscule après chaque espace
+}
+
+
+function formatPhone(str) {
+  const digits = str.replace(/\D/g, "").slice(0, 10);
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+
+if (!resId) {
+  alert("❌ Lien invalide ou incomplet.\nVeuillez utiliser le lien reçu par email.");
+  document.getElementById("participantsForm").style.display = "none";
+  throw new Error("resId manquant");
+}
+
+
+
+
+
+
+document.getElementById("participantsForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    name: formatName(pname.value.trim()),
+    email: pemail.value.trim().toLowerCase(),
+    phone: formatPhone(pphone.value.trim()),
+    createdAt: Date.now()
+  };
+
+  // ✏️ MODE MODIFICATION
+  if (editingParticipantId) {
+    await set(
+      ref(db, `participants/${resId}/${editingParticipantId}`),
+      data
+    );
+
+    editingParticipantId = null;
+    e.target.reset();
+    return; // ⛔ pas d’ajout, pas d’email
+  }
+
+  // ➕ MODE AJOUT
+  await push(ref(db, `participants/${resId}`), data);
+
+  // 🔽 Récupère la réservation principale
+  const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
+  if (!resSnap.exists()) {
+    alert("❌ Réservation introuvable");
+    return;
+  }
+
+  const reservationMain = resSnap.val();
+
+  // ✉️ Envoi du billet
+  await sendParticipantTicket(data, {
+    ...reservationMain,
+    id: resId
+  });
+
+  alert("✅ Participant enregistré et billet envoyé !");
+  e.target.reset();
+});
+
+
+
+  
+
+
+document.addEventListener("click", async (e) => {
+  const delBtn = e.target.closest(".delete-participant");
+  if (!delBtn) return;
+
+  const pid = delBtn.dataset.id;
+
+  if (!confirm("Supprimer ce participant ?")) return;
+
+  await remove(ref(db, `participants/${resId}/${pid}`));
+  loadParticipantsTable();
+});
+let editingParticipantId = null;
+
+document.addEventListener("click", async (e) => {
+  const editBtn = e.target.closest(".edit-participant");
+  if (!editBtn) return;
+
+  const pid = editBtn.dataset.id;
+  const snap = await get(ref(db, `participants/${resId}/${pid}`));
+  if (!snap.exists()) return;
+
+  const p = snap.val();
+
+  pname.value = p.name;
+  pemail.value = p.email;
+  pphone.value = p.phone || "";
+
+  editingParticipantId = pid;
+});
+document.getElementById("closeWindow").addEventListener("click", () => {
+  // Tente de fermer l’onglet
+  window.open("", "_self");
+  window.close();
+
+  // Sécurité : si le navigateur refuse, on redirige
+  setTimeout(() => {
+    window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
+  }, 400);
+});
+loadParticipantsTable()
+
 onValue(ref(db, `participants/${resId}`), snap => {
   const container = document.getElementById("participantsCards");
   container.innerHTML = "";
@@ -39,3 +276,51 @@ onValue(ref(db, `participants/${resId}`), snap => {
     container.appendChild(card);
   });
 });
+onValue(ref(db, `participants/${resId}`), snap => {
+  const container = document.getElementById("participantsCards");
+  container.innerHTML = "";
+
+  if (!snap.exists()) {
+    container.innerHTML = `
+      <div style="text-align:center;color:#777;margin-top:20px;">
+        Aucun participant enregistré
+      </div>`;
+    return;
+  }
+
+  Object.entries(snap.val()).forEach(([pid, p]) => {
+    const card = document.createElement("div");
+    card.style = `
+      background:white;
+      border-radius:10px;
+      box-shadow:0 2px 6px rgba(0,0,0,.12);
+      padding:12px 14px;
+      margin-bottom:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    `;
+
+    card.innerHTML = `
+      <div>
+        <b>${p.name}</b><br>
+        <span style="font-size:13px;color:#555">${p.email}</span><br>
+        <span style="font-size:13px;color:#555">${p.phone || ""}</span>
+      </div>
+
+      <div>
+        <button class="edit-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;cursor:pointer;">✏️</button>
+        <button class="delete-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;color:#e53935;cursor:pointer;">❌</button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+});
+
+
+
+</script>
+
+</body>
+</html>
