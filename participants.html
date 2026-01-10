@@ -36,6 +36,9 @@
       font-weight: bold;
       cursor: pointer;
     }
+    .formulaire {
+    text-align: left;
+}
   </style>
 </head>
 
@@ -181,14 +184,22 @@ document.getElementById("participantsForm").addEventListener("submit", async (e)
 
   const reservationMain = resSnap.val();
 
-  // ✉️ Envoi du billet
-  await sendParticipantTicket(data, {
-    ...reservationMain,
-    id: resId
-  });
+  try {
+    // ✉️ Envoi du billet
+    await sendParticipantTicket(data, {
+      ...reservationMain,
+      id: resId
+    });
 
-  alert("✅ Participant enregistré et billet envoyé !");
+    alert("✅ Participant enregistré et billet envoyé !");
+  } catch (err) {
+    console.error(err);
+    alert("⚠️ Participant enregistré, mais l’email n’a pas pu être envoyé.");
+  }
+
+  // 🔥 Le formulaire se vide TOUJOURS
   e.target.reset();
+
 });
 
 
@@ -263,15 +274,15 @@ onValue(ref(db, `participants/${resId}`), snap => {
     `;
 
     card.innerHTML = `
-      <div>
+      <div class="formulaire">
         <b>${p.name}</b><br>
         <span style="font-size:13px;color:#555">${p.email}</span><br>
         <span style="font-size:13px;color:#555">${p.phone || ""}</span>
       </div>
 
       <div>
-        <button class="edit-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;cursor:pointer;">✏️</button>
-        <button class="delete-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;color:#e53935;cursor:pointer;">❌</button>
+        <button class="edit-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;cursor:pointer;    padding: 0px;">✏️</button>
+        <button class="delete-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;color:#e53935;cursor:pointer;    padding: 0px;">❌</button>
       </div>
     `;
 
