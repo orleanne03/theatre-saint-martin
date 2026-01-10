@@ -53,7 +53,7 @@
   <input id="pphone" placeholder="Téléphone du participant" required>
 
   <button type="submit">✅ Enregistrer</button>
-  <button id="closeWindow"
+<button type="button" id="closeWindow"
   style="
     margin-bottom:15px;
     background:#a10e0e;
@@ -63,35 +63,18 @@
     border-radius:8px;
     cursor:pointer;
     font-weight:600;
-        width: 100%;
-  ">
+    width: 100%;
+">
   ❌ Fermer
 </button>
+
 </form>
 <!-- 📋 Liste des participants -->
 <div id="participantsList" style="margin-top:30px;">
   <h3 style="text-align:center;">📋 Participants enregistrés</h3>
 
-  <table style="
-    width:100%;
-    max-width:420px;
-    margin:10px auto;
-    border-collapse:collapse;
-    font-size:14px;
-  ">
-    <thead>
-      <tr style="background:#f0f0f0;">
-        <th>Nom</th>
-        <th>Email</th>
-        <th>Téléphone</th>
-        <th>✏️</th>
-        <th>❌</th>
-      </tr>
-    </thead>
-    <tbody id="participantsTableBody">
-      <!-- lignes injectées en JS -->
-    </tbody>
-  </table>
+<div id="participantsCards" style="max-width:420px;margin:auto;"></div>
+
 </div>
 
 <script type="module">
@@ -159,26 +142,7 @@ if (!resId) {
 
 
 
-  document.getElementById("participantsForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
 
-const data = {
-  name: formatName(pname.value.trim()),
-  email: pemail.value.trim().toLowerCase(),
-  phone: formatPhone(pphone.value.trim()),
-  createdAt: Date.now()
-};
-
-if (editingParticipantId) {
-  await set(
-    ref(db, `participants/${resId}/${editingParticipantId}`),
-    data
-  );
-  editingParticipantId = null;
-
-  e.target.reset();
-  return;
-}
 
 
 document.getElementById("participantsForm").addEventListener("submit", async (e) => {
@@ -200,77 +164,35 @@ document.getElementById("participantsForm").addEventListener("submit", async (e)
 
     editingParticipantId = null;
     e.target.reset();
-    return; // ⛔ On ne crée PAS un nouveau participant
+    return; // ⛔ pas d’ajout, pas d’email
   }
 
   // ➕ MODE AJOUT
   await push(ref(db, `participants/${resId}`), data);
 
+  // 🔽 Récupère la réservation principale
+  const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
+  if (!resSnap.exists()) {
+    alert("❌ Réservation introuvable");
+    return;
+  }
+
+  const reservationMain = resSnap.val();
+
+  // ✉️ Envoi du billet
+  await sendParticipantTicket(data, {
+    ...reservationMain,
+    id: resId
+  });
+
+  alert("✅ Participant enregistré et billet envoyé !");
   e.target.reset();
 });
 
-// 🔽 Récupère la réservation principale (Firebase)
-const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
-
-if (!resSnap.exists()) {
-  alert("❌ Réservation introuvable");
-  return;
-}
-
-const reservationMain = resSnap.val();
-
-// ✉️ Envoi du billet AU PARTICIPANT
-await sendParticipantTicket(data, {
-  ...reservationMain,
-  id: resId
-});
 
 
+  
 
-
-alert("✅ Participant enregistré et billet envoyé !");
-await loadParticipantsTable();
-
-e.target.reset();
-
-  });
-function loadParticipantsTableRealtime() {
-  const tbody = document.getElementById("participantsTableBody");
-
-  onValue(ref(db, `participants/${resId}`), snap => {
-    tbody.innerHTML = "";
-
-    if (!snap.exists()) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align:center;color:#777;">
-            Aucun participant enregistré
-          </td>
-        </tr>`;
-      return;
-    }
-
-    Object.entries(snap.val()).forEach(([pid, p]) => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${p.name}</td>
-        <td>${p.email}</td>
-        <td>${p.phone || ""}</td>
-
-        <td style="text-align:center;">
-          <button class="edit-participant" data-id="${pid}">✏️</button>
-        </td>
-
-        <td style="text-align:center;">
-          <button class="delete-participant" data-id="${pid}" style="color:#e53935;">❌</button>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  });
-}
 
 document.addEventListener("click", async (e) => {
   const delBtn = e.target.closest(".delete-participant");
@@ -311,7 +233,8 @@ document.getElementById("closeWindow").addEventListener("click", () => {
     window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
   }, 400);
 });
-loadParticipantsTableRealtime();
+loadParticipantsTable()
+
 
 
 
