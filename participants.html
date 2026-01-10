@@ -63,7 +63,7 @@
     border-radius:8px;
     cursor:pointer;
     font-weight:600;
-        width: 25%;
+        width: 100%;
   ">
   ❌ Fermer
 </button>
@@ -115,6 +115,29 @@ import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/
   // 🔑 Récupération du resId depuis l’URL
   const params = new URLSearchParams(window.location.search);
   const resId = params.get("resId");
+  const pname = document.getElementById("pname");
+const pemail = document.getElementById("pemail");
+const pphone = document.getElementById("pphone");
+
+// ✏️ Nom → Majuscule au début de chaque mot
+pname.addEventListener("input", () => {
+  const pos = pname.selectionStart;
+  pname.value = formatName(pname.value);
+  pname.setSelectionRange(pos, pos);
+});
+
+// 📧 Email → toujours en minuscules
+pemail.addEventListener("input", () => {
+  pemail.value = pemail.value.toLowerCase();
+});
+
+// 📞 Téléphone → 06 61 49 97 12
+pphone.addEventListener("input", () => {
+  const pos = pphone.selectionStart;
+  pphone.value = formatPhone(pphone.value);
+  pphone.setSelectionRange(pos, pos);
+});
+
 function formatName(str) {
   return str
     .toLowerCase()
