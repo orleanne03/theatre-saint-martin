@@ -121,11 +121,10 @@ const pemail = document.getElementById("pemail");
 const pphone = document.getElementById("pphone");
 
 // ✏️ Nom → Majuscule au début de chaque mot
-pname.addEventListener("input", () => {
-  const pos = pname.selectionStart;
+pname.addEventListener("blur", () => {
   pname.value = formatName(pname.value);
-  pname.setSelectionRange(pos, pos);
 });
+
 
 // 📧 Email → toujours en minuscules
 pemail.addEventListener("input", () => {
