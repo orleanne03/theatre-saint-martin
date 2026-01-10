@@ -141,11 +141,10 @@ pphone.addEventListener("input", () => {
 function formatName(str) {
   return str
     .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+    .replace(/\s+/g, " ")        // garde les espaces
+    .replace(/(^|\s)\S/g, l => l.toUpperCase());  // majuscule après chaque espace
 }
+
 
 function formatPhone(str) {
   const digits = str.replace(/\D/g, "").slice(0, 10);
