@@ -97,7 +97,8 @@
 <script type="module">
     
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, push, get, onValue, remove, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
 
 
   const app = initializeApp({
@@ -176,7 +177,7 @@ if (editingParticipantId) {
     data
   );
   editingParticipantId = null;
-  await loadParticipantsTable();
+
   e.target.reset();
   return;
 }
@@ -211,53 +212,44 @@ await loadParticipantsTable();
 e.target.reset();
 
   });
-  async function loadParticipantsTable() {
+function loadParticipantsTableRealtime() {
   const tbody = document.getElementById("participantsTableBody");
-  if (!tbody) return;
 
-  tbody.innerHTML = "";
+  onValue(ref(db, `participants/${resId}`), snap => {
+    tbody.innerHTML = "";
 
-  const snap = await get(ref(db, `participants/${resId}`));
-  if (!snap.exists()) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align:center;color:#777;">
-          Aucun participant enregistré
+    if (!snap.exists()) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;color:#777;">
+            Aucun participant enregistré
+          </td>
+        </tr>`;
+      return;
+    }
+
+    Object.entries(snap.val()).forEach(([pid, p]) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${p.name}</td>
+        <td>${p.email}</td>
+        <td>${p.phone || ""}</td>
+
+        <td style="text-align:center;">
+          <button class="edit-participant" data-id="${pid}">✏️</button>
         </td>
-      </tr>`;
-    return;
-  }
 
-  Object.entries(snap.val()).forEach(([pid, p]) => {
-    const tr = document.createElement("tr");
+        <td style="text-align:center;">
+          <button class="delete-participant" data-id="${pid}" style="color:#e53935;">❌</button>
+        </td>
+      `;
 
-    tr.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.email}</td>
-      <td>${p.phone || ""}</td>
-
-      <!-- ✏️ Modifier -->
-      <td style="text-align:center;">
-        <button class="edit-participant"
-          data-id="${pid}"
-          style="background:none;border:none;cursor:pointer;font-size:16px;">
-          ✏️
-        </button>
-      </td>
-
-      <!-- ❌ Supprimer -->
-      <td style="text-align:center;">
-        <button class="delete-participant"
-          data-id="${pid}"
-          style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;">
-          ❌
-        </button>
-      </td>
-    `;
-
-    tbody.appendChild(tr);
+      tbody.appendChild(tr);
+    });
   });
 }
+
 document.addEventListener("click", async (e) => {
   const delBtn = e.target.closest(".delete-participant");
   if (!delBtn) return;
@@ -297,7 +289,8 @@ document.getElementById("closeWindow").addEventListener("click", () => {
     window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
   }, 400);
 });
-loadParticipantsTable();
+loadParticipantsTableRealtime();
+
 
 
 </script>
