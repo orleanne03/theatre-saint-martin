@@ -46,6 +46,8 @@
 
 
 <p>Merci de compléter les informations demandées.</p>
+<p>👉 Arrivée groupée : un seul nom suffit pour les personnes concernées.</p>
+<p>👉 Arrivée séparée : merci de renseigner les informations de chaque participant</p>
 
 <form id="participantsForm">
   <input id="pname" placeholder="Nom du participant" required>
@@ -233,7 +235,7 @@ document.getElementById("closeWindow").addEventListener("click", () => {
     window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
   }, 400);
 });
-loadParticipantsTable()
+
 
 onValue(ref(db, `participants/${resId}`), snap => {
   const container = document.getElementById("participantsCards");
@@ -276,47 +278,7 @@ onValue(ref(db, `participants/${resId}`), snap => {
     container.appendChild(card);
   });
 });
-onValue(ref(db, `participants/${resId}`), snap => {
-  const container = document.getElementById("participantsCards");
-  container.innerHTML = "";
 
-  if (!snap.exists()) {
-    container.innerHTML = `
-      <div style="text-align:center;color:#777;margin-top:20px;">
-        Aucun participant enregistré
-      </div>`;
-    return;
-  }
-
-  Object.entries(snap.val()).forEach(([pid, p]) => {
-    const card = document.createElement("div");
-    card.style = `
-      background:white;
-      border-radius:10px;
-      box-shadow:0 2px 6px rgba(0,0,0,.12);
-      padding:12px 14px;
-      margin-bottom:12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    `;
-
-    card.innerHTML = `
-      <div>
-        <b>${p.name}</b><br>
-        <span style="font-size:13px;color:#555">${p.email}</span><br>
-        <span style="font-size:13px;color:#555">${p.phone || ""}</span>
-      </div>
-
-      <div>
-        <button class="edit-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;cursor:pointer;">✏️</button>
-        <button class="delete-participant" data-id="${pid}" style="border:none;background:none;font-size:18px;color:#e53935;cursor:pointer;">❌</button>
-      </div>
-    `;
-
-    container.appendChild(card);
-  });
-});
 
 
 
