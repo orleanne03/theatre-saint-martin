@@ -42,6 +42,20 @@
 <body>
 
 <h2>👥 Informations des participants</h2>
+<button id="closeWindow"
+  style="
+    margin-bottom:15px;
+    background:#e53935;
+    color:white;
+    border:none;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+  ">
+  ❌ Fermer
+</button>
+
 
 <p>Merci de compléter les informations demandées.</p>
 
@@ -52,6 +66,31 @@
 
   <button type="submit">✅ Enregistrer</button>
 </form>
+<!-- 📋 Liste des participants -->
+<div id="participantsList" style="margin-top:30px;">
+  <h3 style="text-align:center;">📋 Participants enregistrés</h3>
+
+  <table style="
+    width:100%;
+    max-width:420px;
+    margin:10px auto;
+    border-collapse:collapse;
+    font-size:14px;
+  ">
+    <thead>
+      <tr style="background:#f0f0f0;">
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Téléphone</th>
+        <th>✏️</th>
+        <th>❌</th>
+      </tr>
+    </thead>
+    <tbody id="participantsTableBody">
+      <!-- lignes injectées en JS -->
+    </tbody>
+  </table>
+</div>
 
 <script type="module">
     
@@ -93,19 +132,7 @@ if (!resId) {
   document.getElementById("participantsForm").style.display = "none";
   throw new Error("resId manquant");
 }
-function formatName(str) {
-  return str
-    .toLowerCase()
-    .split(" ")
-    .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
 
-function formatPhone(str) {
-  const digits = str.replace(/\D/g, "").slice(0, 10);
-  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
-}
 
 
   document.getElementById("participantsForm").addEventListener("submit", async (e) => {
@@ -118,6 +145,16 @@ const data = {
   createdAt: Date.now()
 };
 
+if (editingParticipantId) {
+  await set(
+    ref(db, `participants/${resId}/${editingParticipantId}`),
+    data
+  );
+  editingParticipantId = null;
+  await loadParticipantsTable();
+  e.target.reset();
+  return;
+}
 
 
 const newParticipantRef = await push(
@@ -159,8 +196,7 @@ if (!reservation || !reservation.email) {
 await emailjs.send("service_0lqs9k7", "template_w2j3pqp", {
   to_email: data.email,
   to_name: data.name,
-  html_message: `
-    <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;">
+  html_message: `    <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;">
       <h2>🎟️ Votre billet – Salle de Bessay</h2>
 
       <p>Bonjour <b>${data.name}</b>,</p>
@@ -200,9 +236,99 @@ await emailjs.send("service_0lqs9k7", "template_w2j3pqp", {
 });
 
 alert("✅ Participant enregistré et billet envoyé !");
+await loadParticipantsTable();
+
 e.target.reset();
 
   });
+  async function loadParticipantsTable() {
+  const tbody = document.getElementById("participantsTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  const snap = await get(ref(db, `participants/${resId}`));
+  if (!snap.exists()) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center;color:#777;">
+          Aucun participant enregistré
+        </td>
+      </tr>`;
+    return;
+  }
+
+  Object.entries(snap.val()).forEach(([pid, p]) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.email}</td>
+      <td>${p.phone || ""}</td>
+
+      <!-- ✏️ Modifier -->
+      <td style="text-align:center;">
+        <button class="edit-participant"
+          data-id="${pid}"
+          style="background:none;border:none;cursor:pointer;font-size:16px;">
+          ✏️
+        </button>
+      </td>
+
+      <!-- ❌ Supprimer -->
+      <td style="text-align:center;">
+        <button class="delete-participant"
+          data-id="${pid}"
+          style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;">
+          ❌
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+document.addEventListener("click", async (e) => {
+  const delBtn = e.target.closest(".delete-participant");
+  if (!delBtn) return;
+
+  const pid = delBtn.dataset.id;
+
+  if (!confirm("Supprimer ce participant ?")) return;
+
+  await remove(ref(db, `participants/${resId}/${pid}`));
+  loadParticipantsTable();
+});
+let editingParticipantId = null;
+
+document.addEventListener("click", async (e) => {
+  const editBtn = e.target.closest(".edit-participant");
+  if (!editBtn) return;
+
+  const pid = editBtn.dataset.id;
+  const snap = await get(ref(db, `participants/${resId}/${pid}`));
+  if (!snap.exists()) return;
+
+  const p = snap.val();
+
+  pname.value = p.name;
+  pemail.value = p.email;
+  pphone.value = p.phone || "";
+
+  editingParticipantId = pid;
+});
+document.getElementById("closeWindow").addEventListener("click", () => {
+  // Tente de fermer l’onglet
+  window.open("", "_self");
+  window.close();
+
+  // Sécurité : si le navigateur refuse, on redirige
+  setTimeout(() => {
+    window.location.href = "https://orleanne03.github.io/theatre-saint-martin/";
+  }, 400);
+});
+
+
 </script>
 
 </body>
