@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Billet - Salle de Bessay</title>
+
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background:#f9f9f9;
+  margin:0;
+  padding:50px 25px;
+  text-align:center;
+  line-height:1.65;
+}
+#ticket {
+  max-width:600px;
+  margin:0 auto;
+  background:white;
+  padding:35px 30px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+h1 { color:#b71c1c; margin-top:0; }
+h3 { margin-top:5px; color:#444; }
+.info-box {
+  margin-top:32px;
+  padding:20px;
+  background:#fff8e1;
+  border-radius:8px;
+  font-size:1rem;
+}
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getDatabase, get, ref } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyXXXX_TON_API_KEY",
+  authDomain:"theatre-saint-martin.firebaseapp.com",
+  databaseURL:"https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"theatre-saint-martin",
+  storageBucket:"theatre-saint-martin.appspot.com",
+  messagingSenderId:"1234567890",
+  appId:"1:1234567890:web:abcd1234efgh"
+});
+const db = getDatabase(app);
+
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+const email = params.get("email"); // si présent => participant
+
+async function load(){
+  if(!id){
+    document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
+    return;
+  }
+
+  const snap = await get(ref(db,"spectacles/salle_bessay/"+id));
+  if(!snap.exists()){
+    document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
+    return;
+  }
+
+  const r = snap.val();
+
+  // 🔍 Mode participant ?
+  let participantName = null;
+  if (email) {
+    const pSnap = await get(ref(db, "participants/" + id));
+    if (pSnap.exists()) {
+      const list = Object.values(pSnap.val());
+      const found = list.find(p => (p.email || "").toLowerCase() === email.toLowerCase());
+      if (found) participantName = found.name;
+    }
+  }
+
+  // -------------------------
+  // AFFICHAGE PARTICIPANT
+  // -------------------------
+  if (email && participantName) {
+    document.getElementById("ticket").innerHTML = `
+      <h1>🎭 Théâtre Saint-Martin</h1>
+      <h3>Salle de Bessay – 23 janvier 2026</h3>
+
+      <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
+
+      <p style="font-size:1.3rem; font-weight:bold;">${participantName}</p>
+
+      <div class="info-box">
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026<br>
+        🕗 Présence à 19h00 — Spectacle à 20h30
+      </div>
+
+      <p style="font-size:13px;color:#777;margin-top:15px;">
+        Billet nominatif (réservation de <b>${r.name}</b>)
+      </p>
+    `;
+  }
+
+  // -------------------------
+  // AFFICHAGE CLIENT PRINCIPAL
+  // -------------------------
+  else {
+    document.getElementById("ticket").innerHTML = `
+      <h1>🎭 Théâtre Saint-Martin</h1>
+      <h3>Salle de Bessay – 23 janvier 2026</h3>
+
+      <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
+
+      <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
+
+      <p>👨‍👩‍👧 <b>Adultes :</b> ${r.nbAdult}</p>
+      <p>👧 <b>Enfants -12 ans :</b> ${r.nbChild}</p>
+
+      <p style="font-size:1.2rem; margin-top:25px; font-weight:bold; color:#2e7d32;">
+        Total : ${Number(r.amount || 0).toFixed(2)} €
+      </p>
+
+      <div class="info-box">
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026 – 20h30
+      </div>
+    `;
+  }
+
+  setTimeout(()=>window.print(), 600);
+}
+
+load();
+</script>
+
+</head>
+
+<body>
+<div id="ticket"></div>
+</body>
+</html>
