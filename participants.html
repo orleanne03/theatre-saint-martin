@@ -104,6 +104,7 @@ import { getDatabase, ref, push, get, onValue, remove, set } from "https://www.g
   // 🔑 Récupération du resId depuis l’URL
   const params = new URLSearchParams(window.location.search);
   const resId = params.get("resId");
+const salle = params.get("salle") || "salle_bessay";
   const pname = document.getElementById("pname");
 const pemail = document.getElementById("pemail");
 const pphone = document.getElementById("pphone");
@@ -176,7 +177,7 @@ document.getElementById("participantsForm").addEventListener("submit", async (e)
   await push(ref(db, `participants/${resId}`), data);
 
   // 🔽 Récupère la réservation principale
-  const resSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
+  const resSnap = await get(ref(db, `spectacles/${salle}/${resId}`));
   if (!resSnap.exists()) {
     alert("❌ Réservation introuvable");
     return;
