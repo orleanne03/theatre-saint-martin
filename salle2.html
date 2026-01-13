@@ -2945,13 +2945,14 @@ async function sendViaBrevo(to, subject, html) {
 
   const result = await res.json();
   console.log("📨 Brevo:", result);
-}
-
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
+    throw new Error(result.error || "Erreur Brevo");
   }
+
+  return result;
+}
+
 
 
 </script>
