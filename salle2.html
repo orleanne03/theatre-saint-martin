@@ -1,0 +1,3016 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎭 Théâtre Saint Martin – Réservations</title>
+	
+
+<!-- Librairies externes -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+
+<!-- ✅ Ajoute la librairie EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<!-- ✅ Initialise ta clé publique EmailJS -->
+<script>
+  (function() {
+    emailjs.init("E4g_UFzGYQZBNH07m");
+    console.log("✅ EmailJS initialisé !");
+  })();
+</script>
+
+
+<!-- ✅ Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyXXXX_TON_API_KEY",
+    authDomain: "theatre-saint-martin.firebaseapp.com",
+    databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "theatre-saint-martin",
+    storageBucket: "theatre-saint-martin.appspot.com",
+    messagingSenderId: "1234567890",
+    appId: "1:1234567890:web:abcd1234efgh"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  window._firebaseDB = db;
+  window._firebaseRef = ref;
+  window._firebaseSet = set;
+  window._firebaseOnValue = onValue;
+
+  console.log("🔥 Firebase initialisé :", db);
+</script>
+
+<style>
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #e3f2fd 0%, #fafafa 100%);
+  margin: 0;
+  text-align: center;
+  color: #212121;
+}
+h1 {
+  color: #0d47a1;
+  margin: 20px 0;
+  font-size: 1.8rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+  #legend-paid {
+  background: #f1f8e9;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.scene {
+  background: #212121;
+  color: #fff;
+  width: 80%;
+  max-width: 800px;
+  margin: 10px auto 20px;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+.legend div { display: flex; align-items: center; gap: 5px; }
+.legend span { width: 18px; height: 18px; border-radius: 3px; display: inline-block; }
+.free { background: #e0e0e0; }
+.selected { background: #64b5f6; }
+.reserved { background: #ef5350; }
+.strapontin { background: #ffd54f; }
+.seat.strapontin.selected { background: #82b1ff !important; }
+
+/* === Conteneur principal === */
+.hall-wrapper {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pinch-zoom pan-x pan-y;
+  padding: 10px 0;
+  box-sizing: border-box;
+  background: transparent;
+  text-align: center;  /* ✅ centre par défaut */
+}
+
+/* === Bloc des sièges === */
+#hall {
+  display: inline-flex;             /* ✅ permet le centrage avec text-align: center */
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.15);
+  transition: transform 0.2s ease;
+}
+
+/* === 🌐 Correction responsive : sur mobile, on désactive le centrage pour garder le scroll complet === */
+@media (max-width: 768px) {
+  .hall-wrapper {
+    text-align: left;              /* ✅ permet le scroll total (gauche et droite) */
+    padding-left: 10px;
+  }
+  #hall {
+    display: flex;                 /* ✅ comportement normal sans centrage forcé */
+    width: max-content;
+  }
+}
+
+
+
+
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin: 4px 0;
+}
+.row-label {
+  font-weight: 600;
+  margin-right: 8px;
+  min-width: 18px;
+}
+/* === STYLE DES SIÈGES (RÉALISTES + CENTRÉS) === */
+.seat {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  margin: 4px;
+  border-radius: 6px 6px 8px 8px;
+  cursor: pointer;
+  display: inline-block;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ✅ Texte centré parfaitement au milieu du siège */
+.seat span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  text-align: center;
+  font-size: 0.95em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* === Effets du dossier et de l’assise === */
+.seat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
+              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
+
+.seat::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: 0 0 8px 8px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+/* === ÉTATS DES SIÈGES === */
+
+/* 🔴 Libre */
+.free {
+  background: linear-gradient(145deg, #c62828, #8e0000);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+.free:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+}
+
+/* 🔵 Sélectionné */
+.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
+  transform: scale(1.1);
+}
+
+/* ⚫ Réservé */
+/* ⚫ Réservé non payé — rose clair */
+.reserved {
+  background: #f8bbd0 !important;
+  color: #212121;
+  cursor: not-allowed;
+  box-shadow: 0 0 6px rgba(233,30,99,0.3);
+  opacity: 1;
+}
+/* 🟡 Strapontin réservé (même rose) */
+.seat.strapontin.reserved {
+  background: #f8bbd0 !important;
+  color: #212121;
+  box-shadow: 0 0 6px rgba(233,30,99,0.3);
+}
+
+/* 💚 Siège réservé et payé */
+/* 💚 Légende Payé */
+.paid {
+  background: linear-gradient(145deg, #43a047, #2e7d32);
+  box-shadow: 0 0 4px rgba(67,160,71,0.6);
+}
+
+
+
+/* 🟡 Strapontin */
+.strapontin {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.seat.strapontin.selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+  box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
+/* === Ajustement Mobile === */
+@media (max-width: 600px) {
+  .seat {
+    width: 26px;
+    height: 26px;
+    margin: 2px;
+  }
+  .seat span {
+    font-size: 12px;
+  }
+}
+
+.buttons {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: .3s;
+}
+#confirm { background: #2e7d32; } #confirm:hover { background: #1b5e20; }
+#admin { background: #d32f2f; } #admin:hover { background: #b71c1c; }
+#reset { background: #455a64; } #reset:hover { background: #263238; }
+#export { background: #009688; } #export:hover { background: #00695c; }
+#scanTicket { background: #8e24aa; } #scanTicket:hover { background: #6a1b9a; }
+#save {
+    background: black;
+}
+#close {
+    background: black;
+}
+#reservations {
+  margin: 20px auto;
+  width: 90%;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  padding: 10px;
+}
+#reservations h3 {
+  text-align: left;
+  margin: 10px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#reservations table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+#reservations th, #reservations td {
+  border-bottom: 1px solid #ddd;
+  padding: 6px;
+  text-align: left;
+}
+#reservations th { background: #1976d2; color: #fff; }
+
+.modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.5); display: flex; justify-content: center; align-items: center; z-index: 10;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: #fff; padding: 20px; border-radius: 10px; width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.modal-content input {
+  width: 90%; margin: 6px auto; padding: 8px; border: 1px solid #ccc;
+  border-radius: 5px; display: block;
+}
+#loader {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg,#e3f2fd 0%,#fafafa 100%);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999; transition: opacity .4s ease;
+}
+#loader.hidden { opacity: 0; pointer-events: none; }
+.loader-content { text-align: center; color: #0d47a1; font-weight: 600; font-size: 1.1rem; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid #bbdefb;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+  /* === STYLE FAUTEUILS RÉALISTES === */
+.seat {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  margin: 4px;
+  border-radius: 6px 6px 8px 8px;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: bottom center;
+}
+
+/* Dossier (partie haute) */
+.seat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0)),
+              radial-gradient(circle at top left, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
+
+/* Assise (partie basse) */
+.seat::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  border-radius: 0 0 8px 8px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+
+/* 🔴 Siège libre */
+.free {
+  background: linear-gradient(145deg, #c62828, #8e0000);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  color: #fff; /* texte blanc */
+}
+.free:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.35);
+}
+
+/* 🔵 Sélectionné */
+.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  box-shadow: 0 4px 10px rgba(13,71,161,0.4);
+  transform: scale(1.1);
+  color: #fff; /* texte blanc */
+}
+
+/* ⚫ Réservé */
+.reserved {
+  background: linear-gradient(145deg, #7c787773, #3e272300);
+  opacity: 0.8;
+  cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+/* 🟡 Strapontin */
+.strapontin {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.seat.strapontin.selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+  box-shadow: 0 0 10px rgba(255,193,7,0.6);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@media(max-width:600px){
+  .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
+  .row-label { font-size: 12px; margin-right: 4px; }
+  h1 { font-size: 1.5rem; }
+  /* === 🌟 VISUEL AMÉLIORÉ POUR LE MODE ADMIN === */
+
+/* Fond légèrement doré pour signaler le mode admin */
+body.admin {
+  background: radial-gradient(circle at center, #fff8e1, #ffe082);
+  transition: background 0.5s ease;
+}
+
+/* Aura dorée autour de tous les sièges réservés */
+.admin .seat.reserved {
+  box-shadow: 0 0 10px 3px rgba(255,215,0,0.7),
+              inset 0 2px 4px rgba(0,0,0,0.3);
+  animation: pulseGold 1.5s infinite alternate;
+}
+
+/* Animation douce (pulsation dorée) */
+@keyframes pulseGold {
+  from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
+  to   { box-shadow: 0 0 14px 5px rgba(255,215,0,0.9); }
+}
+
+/* Curseur et effet au survol des sièges réservés */
+.admin .seat.reserved:hover {
+  cursor: pointer;
+  transform: scale(1.12);
+  filter: brightness(1.15);
+}
+
+/* Petite étiquette visuelle "Mode Admin" fixe */
+#adminBanner {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(90deg, #ffb300, #f57c00);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: none;
+}
+body.admin #adminBanner {
+  display: block;
+}
+
+}
+  /* === Ajustement de l'espacement sur mobile === */
+@media (max-width: 768px) {
+  .hall-wrapper {
+    margin-bottom: 10px !important;   /* Réduit l'espace sous le plan */
+  }
+
+  #hall {
+    margin-bottom: 0 !important;      /* Supprime tout espace interne inutile */
+  }
+
+  .buttons {
+    margin-top: 5px !important;       /* Rapproche les boutons de la salle */
+    margin-bottom: 10px;
+  }
+
+  /* Optionnel : rendre les boutons un peu plus compacts sur mobile */
+  .buttons button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+#info {
+  background: #1976d2;
+}
+#info:hover {
+  background: #0d47a1;
+}
+/* === Strapontin réservé : même style que les sièges réservés === */
+.seat.strapontin.reserved {
+  background: linear-gradient(145deg, #7c787773, #3e272300);
+  opacity: 0.8;
+  cursor: not-allowed;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+#reservations tr:hover {
+  background-color: #e3f2fd;
+  transition: background-color 0.3s;
+}
+input.paid-toggle {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+.seat.strapontin.paid {
+  background: linear-gradient(145deg, #7cb342, #558b2f);
+}
+/* === Ligne "Paiement reçu" === */
+.paid-line {
+  
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 12px 5px;
+  font-weight: 500;
+}
+
+.paid-line input[type="checkbox"] {
+  transform: scale(1.3);
+  cursor: pointer;
+  margin-right: 8px; /* espace léger avec le bord droit */
+}
+/* ✨ Animation d'apparition des sièges */
+@keyframes seatPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.seat {
+  animation: seatPop 0.4s ease-out;
+}
+
+/* 💡 Petit rebond au clic */
+.seat:active {
+  transform: scale(0.9);
+  transition: transform 0.1s;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #bbdefb;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-content p {
+  animation: fadeIn 1s ease-in-out infinite alternate;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+.modal-content {
+  transform: scale(0.8);
+  opacity: 0;
+  animation: modalIn 0.3s ease-out forwards;
+}
+
+@keyframes modalIn {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+button:active {
+  transform: scale(0.96);
+}
+.scene {
+  animation: float 3s ease-in-out infinite alternate;
+}
+
+@keyframes float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+/* === Accordéons de réservation par client (version douce) === */
+.accordion {
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin: 10px 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accordion-header {
+  background: #6fb572; /* 💙 bleu plus doux */
+  color: #000000;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 100;
+  transition: background 0.3s;
+}
+
+.accordion-header:hover {
+  background: #42a5f5;
+}
+
+.accordion-content {
+  background: #fff;
+  padding: 10px 14px;
+  display: none;
+  border-top: 1px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.accordion.open .accordion-content {
+  display: block;
+}
+
+.accordion-header span {
+  font-size: 0.9rem;
+  font-weight: normal;
+  color: #e3f2fd;
+}
+
+.seat-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+.badge-seat {
+  background: #64b5f6; /* même bleu doux */
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.accordion-content p {
+  margin: 4px 0;
+}
+/* === Couleur différente si non payé === */
+.accordion-header.paid {
+  background: #a5d1a7; /* 💙 bleu doux */
+}
+
+.accordion-header.unpaid {
+  background: #f8bbd0; /* 🌸 rose clair */
+  color: #212121;
+}
+
+.accordion-header.unpaid:hover {
+  background: #f48fb1;
+}
+.accordion-header.paid {
+  border-left: 6px solid #49a760;
+}
+
+.accordion-header.unpaid {
+  border-left: 6px solid #e91e63;
+}
+
+.paid-toggle-client {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+#amount {
+  width: 90%;
+  margin: 6px auto;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: block;
+  font-size: 14px;
+}
+#total-amount {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+#total-amount.updated {
+  transform: scale(1.1);
+  color: #43a047;
+}
+.paid-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px auto 14px;
+  padding: 6px 10px;
+  width: 90%;
+  background: #f1f1f1;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.paid-line input[type="checkbox"] {
+  transform: scale(1.3);
+  accent-color: #2e7d32; /* ✅ vert doux */
+  cursor: pointer;
+}
+.payment-group {
+  background: #f5f5f5;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 10px auto 15px;
+  width: 90%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.payment-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.payment-line input[type="checkbox"] {
+  transform: scale(1.2);
+  accent-color: #2e7d32; /* vert doux */
+  cursor: pointer;
+}
+
+#amount {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+input#paid {
+    width: 10%;
+}
+#stats {
+  background: linear-gradient(180deg, #e3f2fd 0%, #f8f9fa 100%);
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-top: 15px;
+  width: fit-content;
+  text-align: left;
+  font-weight: 600;
+  color: #0d47a1;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  font-size: 15px;
+}
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.mini-seat.selected {
+  background: linear-gradient(145deg,#1565c0,#0d47a1);
+  color:#fff;
+  transform: scale(1.1);
+}
+.mini-seat:hover {
+  box-shadow: 0 0 6px rgba(33,150,243,0.6);
+}
+/* 🎭 Mini-plan compact pour l’ajout manuel */
+#miniSeatMap {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 6px;
+  justify-items: center;
+  align-items: center;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Siège visuel dans le mini-plan */
+.mini-seat {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px 6px 8px 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  background: linear-gradient(145deg, #e0e0e0, #bdbdbd);
+  color: #212121;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.mini-seat:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Siège sélectionné */
+.mini-seat.selected {
+  background: linear-gradient(145deg, #1565c0, #0d47a1);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(25,118,210,0.6);
+}
+
+/* Strapontins */
+.mini-seat[data-strapontin="true"] {
+  background: linear-gradient(145deg, #f9a825, #f57f17);
+  color: #fff;
+}
+.mini-seat[data-strapontin="true"].selected {
+  background: linear-gradient(145deg, #ffca28, #fbc02d);
+}
+
+/* Indication de rangée à gauche */
+.mini-row-label {
+  grid-column: 1 / -1;
+  text-align: left;
+  width: 100%;
+  margin: 4px 0 0 4px;
+  font-weight: 700;
+  color: #424242;
+}
+
+/* Scrollbar discrète */
+#miniSeatMap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#miniSeatMap::-webkit-scrollbar-thumb {
+  background: #90a4ae;
+  border-radius: 3px;
+}
+#miniSeatMap::-webkit-scrollbar-track {
+  background: #e0e0e0;
+}
+button#editPrices {
+    background: coral;
+}
+	input#childCount {
+    width: 50%;
+}
+	input#adultCount {
+    width: 50%;
+}
+	input#babyCount {
+    width: 50%;
+}
+	div#miniSeatMap {
+    display: none !important;
+}
+	button#addSeatConfirm {
+    background: black;
+}
+	button#addSeatCancel {
+    background: black;
+}
+.group-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+/* Mode groupé : mise en évidence */
+.seat.selected {
+  box-shadow: 0 0 12px 3px rgba(33,150,243,0.7) !important;
+}
+body.admin .seat.selected {
+  transform: scale(1.15);
+}
+
+/* Vert clair en ajout, rouge clair en suppression */
+body.admin .seat.selected.add-mode {
+  background: #a5d6a7 !important;
+}
+body.admin .seat.selected.remove-mode {
+  background: #ef9a9a !important;
+}
+.hidden {
+  display: none !important;
+}
+/* === Boutons du haut === */
+.top-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+}
+
+.top-buttons button {
+  background: linear-gradient(180deg, #b22, #7b0d0d);
+  color: #ffeeba;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+button#retour-dashboard {
+    background: midnightblue;
+}
+.top-buttons button:hover {
+  filter: brightness(1.1);
+  transform: scale(1.05);
+}
+
+
+</style>
+</head>
+
+<body>
+<div id="loader">
+  <div class="loader-content">
+    <div class="spinner"></div>
+    <p>Chargement de la salle…</p>
+  </div>
+</div>
+
+<h1>🎭 Théâtre Saint Martin</h1>
+	<h3>LE 24 JANVIER 2026 à 20H30</h3>
+  <br> Adulte : 14€ / Enfant 9-14 ans : 10e / Gratuit - de 8 ans</br>
+<div class="scene">SCÈNE</div>
+
+<div class="legend">
+  <div><span class="free"></span>Libre</div>
+  <div><span class="selected"></span>Sélectionné</div>
+  <div><span class="reserved"></span>Réservé non payé</div>
+  <div><span class="strapontin"></span>Strapontin</div>
+  <div><span class="paid"></span>Réservé et payé</div> <!-- 💚 ajouté -->
+</div>
+
+<div class="hall-wrapper">
+  <div id="hall"></div>
+</div>
+
+<div class="buttons">
+  <button id="confirm">✅ Confirmer</button>
+  <button id="admin">🔐 Admin</button>
+  <button id="reset">♻️ Réinitialiser</button>
+  <button id="export" style="display:none;">📤 Export CSV</button>
+  <button id="scanTicket">🎟️ Scanner un billet</button>
+  <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
+  <button id="toggleEmailTest" style="display:none;">✉️ Mode email : TEST</button>
+  <button id="bulkReminder"
+  style="display:none;background:#1976d2;">
+  🔔 Rappel réservation (billet + QR)
+</button>
+
+  
+  <!-- === Bouton retour Tableau de bord === -->
+<button id="retour-dashboard" class="back-btn">🏠 Retour au tableau de bord</button>
+
+
+    <button id="info">ℹ️ AIDE</button>
+
+</div>
+<!-- 💰 Résumé des statistiques -->
+<!-- 💰 Résumé des statistiques globales -->
+<div id="stats-bar" style="
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:25px;
+  background:#f8f9fa;
+  padding:10px 20px;
+  margin:10px auto 5px;
+  border-radius:12px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+  font-family:'Segoe UI',sans-serif;
+  font-weight:600;
+  color:#2e7d32;
+  flex-wrap:wrap;
+">
+  <span id="stat-total">💰 Total encaissé : 0 €</span>
+  <span id="stat-adult">🧍 Adultes : 0</span>
+  <span id="stat-child">👶 Enfants : 0</span>
+  <span id="stat-baby">🍼 Moins de 8 ans : 0</span>
+  <span id="stat-sold">🎟️ Places réservées : 0</span>
+</div>
+
+
+<div id="reservations">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+    <h3>📋 Liste des réservations</h3>
+	<h4 id="total-amount" style="
+  text-align:right;
+  color:#2e7d32;
+  margin:10px 15px;
+  font-size:1rem;
+  font-weight:600;
+"></h4>
+
+    <div id="legend-paid" style="display: flex; align-items: center; gap: 6px; font-size: 14px;">
+      <div style="width:18px; height:18px; background:#c8e6c9; border:1px solid #81c784; border-radius:3px;"></div>
+      
+    </div>
+  </div>
+
+  <div id="resBody"><p>Aucune réservation.</p></div>
+
+
+</div>
+
+
+<!-- 🧾 Fenêtre modale de réservation -->
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Informations de réservation</h3>
+
+    <input id="name" placeholder="Nom complet">
+    <input id="email" placeholder="Adresse email">
+    <input id="phone" placeholder="Téléphone">
+
+    <div class="payment-group">
+      <div class="payment-line">
+        <span>Si paiement reçu, coche la case</span>
+        <input type="checkbox" id="paid">
+      </div>
+	<div class="payment-line">
+  <label for="babyCount">- de 8 ans</label>
+  <input id="babyCount" type="number" min="0" value="0" step="1">
+</div>
+
+      <div class="payment-line">
+        <label for="adultCount">Adultes</label>
+        <input id="adultCount" type="number" min="0" value="0" step="1">
+      </div>
+
+      <div class="payment-line">
+        <label for="childCount">9-14 ans</label>
+        <input id="childCount" type="number" min="0" value="0" step="1">
+      </div>
+
+      <p id="total-display" style="
+        margin:6px 0 0;
+        font-weight:600;
+        text-align:right;
+        color:#2e7d32;
+      ">
+        Total : 0 €
+      </p>
+    </div>
+
+    <div>
+      <button id="save">Valider</button>
+      <button id="close">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script type="module">
+/* === Attente que Firebase soit prêt === */
+await new Promise(resolve => {
+  const check = () => window._firebaseRef ? resolve() : setTimeout(check, 100);
+  check();
+});
+// === TARIFS (source unique) ===
+let PRICE_ADULT = parseFloat(localStorage.getItem("PRICE_ADULT")) || 14;
+let PRICE_CHILD = parseFloat(localStorage.getItem("PRICE_CHILD")) || 10;
+// === MODE EMAIL (source unique) ===
+let EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "true";
+
+
+
+const db = window._firebaseDB;
+const ref = window._firebaseRef;
+const set = window._firebaseSet;
+const onValue = window._firebaseOnValue;
+
+let seats = {}, selected = [], admin = false;
+
+const hall = document.getElementById("hall");
+const resetBtn = document.getElementById("reset");
+const adminBtn = document.getElementById("admin");
+const loader = document.getElementById("loader");
+
+/* === Plan de la salle === */
+const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
+const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
+
+rows.forEach(r => {
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const label = document.createElement("div");
+  label.className = "row-label";
+  label.textContent = r;
+  row.append(label);
+
+  row.append(makeSeat(`${r}-S15`, "S", "strapontin"));
+  seatNums.forEach(n => row.append(makeSeat(`${r}-${n}`, n)));
+  row.append(makeSeat(`${r}-S16`, "S", "strapontin"));
+
+  hall.append(row);
+});
+
+function makeSeat(id, label, extra){
+  const d = document.createElement("div");
+  d.className = "seat " + (extra || "free");
+  d.dataset.id = id;
+  d.setAttribute("aria-label", `Siège ${id}`);
+
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = label;
+  d.appendChild(labelSpan);
+
+  d.onclick = () => toggle(id, d);
+  return d;
+}
+
+/* === Connexion Firebase === */
+const seatsRef = ref(db, "seats");
+onValue(seatsRef, snapshot => {
+  seats = snapshot.val() || {};
+  render();
+  updateTable();
+  updateStatsBar(); // ✅ AJOUT ICI — met à jour les compteurs au chargement
+  setTimeout(() => loader.classList.add("hidden"), 400);
+});
+
+function save(){ set(seatsRef, seats); }
+// 🎨 Nouvelle modale de choix du type de billet (accessible partout)
+async function askSeatType(id) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("ticketTypeModal");
+    const seatLabel = document.getElementById("ticketTypeSeat");
+    seatLabel.textContent = `🪑 Siège ${id}`;
+    modal.classList.remove("hidden");
+
+    function cleanup() {
+      modal.classList.add("hidden");
+      document.querySelectorAll(".ticket-type-btn").forEach(btn =>
+        btn.removeEventListener("click", onSelect)
+      );
+      cancelBtn.removeEventListener("click", onCancel);
+    }
+
+    function onSelect(e) {
+      const type = e.target.dataset.type;
+      cleanup();
+      resolve(type);
+    }
+
+    function onCancel() {
+      cleanup();
+      resolve(null);
+    }
+
+    const cancelBtn = document.getElementById("cancelTicketType");
+    document.querySelectorAll(".ticket-type-btn").forEach(btn =>
+      btn.addEventListener("click", onSelect)
+    );
+    cancelBtn.addEventListener("click", onCancel);
+  });
+}
+
+/* === Rendu === */
+function render() {
+  document.querySelectorAll(".seat").forEach(el => {
+    const id = el.dataset.id;
+    const wasStrap = el.classList.contains("strapontin");
+    el.className = "seat";
+    if (wasStrap) el.classList.add("strapontin");
+
+    const seatData = seats[id];
+    if (seatData) {
+      if (seatData.paid) el.classList.add("paid");
+      else el.classList.add("reserved");
+    } else if (selected.includes(id)) {
+      el.classList.add("selected");
+    } else {
+      el.classList.add("free");
+    }
+  });
+}
+
+/* === Sélection === */
+async function toggle(id, el) {
+
+// 🧩 Si on est en mode suppression groupée → on ne fait pas la logique normale
+if (groupMode === "remove" && admin) {
+  if (el.classList.contains("reserved") || el.classList.contains("paid")) {
+    // Sélectionne ou désélectionne le siège pour suppression
+    el.classList.toggle("selected");
+
+    if (el.classList.contains("selected")) {
+      groupChanges.push(id);
+    } else {
+      groupChanges = groupChanges.filter(x => x !== id);
+    }
+  }
+  return; // 🔁 On bloque ici : ne pas exécuter le reste de toggle()
+}
+
+// 🧩 Si on est en mode ajout groupé → même logique (pas de réservation immédiate)
+if (groupMode === "add" && admin) {
+  if (el.classList.contains("free")) {
+    el.classList.toggle("selected");
+
+    if (el.classList.contains("selected")) {
+      groupChanges.push({ id, name: groupClient });
+    } else {
+      groupChanges = groupChanges.filter(s => s.id !== id);
+    }
+  }
+  return; // 🟢 On bloque ici aussi
+}
+
+// 🧩 Sinon comportement normal
+if (admin && seats[id]) {
+  if (confirm(`🔓 Libérer le siège ${id} ?`)) {
+    const clientName = seats[id].name;
+    const clientEmail = seats[id].email;
+    delete seats[id];
+
+    // recalcul totaux
+    let totalA = 0, totalC = 0, totalB = 0;
+    for (const data of Object.values(seats)) {
+      if (data.name === clientName) {
+        totalA += (data.type === "adulte") ? 1 : 0;
+        totalC += (data.type === "enfant") ? 1 : 0;
+        totalB += (data.type === "moins8") ? 1 : 0;
+      }
+    }
+    const totalAmount = totalA * PRICE_ADULT + totalC * PRICE_CHILD;
+
+    for (const [sid, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        data.nbAdult = totalA;
+        data.nbChild = totalC;
+        data.nbBaby = totalB;
+        data.amount = totalAmount;
+      }
+    }
+
+    save();
+    render();
+    updateTable();
+    updateStatsBar();
+
+    if (clientEmail) await notifyClientUpdate(clientEmail);
+    alert(`✅ Siège ${id} libéré. Totaux mis à jour pour ${clientName}.`);
+  }
+  return;
+}
+
+// 🎟️ comportement normal utilisateur
+if (!seats[id]) {
+  if (selected.includes(id)) {
+    selected = selected.filter(x => x !== id);
+  } else {
+    selected.push(id);
+  }
+  render();
+}
+}
+
+
+  // ... le reste de ta fonction toggle
+
+
+
+/* === Ouvre/ferme la modale === */
+document.getElementById("confirm").onclick = () => {
+  if (!selected.length) return alert("Aucun siège sélectionné !");
+  document.getElementById("modal").classList.remove("hidden");
+};
+document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
+
+/* === Formatage nom/email/téléphone === */
+function formatPhone(input) {
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("33")) digits = "0" + digits.slice(2);
+  if (digits.startsWith("0033")) digits = "0" + digits.slice(4);
+  digits = digits.slice(0, 10);
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+document.getElementById("name").addEventListener("input", e => e.target.value = e.target.value.toUpperCase());
+document.getElementById("email").addEventListener("input", e => e.target.value = e.target.value.toLowerCase());
+document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
+
+/* === 🧮 Calcul automatique total (adultes/enfants) === */
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("reset").style.display = "none";
+
+  const adultInput = document.getElementById("adultCount");
+  const childInput = document.getElementById("childCount");
+  const totalDisplay = document.getElementById("total-display");
+  function updateTotal() {
+    const nbA = parseInt(adultInput.value) || 0;
+const nbE = parseInt(childInput.value) || 0;
+const nbB = parseInt(document.getElementById("babyCount").value) || 0; // 👶 Moins de 8 ans
+const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // 👶 Gratuit ou tarif 0 €
+
+    totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
+  }
+  adultInput.addEventListener("input", updateTotal);
+  childInput.addEventListener("input", updateTotal);
+});
+
+/* === Validation + enregistrement === */
+document.getElementById("save").onclick = async () => {
+  const name   = document.getElementById("name").value.trim().toUpperCase();
+  const email  = document.getElementById("email").value.trim().toLowerCase();
+  const phone  = formatPhone(document.getElementById("phone").value.trim());
+  const paid   = document.getElementById("paid").checked;
+
+  const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
+  const nbChild = parseInt(document.getElementById("childCount").value) || 0;
+  const nbBaby  = parseInt(document.getElementById("babyCount")?.value || "0") || 0; // "Moins de 8 ans" (gratuit)
+
+  const totalSeats  = selected.length;                  // ✅ manquait
+  const totalPeople = nbAdult + nbChild + nbBaby;
+
+  if (!name || !email || !phone) {
+    alert("Tous les champs sont requis.");
+    return;
+  }
+  if (totalPeople !== totalSeats) {
+    alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges sélectionnés (${totalSeats}).`);
+    return;
+  }
+
+  // 💶 Moins de 8 ans = gratuit. Utilise les tarifs configurables si présents.
+  const amount = nbAdult * (typeof PRICE_ADULT === "number" ? PRICE_ADULT : 14)
+               + nbChild * (typeof PRICE_CHILD === "number" ? PRICE_CHILD : 10);
+
+  const user = { name, email, phone, paid, nbAdult, nbChild, nbBaby, amount };
+
+  // 🆔 Identifiant de réservation (pour le formulaire Participants)
+  const reservationId =
+    (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+  user.reservationId = reservationId;
+
+
+  // Répartition des types par siège
+  let adultRemaining = nbAdult;
+  let childRemaining = nbChild;
+  let babyRemaining  = nbBaby;
+
+  selected.forEach(id => {
+    if (!seats[id]) {
+      const seatData = { ...user };
+      if (adultRemaining > 0) {
+        seatData.type = "adulte";
+        adultRemaining--;
+      } else if (childRemaining > 0) {
+        seatData.type = "enfant";
+        childRemaining--;
+      } else if (babyRemaining > 0) {
+        seatData.type = "moins8";
+        babyRemaining--;
+      } else {
+        seatData.type = "autre";
+      }
+      seats[id] = seatData;
+    }
+  });
+
+  save();
+
+  // 📌 Enregistre aussi une "fiche réservation" (comme Bessay) pour la page participants.html
+  // Chemin: spectacles/salle_saint_martin/<reservationId>
+  try {
+    const reservationRef = ref(db, `spectacles/salle_saint_martin/${reservationId}`);
+    await set(reservationRef, {
+      id: reservationId,
+      name,
+      email,
+      phone,
+      paid,
+      nbAdult,
+      nbChild,
+      nbBaby,
+      amount,
+      seats: [...selected],            // sièges concernés par cette réservation
+      createdAt: Date.now()
+    });
+  } catch (e) {
+    console.warn("⚠️ Impossible d'écrire la fiche réservation (participants) :", e);
+  }
+
+
+// 📧 Envoi de l’email (autorisé en mode test même en admin)
+if (!admin || EMAIL_TEST_MODE) {
+  await sendEmail(user);
+}
+
+
+selected = [];
+document.getElementById("modal").classList.add("hidden");
+updateStatsBar();
+
+
+  alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
+};
+
+
+/* === Email + QR === */
+async function sendEmail(user) {
+  alert("📨 sendEmail() appelée");
+
+  console.log("📨 Envoi EmailJS vers", user.email);
+
+  const reservedSeats = Object.entries(seats)
+    .filter(([_, v]) => v.email === user.email)
+    .map(([id]) => id)
+    .join(", ");
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    tel: user.phone,
+    sieges: reservedSeats
+  });
+
+const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+
+  const html = `
+    <h2>🎭 Confirmation de votre réservation — Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${user.name}</strong>,</p>
+    <p>Merci pour votre réservation.</p>
+    <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
+    <p><strong>💰 Montant total :</strong> ${user.amount.toFixed(2)} €</p>
+    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
+    <p>Voici votre QR Code de confirmation :</p>
+<img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
+
+    <p>À très bientôt au Théâtre Saint Martin 🎭</p>
+  `;
+
+  try {
+  if (EMAIL_TEST_MODE) {
+  console.log("🚫 [MODE TEST] Email non envoyé — aperçu ci-dessous :");
+  console.log("Destinataire :", user.email);
+
+  // 🧩 Affiche la modale de prévisualisation
+  const previewModal = document.getElementById("emailPreviewModal");
+  const previewContent = document.getElementById("emailPreviewContent");
+  previewContent.innerHTML = html; // injecte le contenu HTML
+  previewModal.classList.remove("hidden");
+
+  // Bouton de fermeture
+  document.getElementById("closeEmailPreview").onclick = () => {
+    previewModal.classList.add("hidden");
+  };
+
+  alert(`📩 Mode test : aucun envoi, mais aperçu disponible`);
+} else {
+  await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+    to_email: user.email,
+    subject: "🎭 Confirmation de votre réservation",
+    message_html: html
+  });
+  console.log("✅ Email de confirmation envoyé à", user.email);
+}
+
+} catch (err) {
+  console.error("❌ Erreur EmailJS :", err);
+}
+}
+// ===================================================
+// 🔔 EMAIL DE RAPPEL (billet + QR)
+// ===================================================
+async function sendReminderEmail(user) {
+
+  const reservedSeats = Object.entries(seats)
+    .filter(([_, v]) => v.email === user.email)
+    .map(([id]) => id)
+    .join(", ");
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    sieges: reservedSeats
+  });
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+  const html = `
+    <h2>🔔 Rappel : votre spectacle approche — Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${user.name}</strong>,</p>
+
+    <p>Nous vous rappelons votre réservation pour le spectacle à venir.</p>
+
+    <p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
+    <p><strong>💰 Montant :</strong> ${user.amount.toFixed(2)} €</p>
+    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
+
+    <p>Merci de présenter ce QR Code à l’entrée :</p>
+    <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
+
+    <p style="margin-top:10px;">
+      📅 <strong>24 janvier 2026 – 20h30</strong><br>
+      📍 Théâtre Saint Martin
+    </p>
+
+    <p>À très bientôt 🎭</p>
+  `;
+
+  if (EMAIL_TEST_MODE) {
+    document.getElementById("emailPreviewContent").innerHTML = html;
+    document.getElementById("emailPreviewModal").classList.remove("hidden");
+    return;
+  }
+
+  await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+    to_email: user.email,
+    subject: "🔔 Rappel — Votre réservation au Théâtre Saint Martin",
+    message_html: html
+  });
+}
+
+
+
+async function notifyClientUpdate(email) {
+  // ✅ Si aucun email passé, on tente de le retrouver via le nom du client sélectionné
+  if (!email && typeof groupClient !== "undefined" && groupClient) {
+    const anySeat = Object.values(seats).find(s => s.name === groupClient);
+    if (anySeat && anySeat.email) {
+      email = anySeat.email;
+      console.log(`📩 Email récupéré automatiquement pour ${groupClient} → ${email}`);
+    }
+  }
+
+  if (!email) {
+    console.warn(`⚠️ Aucun email trouvé pour "${groupClient || "?"}" (email passé: ${email || "aucun"})`);
+    return;
+  }
+
+
+  const clientSeats = Object.entries(seats)
+    .filter(([id, s]) => s.email && s.email.toLowerCase() === email.toLowerCase())
+    .map(([id, s]) => ({ id, ...s }));
+
+  if (!clientSeats.length) {
+    console.warn("❌ Aucun siège trouvé pour ce client.");
+    return;
+  }
+
+  const added = groupMode === "add" ? groupChanges.map(s => s.id) : [];
+  const removed = groupMode === "remove" ? groupChanges : [];
+
+  const client = clientSeats[0];
+  const allSeats = clientSeats.map(s => s.id).join(", ");
+  const totalAmount = clientSeats[0].amount || 0;
+  const paye = clientSeats.every(s => s.paid);
+
+  const qrData = JSON.stringify({
+    nom: client.name,
+    email: client.email,
+    tel: client.tel || "",
+    sieges: allSeats,
+    paye
+  });
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+  const html = `
+    <h2>🎭 Mise à jour de votre réservation — Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${client.name}</strong>,</p>
+    <p>Votre réservation a été mise à jour par notre équipe.</p>
+
+    ${added.length ? `<p>🟢 <strong>Sièges ajoutés :</strong> ${added.join(", ")}</p>` : ""}
+    ${removed.length ? `<p>🔴 <strong>Sièges supprimés :</strong> ${removed.join(", ")}</p>` : ""}
+
+    <p>📍 <strong>Sièges actuels réservés :</strong> ${allSeats}</p>
+       <p>💳 <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}</p>
+
+    <p>Voici votre QR Code mis à jour :</p>
+    <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
+
+    <p>Merci et à bientôt au théâtre 🎭<br>— L’équipe Saint Martin</p>
+  `;
+
+  console.log("📧 Envoi du mail de mise à jour à", email);
+
+  try {
+  if (EMAIL_TEST_MODE) {
+    console.log("🚫 [MODE TEST] Aucun envoi réel — aperçu ci-dessous :");
+    console.log("Destinataire :", email);
+
+    // 💌 Prévisualisation HTML
+    const previewModal = document.getElementById("emailPreviewModal");
+    const previewContent = document.getElementById("emailPreviewContent");
+    previewContent.innerHTML = html;
+    previewModal.classList.remove("hidden");
+
+    document.getElementById("closeEmailPreview").onclick = () =>
+      previewModal.classList.add("hidden");
+
+    alert(`📩 Mode test : aucun email envoyé à ${email}`);
+  } else {
+    await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
+      to_email: email,
+      subject: "🎭 Mise à jour de votre réservation",
+      message_html: html
+    });
+    console.log("✅ Email envoyé à", email);
+  }
+} catch (err) {
+  console.error("❌ Erreur d’envoi du mail :", err);
+}
+}
+
+/* === Mode Admin === */
+adminBtn.onclick = () => {
+  const scanBtn = document.getElementById("scanTicket");
+  const infoBtn = document.getElementById("info");
+
+  if (!admin) {
+    const p = prompt("Mot de passe admin :");
+    if (p === "admin123") {
+      admin = true;
+      alert("✅ Mode admin activé");
+      resetBtn.style.display = "inline-block";
+      document.getElementById("export").style.display = "inline-block";
+      scanBtn.style.display = "none";
+      infoBtn.style.display = "none";
+      document.body.classList.add("admin");
+      adminBtn.textContent = "🚪 Sortir du mode admin";
+      updateTable();
+
+      toggleAdminUI(); // ✅ ajoute cette ligne ici aussi
+    } else {
+      alert("❌ Mot de passe incorrect.");
+    }
+  } else {
+    admin = false;
+    alert("👋 Mode admin désactivé");
+    resetBtn.style.display = "none";
+    document.getElementById("export").style.display = "none";
+    scanBtn.style.display = "inline-block";
+    infoBtn.style.display = "inline-block";
+    document.body.classList.remove("admin");
+    adminBtn.textContent = "🔐 Admin";
+    updateTable();
+    toggleAdminUI(); // ✅ déjà présent ici
+  }
+};
+
+
+
+/* === Réinitialiser === */
+resetBtn.onclick = () => {
+  if (!admin) return alert("Activez le mode admin.");
+  if (confirm("Effacer toutes les réservations ?")) {
+    seats = {};
+    save();
+	updateStatsBar(); // ✅ ajout ici
+    alert("✅ Réinitialisation complète.");
+  }
+};
+
+/* === Export CSV === */
+document.getElementById("export").onclick = () => {
+  const entries = Object.entries(seats)
+    .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
+  const now = new Date().toLocaleString("fr-FR");
+  let csv = `Export des réservations – Théâtre Saint Martin (${now})\n\n`;
+  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE;ADULTES;ENFANTS;MOINS_DE_X_ANS;TOTAL(€)\n";
+
+  for (const [k, v] of entries) {
+    const [r, s] = k.split("-");
+csv += `${r};${s};${v.name};${v.email};${v.phone};${v.nbAdult||0};${v.nbChild||0};${v.nbBaby||0};${v.amount||0}\n`;
+  }
+  csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
+  // ===============================
+// 📧 Liste des emails uniques
+// ===============================
+const emailsSet = new Set();
+
+for (const v of Object.values(seats)) {
+  if (v.email) {
+    emailsSet.add(v.email.toLowerCase());
+  }
+}
+
+csv += "\n\nLISTE DES EMAILS (SANS DOUBLONS)\n";
+for (const email of emailsSet) {
+  csv += `${email}\n`;
+}
+
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `reservations_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+};
+
+/* === Liste réservations === */
+function updateTable() {
+  const container = document.getElementById("resBody");
+  container.innerHTML = "";
+  const entries = Object.entries(seats || {});
+  if (!entries.length) return container.innerHTML = '<p>Aucune réservation.</p>';
+
+  // === Regroupement des réservations par client ===
+const grouped = {};
+
+for (const [id, data] of entries) {
+  const key = data.name || "Inconnu";
+
+  if (!grouped[key]) {
+    grouped[key] = {
+      ...data,
+      seats: [],
+      emails: new Set(),
+      allPaid: true,
+    };
+  }
+
+  grouped[key].seats.push({
+  id,
+  paid: !!data.paid,
+  type: data.type || null,   // 👈 essentiel
+});
+
+
+  grouped[key].emails.add(data.email || "N/A");
+
+  // ✅ Si au moins un siège n’est pas payé → la ligne sera rose
+  if (!data.paid) grouped[key].allPaid = false;
+}
+
+
+
+  const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
+    (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
+  );
+
+  for (const [name, info] of sorted) {
+  const div = document.createElement("div");
+  div.className = "accordion";
+  const header = document.createElement("div");
+  header.className = `accordion-header ${info.allPaid ? "paid" : "unpaid"}`;
+  header.innerHTML = `
+    <div>👤 ${name}</div>
+    <div>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</div>
+  `;
+  header.onclick = () => div.classList.toggle("open");
+
+  const content = document.createElement("div");
+  content.className = "accordion-content";
+  // --- Ajout à faire juste avant content.innerHTML = ...
+  const adults = info.seats.filter(s => s.type === "adulte");
+const children = info.seats.filter(s => s.type === "enfant");
+const babies = info.seats.filter(s => s.type === "moins8");
+
+content.innerHTML = `
+  <p><strong>Email :</strong> ${info.email || "—"}</p>
+  <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
+
+  <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
+    <span style="color:#1565c0;font-weight:600">
+      ${adults.map(s => s.id).join(", ") || "—"}
+    </span>
+  </p>
+
+  <p><strong>🧒 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € →
+    <span style="color:#0288d1;font-weight:600">
+      ${children.map(s => s.id).join(", ") || "—"}
+    </span>
+  </p>
+
+  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} →
+    <span style="color:#6a1b9a;font-weight:600">
+      ${babies.map(s => s.id).join(", ") || "—"}
+    </span>
+  </p>
+
+  <p><strong>Total :</strong> ${(
+  (info.seats.filter(s => s.type === "adulte").length * PRICE_ADULT) +
+  (info.seats.filter(s => s.type === "enfant").length * PRICE_CHILD)
+).toFixed(2)} €</p>
+
+`;
+
+content.innerHTML += `
+  <div class="seat-list" style="margin-top:8px;">
+    ${info.seats.map(s => {
+      const icon =
+        s.type === "adulte" ? "🧍" :
+        s.type === "enfant" ? "🧒" :
+        s.type === "moins8" ? "🍼" : "🎟️";
+
+      const paidIcon = s.paid ? "💰" : "❌";
+
+      return `
+        <span class="badge-seat" style="
+          background:${s.paid ? "#43a047" : "#ef5350"};
+          color:white;border-radius:6px;padding:4px 8px;font-size:0.85rem;
+        ">${icon} ${s.id} ${paidIcon}</span>
+      `;
+    }).join("")}
+  </div>
+
+
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;">
+  <label>💶 Tout payé 
+    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}>
+  </label>
+
+  ${admin ? `
+  <div class="group-actions" data-client="${name}" style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="group-add-btn" data-name="${name}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajout groupé</button>
+    <button class="group-remove-btn" data-name="${name}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️ Suppression groupée</button>
+    <button class="group-validate-btn" data-name="${name}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider</button>
+
+    <!-- 📧 NOUVEAU BOUTON -->
+    <button
+      class="resend-ticket-btn"
+      data-name="${name}"
+      data-email="${info.email}"
+      style="background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
+      📧 Renvoyer le billet
+    </button>
+
+    <button
+      class="participants-btn"
+      data-name="${name}"
+      data-email="${info.email}"
+      style="background:#6a1b9a;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
+      👥 Ajouter les participants
+    </button>
+  </div>
+  ` : ""}
+</div>
+
+
+  `;
+
+  div.append(header, content);
+  container.append(div);
+}
+
+
+  // === Gestion stable de la case "Tout payé" (sans cumul) ===
+    // === Gestion stable de la case "Tout payé" (sans cumul) ===
+    document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+      cb.addEventListener("change", async e => {
+    if (!admin) {
+      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+      e.target.checked = !e.target.checked;
+      return;
+    }
+
+    const clientName = e.target.dataset.name;
+    const isPaid = e.target.checked;
+
+    console.log(`💶 Mise à jour du paiement pour ${clientName} → ${isPaid}`);
+
+    // ✅ Met à jour tous les sièges de ce client dans Firebase
+    for (const [id, data] of Object.entries(seats)) {
+      if (data.name === clientName) {
+        data.paid = isPaid;
+        await set(ref(db, `seats/${id}`), data);
+      }
+    }
+
+    // 🔄 Rafraîchit les affichages
+    render();
+    updateTable();
+    updateStatsBar();
+
+    // 📧 (Optionnel) Notifie le client
+    const clientSeat = Object.values(seats).find(s => s.name === clientName);
+    if (clientSeat?.email) {
+      try {
+        await notifyClientUpdate(clientSeat.email);
+        console.log(`📨 Email envoyé à ${clientSeat.email}`);
+      } catch (err) {
+        console.error("Erreur d’envoi d’e-mail :", err);
+      }
+    }
+  });
+
+
+
+
+
+}); // ← ferme cb.addEventListener
+};   // ← ferme updateTable()
+
+
+// ===================================================
+// 📧 BOUTON ADMIN : RENVOYER LE BILLET AU CLIENT
+// ===================================================
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".resend-ticket-btn");
+  if (!btn) return;
+
+  if (!admin) {
+    alert("❌ Mode admin requis");
+    return;
+  }
+
+  const email = btn.dataset.email;
+  const name = btn.dataset.name;
+
+  if (!email) {
+    alert("❌ Aucun email pour ce client");
+    return;
+  }
+
+  // 🔍 Retrouve tous les sièges du client
+  const clientSeats = Object.entries(seats)
+    .filter(([_, s]) => s.email === email);
+
+  if (!clientSeats.length) {
+    alert("❌ Aucune réservation trouvée");
+    return;
+  }
+
+  const user = {
+    name,
+    email,
+    phone: clientSeats[0][1].phone || "",
+    paid: clientSeats.every(([_, s]) => s.paid),
+    amount: clientSeats[0][1].amount || 0
+  };
+
+  if (!confirm(`📧 Renvoyer le billet à ${email} ?`)) return;
+
+  await sendEmail(user);
+
+  alert("✅ Billet renvoyé avec succès");
+});
+
+// ===================================================
+// 👥 BOUTON ADMIN : ENVOYER LE LIEN "AJOUTER LES PARTICIPANTS"
+// (même logique que Bessay, mais pour Salle Saint Martin)
+// ===================================================
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".participants-btn");
+  if (!btn) return;
+
+  if (!admin) {
+    alert("❌ Mode admin requis");
+    return;
+  }
+
+  const email = (btn.dataset.email || "").trim().toLowerCase();
+  const name = btn.dataset.name || "";
+
+  if (!email) {
+    alert("❌ Aucun email pour ce client");
+    return;
+  }
+
+  // 🔍 Retrouve tous les sièges du client
+  const clientSeats = Object.entries(seats).filter(([_, s]) =>
+    (s.email || "").toLowerCase() === email
+  );
+
+  if (!clientSeats.length) {
+    alert("❌ Aucune réservation trouvée");
+    return;
+  }
+
+  // 🆔 Récupère (ou crée) un reservationId commun
+  let reservationId = clientSeats[0][1].reservationId;
+  if (!reservationId) {
+    reservationId =
+      (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+    // injecte sur tous les sièges du client
+    for (const [sid, data] of clientSeats) {
+      data.reservationId = reservationId;
+      seats[sid] = data;
+    }
+    save();
+  }
+
+  // 🔗 Lien vers la page participants (param "salle" pour choisir le bon spectacle)
+  const link = `${location.origin}${location.pathname.replace(/[^/]+$/, "")}participants.html?resId=${encodeURIComponent(reservationId)}&salle=salle_saint_martin`;
+
+  // 📌 Écrit/rafraîchit la fiche réservation dans /spectacles/salle_saint_martin/<reservationId>
+  try {
+    const base = clientSeats[0][1];
+    const seatIds = clientSeats.map(([sid]) => sid);
+    const nbAdult = clientSeats.filter(([_, s]) => s.type === "adulte").length;
+    const nbChild = clientSeats.filter(([_, s]) => s.type === "enfant").length;
+    const nbBaby  = clientSeats.filter(([_, s]) => s.type === "moins8").length;
+    const amount  = nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
+
+    await set(ref(db, `spectacles/salle_saint_martin/${reservationId}`), {
+      id: reservationId,
+      name: base.name || name,
+      email: base.email || email,
+      phone: base.phone || "",
+      paid: clientSeats.every(([_, s]) => !!s.paid),
+      nbAdult, nbChild, nbBaby,
+      amount,
+      seats: seatIds,
+      updatedAt: Date.now()
+    });
+  } catch (err) {
+    console.warn("⚠️ Écriture fiche réservation (participants) impossible :", err);
+  }
+
+  if (!confirm(`📧 Envoyer le lien "Participants" à ${email} ?\n\n${link}`)) return;
+
+  const html = `
+    <h2>🎭 Informations participants – Théâtre Saint Martin</h2>
+    <p>Bonjour <strong>${name}</strong>,</p>
+    <p>Merci de compléter la liste des participants (prénom / nom) pour votre réservation.</p>
+    <p style="margin:16px 0;">
+      👉 <a href="${link}" target="_blank" rel="noopener">Cliquer ici pour ajouter les participants</a>
+    </p>
+    <p>À très bientôt 🎭</p>
+  `;
+
+  try {
+    await sendViaBrevo(email, "👥 Ajouter les participants – Théâtre Saint Martin", html);
+    alert("✅ Lien participants envoyé");
+  } catch (err) {
+    console.error("❌ Erreur envoi participants :", err);
+    alert("❌ Erreur d'envoi (voir console)");
+  }
+});
+
+
+
+// === Ajouter des sièges manuellement (mode admin) ===
+document.querySelectorAll(".add-seat-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (!admin) return alert("⚠️ Activez le mode admin.");
+    const clientName = btn.dataset.name;
+    const clientSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
+    if (!clientSeat) return alert("❌ Client introuvable.");
+
+    const modal = document.getElementById("addSeatModal");
+    const map = document.getElementById("miniSeatMap");
+    const manualInput = document.getElementById("manualSeatInput");
+    const paidBox = document.getElementById("addSeatPaid");
+    const adultInput = document.getElementById("addSeatAdult");
+    const childInput = document.getElementById("addSeatChild");
+    const babyInput = document.getElementById("addSeatBaby");
+    const totalDisplay = document.getElementById("addSeatTotal");
+
+    document.getElementById("addSeatClient").textContent = `Client : ${clientName}`;
+    map.innerHTML = "";
+    manualInput.value = "";
+    paidBox.checked = false;
+    adultInput.value = 0;
+    childInput.value = 0;
+    babyInput.value = 0;
+    totalDisplay.textContent = "Total : 0 €";
+
+    // 🎨 Affichage des sièges libres (mini version)
+    const allSeats = Array.from(document.querySelectorAll(".seat.free"));
+    allSeats.forEach(el => {
+      const id = el.dataset.id;
+      const seatBtn = document.createElement("button");
+      seatBtn.textContent = id;
+      seatBtn.className = "mini-seat";
+      seatBtn.style.cssText = `
+        width:45px;height:30px;
+        border:none;
+        border-radius:6px;
+        background:#e0e0e0;
+        color:#000;
+        cursor:pointer;
+        font-size:12px;
+        font-weight:600;
+      `;
+      seatBtn.onclick = () => seatBtn.classList.toggle("selected");
+      map.appendChild(seatBtn);
+    });
+
+    // 🧮 Recalcul du total
+    function updateTotal() {
+      const a = parseInt(adultInput.value) || 0;
+      const c = parseInt(childInput.value) || 0;
+      const b = parseInt(babyInput.value) || 0;
+      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`; // 👶 Moins de 8 ans gratuit
+    }
+    adultInput.oninput = childInput.oninput = babyInput.oninput = updateTotal;
+
+    modal.classList.remove("hidden");
+
+    document.getElementById("addSeatCancel").onclick = () => modal.classList.add("hidden");
+
+    document.getElementById("addSeatConfirm").onclick = async () => {
+  const chosen = Array.from(map.querySelectorAll(".mini-seat.selected")).map(b => b.textContent);
+  const typed = manualInput.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  const allChosen = [...chosen, ...typed];
+  const nbA = parseInt(adultInput.value) || 0;
+  const nbC = parseInt(childInput.value) || 0;
+  const nbB = parseInt(babyInput.value) || 0;
+  const totalPeople = nbA + nbC + nbB;
+  const totalAdd = nbA * PRICE_ADULT + nbC * PRICE_CHILD; // 👶 moins de 8 ans gratuit
+
+  if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
+  if (totalPeople !== allChosen.length)
+    return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
+
+  // 🔍 Récupère les anciens totaux du client
+  let oldA = 0, oldC = 0, oldB = 0, oldTotal = 0;
+  for (const [sid, data] of Object.entries(seats)) {
+    if (data.name === clientName) {
+      oldA = parseInt(data.nbAdult || 0);
+      oldC = parseInt(data.nbChild || 0);
+      oldB = parseInt(data.nbBaby  || 0);
+      oldTotal = parseFloat(data.amount || 0);
+      break;
+    }
+  }
+
+  const newA = oldA + nbA;
+  const newC = oldC + nbC;
+  const newB = oldB + nbB;
+  const newTotal = oldTotal + totalAdd;
+
+  // 🪑 Ajout des nouveaux sièges
+  let added = 0;
+  for (let id of allChosen) {
+
+    // ✅ Correction : normalise les IDs pour les strapontins ("S15", "S16" → "A-S15", etc.)
+    if (/^S\d+$/i.test(id)) {
+      id = `A-${id}`; // 🟡 tu peux changer la lettre de rangée ici si besoin
+    }
+
+    const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
+    console.log("Ajout manuel :", id, "→", seatEl ? "OK" : "non trouvé");
+
+    if (!seatEl) {
+      alert(`⚠️ Le siège ${id} n'existe pas dans le plan.`);
+      continue;
+    }
+
+    if (!seatEl.classList.contains("free")) {
+      alert(`⚠️ Le siège ${id} est déjà réservé.`);
+      continue;
+    }
+
+    const type = added < nbA ? "adulte" : added < nbA + nbC ? "enfant" : "moins8";
+
+    seats[id] = {
+  name: groupClient,
+  email: baseData.email,
+  phone: baseData.phone,
+  paid: baseData.paid || false,
+  nbAdult: baseData.nbAdult,
+  nbChild: baseData.nbChild,
+  nbBaby: baseData.nbBaby,
+  amount: baseData.amount,
+  type: seatType, // ✅ maintenant le bon type est gardé
+};
+
+    added++;
+  }
+
+  // ✅ Met à jour TOUS les sièges du client avec les nouveaux totaux
+  for (const [sid, data] of Object.entries(seats)) {
+    if (data.name === clientName) {
+      data.nbAdult = newA;
+      data.nbChild = newC;
+      data.nbBaby  = newB;
+      data.amount  = newTotal;
+    }
+  }
+
+  if (added > 0) {
+    save();
+    render();       // 🟢 met à jour visuellement le plan
+    updateTable();  // 🟢 met à jour la liste de réservations
+    updateStatsBar(); // 🧮 met à jour la barre de stats
+
+    // ✨ Ouvre automatiquement l’accordéon du client ajouté
+    setTimeout(() => {
+      const accHeader = [...document.querySelectorAll('.accordion-header')]
+        .find(h => h.textContent.includes(clientName));
+      if (accHeader && accHeader.parentElement) {
+        accHeader.parentElement.classList.add('open');
+        accHeader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        accHeader.style.transition = "background 0.4s";
+        accHeader.style.background = "#fff59d";
+        setTimeout(() => accHeader.style.background = "", 1200);
+      }
+    }, 300);
+// 📧 Envoi automatique d'un e-mail de mise à jour avec QR code actualisé
+const clientData = Object.values(seats).find(s => s.name === clientName);
+if (clientData) {
+  await notifyClientUpdate(clientData.email); // ✅ on envoie la version “mise à jour complète”
+  console.log(`📨 Email de mise à jour envoyé à ${clientData.email} après ajout de siège.`);
+}
+
+    alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
+  }
+
+  modal.classList.add("hidden");
+};
+
+
+  });
+});
+
+
+
+
+// === ⚙️ Gestion des ajouts/suppressions groupés (version finale propre) ===
+let groupMode = null;
+let groupClient = null;
+let groupChanges = [];
+
+// === ⚙️ Gestion des ajouts/suppressions groupés ===
+document.addEventListener("click", async (e) => {
+  const addBtn = e.target.closest(".group-add-btn");
+  const removeBtn = e.target.closest(".group-remove-btn");
+  const validateBtn = e.target.closest(".group-validate-btn");
+
+  // ➕ AJOUT GROUPÉ
+  if (addBtn) {
+    groupMode = "add";
+    groupClient = addBtn.dataset.name;
+    groupChanges = [];
+    addBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
+    alert(`🟢 Mode AJOUT groupé activé pour ${groupClient}. Sélectionnez les sièges libres à ajouter.`);
+    return;
+  }
+
+  // 🗑️ SUPPRESSION GROUPÉE
+  if (removeBtn) {
+    groupMode = "remove";
+    groupClient = removeBtn.dataset.name;
+    groupChanges = [];
+    removeBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
+    alert(`🔴 Mode SUPPRESSION groupée activé pour ${groupClient}. Cliquez sur les sièges réservés à supprimer.`);
+    return;
+  }
+
+  // ✅ VALIDATION
+  if (validateBtn) {
+    if (!groupClient || !groupChanges.length) {
+      alert("Aucune modification détectée.");
+      return;
+    }
+
+    const action = groupMode === "add" ? "ajoutés" : "supprimés";
+    if (!confirm(`Confirmer ${groupChanges.length} siège(s) ${action} pour ${groupClient} ?`)) return;
+
+    // --- SUPPRESSION
+if (groupMode === "remove") {
+  for (const id of groupChanges) {
+    if (seats[id]) delete seats[id];
+  }
+
+  // ✅ Enregistre les changements et rafraîchit l’affichage
+  save();
+  render();
+  updateTable();
+  updateStatsBar();
+
+  const clientData = Object.values(seats).find(s => s.name === groupClient);
+  if (clientData?.email) {
+    const sendMail = await askEmailConfirmation(clientData.email);
+
+    if (sendMail) await notifyClientUpdate(clientData.email);
+  }
+}
+
+    // --- AJOUT
+    if (groupMode === "add") {
+      const baseData = Object.values(seats).find(s => s.name === groupClient);
+      if (!baseData) {
+        alert(`❌ Impossible d’ajouter : aucune donnée trouvée pour ${groupClient}`);
+      } else {
+        let addAdult = 0, addChild = 0, addBaby = 0;
+
+        for (const { id } of groupChanges) {
+          const seatType = await askSeatType(id);
+          if (!seatType) continue;
+
+          if (seatType === "adulte") addAdult++;
+          else if (seatType === "enfant") addChild++;
+          else if (seatType === "moins8") addBaby++;
+
+          seats[id] = {
+            name: groupClient,
+            email: baseData.email,
+            phone: baseData.phone,
+            paid: baseData.paid || false,
+            nbAdult: baseData.nbAdult || 0,
+            nbChild: baseData.nbChild || 0,
+            nbBaby: baseData.nbBaby || 0,
+            amount: baseData.amount || 0,
+            type: seatType
+          };
+        }
+
+        const newAdult = (baseData.nbAdult || 0) + addAdult;
+        const newChild = (baseData.nbChild || 0) + addChild;
+        const newBaby  = (baseData.nbBaby  || 0) + addBaby;
+        const newAmount = newAdult * PRICE_ADULT + newChild * PRICE_CHILD;
+
+        const refId = Object.entries(seats).find(([sid, s]) => s.name === groupClient)?.[0];
+        if (refId && seats[refId]) {
+          seats[refId].nbAdult = newAdult;
+          seats[refId].nbChild = newChild;
+          seats[refId].nbBaby  = newBaby;
+          seats[refId].amount  = newAmount;
+        }
+
+        save();
+        render();
+        updateTable();
+        updateStatsBar();
+
+        const clientData = Object.values(seats).find(s => s.name === groupClient);
+        if (clientData?.email) {
+          const sendMail = await askEmailConfirmation(clientData.email);
+
+          if (sendMail) await notifyClientUpdate(clientData.email);
+        }
+
+        alert(`✅ Ajout terminé : ${addAdult} adulte(s), ${addChild} enfant(s), ${addBaby} -8 ans`);
+      }
+    }
+
+    // --- FIN ---
+    alert(`✅ ${groupChanges.length} siège(s) ${groupMode === "add" ? "ajouté(s)" : "supprimé(s)"} pour ${groupClient}.`);
+
+    groupMode = null;
+    groupClient = null;
+    groupChanges = [];
+    document.querySelectorAll(".group-validate-btn").forEach(b => (b.style.display = "none"));
+  }
+}); // ✅ plus aucune erreur ici
+
+
+// === Clic sur un siège pendant un mode groupé ===
+hall.addEventListener("click", (e) => {
+  const seatEl = e.target.closest(".seat");
+  if (!seatEl || !groupMode || !groupClient) return;
+
+  const id = seatEl.dataset.id;
+
+  // === Mode AJOUT ===
+  if (groupMode === "add" && seatEl.classList.contains("reserved")) {
+    seatEl.classList.toggle("selected", !seatEl.classList.contains("selected"));
+    if (seatEl.classList.contains("selected")) {
+      seatEl.classList.add("add-mode");
+      seatEl.style.backgroundColor = "#a5d6a7"; // vert clair
+
+      groupChanges.push({ id, name: groupClient });
+    } else {
+      seatEl.classList.remove("add-mode");
+      seatEl.style.backgroundColor = "";
+
+      groupChanges = groupChanges.filter(s => s.id !== id);
+    }
+  }
+
+  // === Mode SUPPRESSION ===
+  else if (groupMode === "remove" && seatEl.classList.contains("reserved")) {
+    seatEl.classList.toggle("selected", !seatEl.classList.contains("selected"));
+    if (seatEl.classList.contains("selected")) {
+      seatEl.classList.add("remove-mode");
+      groupChanges.push(id);
+    } else {
+      seatEl.classList.remove("remove-mode");
+      groupChanges = groupChanges.filter(x => x !== id);
+    }
+  }
+});
+
+
+
+/* === Scanner et Aide === */
+document.getElementById("scanTicket").onclick = () => window.location.href = "scanner.html";
+document.getElementById("info").onclick = () => window.open("mode_emploi.pdf", "_blank");
+
+/* === Zoom/drag mobile (version fluide) === */
+const wrapper = document.querySelector(".hall-wrapper");
+let scale = 1;
+let lastDist = 0;
+let startMid = { x: 0, y: 0 };
+let translate = { x: 0, y: 0 };
+
+wrapper.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastDist = Math.hypot(dx, dy);
+    startMid = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+    };
+  }
+});
+
+wrapper.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault(); // on bloque le scroll seulement pendant le zoom
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+
+    if (lastDist) {
+      const delta = dist / lastDist;
+      scale = Math.max(0.8, Math.min(3, scale * delta));
+      hall.style.transform = `scale(${scale})`;
+    }
+
+    lastDist = dist;
+  }
+});
+
+wrapper.addEventListener("touchend", (e) => {
+  if (e.touches.length < 2) lastDist = 0;
+});
+
+
+wrapper.addEventListener("touchend", e => {
+  if (e.touches.length < 2) lastDist = 0;
+  if (e.touches.length === 0) isDragging = false;
+});
+
+
+/* === 💶 Gestion des tarifs personnalisables === */
+const editPricesBtn = document.getElementById("editPrices");
+const priceModal = document.getElementById("priceModal");
+const priceAdultInput = document.getElementById("priceAdult");
+const priceChildInput = document.getElementById("priceChild");
+
+// === Valeurs par défaut ou chargées du localStorage ===
+
+
+/* === Affiche les tarifs actuels dans les labels === */
+function updatePriceLabels() {
+  const mainAdult = document.getElementById("labelPriceAdult");
+  const mainChild = document.getElementById("labelPriceChild");
+  const addAdult = document.getElementById("labelAddSeatPriceAdult");
+  const addChild = document.getElementById("labelAddSeatPriceChild");
+
+  if (mainAdult) mainAdult.textContent = PRICE_ADULT.toFixed(2);
+  if (mainChild) mainChild.textContent = PRICE_CHILD.toFixed(2);
+  if (addAdult) addAdult.textContent = PRICE_ADULT.toFixed(2);
+  if (addChild) addChild.textContent = PRICE_CHILD.toFixed(2);
+}
+
+/* === Ouvrir/Fermer la modale === */
+function openPriceModal() {
+  priceAdultInput.value = PRICE_ADULT;
+  priceChildInput.value = PRICE_CHILD;
+  priceModal.classList.remove("hidden");
+}
+document.getElementById("cancelPrices").onclick = () => priceModal.classList.add("hidden");
+
+/* === Enregistrer les nouveaux tarifs === */
+document.getElementById("savePrices").onclick = () => {
+  const newAdult = parseFloat(priceAdultInput.value);
+  const newChild = parseFloat(priceChildInput.value);
+  if (isNaN(newAdult) || isNaN(newChild)) {
+    alert("⚠️ Les tarifs doivent être des nombres valides.");
+    return;
+  }
+
+  const oldAdult = PRICE_ADULT;
+  const oldChild = PRICE_CHILD;
+
+  PRICE_ADULT = newAdult;
+  PRICE_CHILD = newChild;
+
+  localStorage.setItem("PRICE_ADULT", PRICE_ADULT);
+  localStorage.setItem("PRICE_CHILD", PRICE_CHILD);
+
+  updatePriceLabels();
+  render();
+  updateTable();
+
+  const msg = document.getElementById("priceMessage");
+  if (msg) {
+    msg.textContent = `✔️ Tarifs mis à jour :
+    Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € |
+    Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
+    msg.style.display = "block";
+    msg.style.opacity = 1;
+
+    setTimeout(() => {
+      msg.style.transition = "opacity 0.5s";
+      msg.style.opacity = 0;
+      setTimeout(() => {
+        msg.style.display = "none";
+        priceModal.classList.add("hidden");
+      }, 600);
+    }, 1800);
+  }
+};
+
+// === 💌 Bouton de test Email (avec sauvegarde persistante) ===
+const emailTestBtn = document.getElementById("toggleEmailTest");
+
+// 🔄 Charge la préférence sauvegardée dans le navigateur
+// Désactivé par défaut, activé uniquement si "true" est enregistré
+
+
+
+// ⚙️ Fonction pour mettre à jour l’apparence du bouton
+function updateEmailTestButton() {
+  const banner = document.getElementById("emailModeBanner");
+
+  // Met à jour le texte et la couleur du bouton admin
+  emailTestBtn.textContent = EMAIL_TEST_MODE
+    ? "✉️ Mode email : TEST"
+    : "✉️ Mode email : RÉEL";
+  emailTestBtn.style.background = EMAIL_TEST_MODE ? "#607d8b" : "#2e7d32";
+
+  // 💡 Affiche le bandeau uniquement quand le mode TEST est actif
+  if (EMAIL_TEST_MODE) {
+    banner.textContent = "✉️ Mode email : TEST (aucun envoi)";
+    banner.style.background = "#607d8b";
+    banner.style.display = "block";
+  } else {
+    banner.style.display = "none";
+  }
+}
+
+
+
+// 🧩 Clique sur le bouton pour basculer le mode
+emailTestBtn.onclick = () => {
+  EMAIL_TEST_MODE = !EMAIL_TEST_MODE;
+
+  // 💾 Sauvegarde la préférence dans localStorage
+  localStorage.setItem("EMAIL_TEST_MODE", EMAIL_TEST_MODE);
+
+  // 🔄 Met à jour le bouton
+  updateEmailTestButton();
+
+  alert(
+    `🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (EmailJS actif)"}`
+  );
+};
+
+// ➕ Affiche le bouton seulement en mode admin
+function toggleAdminUI() {
+  const isAdmin = document.body.classList.contains("admin");
+
+  editPricesBtn.style.display = isAdmin ? "inline-block" : "none";
+  emailTestBtn.style.display = isAdmin ? "inline-block" : "none";
+  document.getElementById("bulkReminder").style.display =
+    isAdmin ? "inline-block" : "none";
+}
+
+
+// 🔹 Initialisation de l’interface
+editPricesBtn.onclick = openPriceModal;
+updatePriceLabels();
+toggleAdminUI();
+
+// 🧩 Met à jour le texte du bouton au démarrage
+updateEmailTestButton();
+
+
+  // 🔹 Regroupe par client
+  const grouped = {};
+  for (const [id, data] of Object.entries(seats)) {
+    if (!grouped[data.name]) grouped[data.name] = [];
+    grouped[data.name].push(data);
+  }
+
+// 🔄 Nouvelle logique : on compte chaque siège payé individuellement
+function updateStatsBar() {
+  let totalAmount = 0;
+  let totalAdult = 0;
+  let totalChild = 0;
+  let totalBaby = 0;
+  const soldSeats = Object.keys(seats).length;
+
+  // 🔹 Regroupe les sièges par client
+  const grouped = {};
+  for (const data of Object.values(seats)) {
+    if (!grouped[data.name]) grouped[data.name] = [];
+    grouped[data.name].push(data);
+  }
+
+  // 🔹 Pour chaque client : si tous ses sièges sont payés → on recalcule son total
+  for (const client of Object.values(grouped)) {
+    const allPaid = client.every(s => s.paid);
+    if (allPaid) {
+      const nbAdult = client.filter(s => s.type === "adulte").length;
+      const nbChild = client.filter(s => s.type === "enfant").length;
+      const nbBaby  = client.filter(s => s.type === "moins8").length;
+
+      totalAmount += nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
+      totalAdult  += nbAdult;
+      totalChild  += nbChild;
+      totalBaby   += nbBaby;
+    }
+  }
+
+  // 🔄 Mise à jour visuelle
+  document.getElementById("stat-total").textContent =
+    `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
+  document.getElementById("stat-adult").textContent =
+    `🧍 Adultes : ${totalAdult}`;
+  document.getElementById("stat-child").textContent =
+    `👶 Enfants : ${totalChild}`;
+  document.getElementById("stat-baby").textContent =
+    `🍼 Moins de 8 ans : ${totalBaby}`;
+  document.getElementById("stat-sold").textContent =
+    `🎟️ Places réservées : ${soldSeats}`;
+}
+
+
+async function askEmailConfirmation(email) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("emailConfirmModal");
+    const text = document.getElementById("emailConfirmText");
+    text.textContent = `Souhaitez-vous envoyer un e-mail de mise à jour à ${email} ?`;
+
+    modal.classList.remove("hidden");
+
+    const yesBtn = document.getElementById("emailConfirmYes");
+    const noBtn = document.getElementById("emailConfirmNo");
+
+    function cleanup(result) {
+      modal.classList.add("hidden");
+      yesBtn.removeEventListener("click", onYes);
+      noBtn.removeEventListener("click", onNo);
+      resolve(result);
+    }
+
+    function onYes() { cleanup(true); }
+    function onNo() { cleanup(false); }
+
+    yesBtn.addEventListener("click", onYes);
+    noBtn.addEventListener("click", onNo);
+  });
+}
+
+// ===================================================
+// 🔔 OUVERTURE MODALE RAPPEL (choix des clients)
+// ===================================================
+document.getElementById("bulkReminder").onclick = () => {
+  if (!admin) return alert("❌ Mode admin requis");
+
+  const modal = document.getElementById("bulkSelectModal");
+  const list = document.getElementById("clientCheckboxList");
+  const selectAll = document.getElementById("selectAllClients");
+
+  list.innerHTML = "";
+  selectAll.checked = false;
+
+  // Regroupe par email
+  const clients = {};
+  for (const [id, s] of Object.entries(seats)) {
+    if (!s.email) continue;
+    if (!clients[s.email]) {
+      clients[s.email] = {
+        name: s.name,
+        email: s.email
+      };
+    }
+  }
+
+  // Crée les checkbox
+  Object.values(clients).forEach(c => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "6px";
+    div.innerHTML = `
+      <label>
+        <input type="checkbox" class="client-check" value="${c.email}">
+        <strong>${c.name}</strong>
+        <span style="font-size:12px;color:#666;">(${c.email})</span>
+      </label>
+    `;
+    list.appendChild(div);
+  });
+
+  // ✔️ Tous / aucun
+  selectAll.onchange = () => {
+    document.querySelectorAll(".client-check")
+      .forEach(cb => cb.checked = selectAll.checked);
+  };
+
+  modal.classList.remove("hidden");
+};
+
+// ===================================================
+// ❌ ÉTAPE 4 — BOUTON ANNULER (FERMETURE MODALE RAPPEL)
+// ===================================================
+document.getElementById("bulkCancel").onclick = () => {
+  document.getElementById("bulkSelectModal").classList.add("hidden");
+};
+// ===================================================
+// 📧 ÉTAPE 5 — ENVOI RAPPEL AUX CLIENTS SÉLECTIONNÉS
+// ===================================================
+document.getElementById("bulkSendSelected").onclick = async () => {
+  if (!admin) {
+    alert("❌ Mode admin requis");
+    return;
+  }
+
+  const checked = [...document.querySelectorAll(".client-check:checked")];
+
+  if (!checked.length) {
+    alert("⚠️ Aucun destinataire sélectionné");
+    return;
+  }
+
+  if (!confirm(`📧 Envoyer un rappel à ${checked.length} client(s) ?`)) return;
+
+  for (const cb of checked) {
+    const email = cb.value;
+
+    // 🔍 Récupère tous les sièges de ce client
+    const clientSeats = Object.entries(seats)
+      .filter(([_, s]) => s.email === email);
+
+    if (!clientSeats.length) continue;
+
+    const user = {
+      name: clientSeats[0][1].name,
+      email,
+      phone: clientSeats[0][1].phone || "",
+      paid: clientSeats.every(([_, s]) => s.paid),
+      amount: clientSeats[0][1].amount || 0
+    };
+
+    try {
+      await sendReminderEmail(user); // ✅ billet + QR code
+      console.log("📨 Rappel envoyé à", email);
+    } catch (err) {
+      console.error("❌ Erreur envoi", email, err);
+    }
+  }
+
+  alert("✅ Rappel envoyé aux clients sélectionnés");
+  document.getElementById("bulkSelectModal").classList.add("hidden");
+};
+
+
+</script>
+
+
+
+<!-- 🧮 Fenêtre admin : saisie adultes/enfants -->
+<div id="adminPaymentModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>💰 Saisie du paiement</h3>
+    <p id="adminClientName" style="font-weight:600;margin-bottom:10px;"></p>
+
+    <label for="adminAdult">Nombre d’adultes (14 €)</label>
+    <input id="adminAdult" type="number" min="0" value="0" step="1">
+
+    <label for="adminChild">Nombre d’enfants (10 €)</label>
+    <input id="adminChild" type="number" min="0" value="0" step="1">
+	<label for="adminBaby">Nombre de moins de 8 ans</label>
+<input id="adminBaby" type="number" min="0" value="0" step="1">
+
+
+    <p id="adminTotal" style="font-weight:600;color:#2e7d32;margin-top:8px;">Total : 0 €</p>
+
+    <div style="margin-top:12px;">
+      <button id="adminSavePayment">Valider</button>
+      <button id="adminCancelPayment">Annuler</button>
+    </div>
+  </div>
+</div>
+<!-- 🆕 Modale ajout manuel de sièges -->
+<!-- 🆕 Modale ajout manuel de sièges -->
+<div id="addSeatModal" class="modal hidden">
+  <div class="modal-content" style="max-width:480px;">
+    <h3>➕ Ajouter des sièges</h3>
+    <p id="addSeatClient" style="font-weight:600;margin-bottom:10px;"></p>
+
+    <!-- 🧭 Mini plan des sièges -->
+    <div id="miniSeatMap" style="
+      display:grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap:5px;
+      justify-items:center;
+      margin-bottom:10px;
+      max-height:250px;
+      overflow-y:auto;
+      padding:8px;
+      background:#fafafa;
+      border-radius:8px;
+      border:1px solid #ddd;
+    "></div>
+
+    <p style="font-weight:600;">saisir manuellement :</p>
+    <input id="manualSeatInput" type="text" placeholder="Ex : A-12, B-3, Stapontin: A-S15," style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:6px;margin-bottom:10px;">
+
+    <div class="payment-group">
+      <div class="payment-line">
+        <label for="addSeatAdult">Adultes (${PRICE_ADULT} €)</label>
+        <input id="addSeatAdult" type="number" min="0" value="0" step="1" style="width:60px;">
+      </div>
+	  <div class="payment-line">
+  <label for="addSeatBaby">Moins de 8 ans</label>
+  <input id="addSeatBaby" type="number" min="0" value="0" step="1" style="width:60px;">
+</div>
+
+      <div class="payment-line">
+        <label for="addSeatChild">Enfants (${PRICE_CHILD} €)</label>
+        <input id="addSeatChild" type="number" min="0" value="0" step="1" style="width:60px;">
+      </div>
+      <p id="addSeatTotal" style="margin-top:8px;text-align:right;font-weight:600;color:#2e7d32;">Total : 0 €</p>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:6px;margin:10px 0;">
+      <input type="checkbox" id="addSeatPaid">
+      💶 Sièges payés
+    </label>
+
+    <div style="margin-top:12px;">
+      <button id="addSeatConfirm">Valider</button>
+      <button id="addSeatCancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 💶 Fenêtre modale de modification des tarifs -->
+<div id="priceModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>💶 Modifier les tarifs</h3>
+
+<label for="priceAdult">Tarif adulte (€)</label>
+<input id="priceAdult" type="number" min="0" step="0.5" value="14">
+<span id="labelPriceAdult" style="display:none;"></span>
+
+<label for="priceChild">Tarif enfant (€)</label>
+<input id="priceChild" type="number" min="0" step="0.5" value="10">
+<span id="labelPriceChild" style="display:none;"></span>
+
+
+    <div style="margin-top:12px;">
+      <button id="savePrices">Enregistrer</button>
+      <button id="cancelPrices">Annuler</button>
+    </div>
+  </div>
+</div>
+<!-- === Modal choix du type de billet === -->
+<div id="typeModal" class="hidden" style="
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;">
+  <div style="background: white; padding: 20px 30px; border-radius: 12px; text-align: center;">
+    <h3>🎫 Type de billet pour les sièges ajoutés</h3>
+    <p>Sélectionnez le type appliqué à tous les nouveaux sièges :</p>
+    <button class="type-btn" data-type="adulte" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#1565c0;color:white;">🧍 Adulte</button>
+    <button class="type-btn" data-type="enfant" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#2e7d32;color:white;">🧒 Enfant</button>
+    <button class="type-btn" data-type="moins8" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#f57c00;color:white;">🍼 Moins de 8 ans</button>
+  </div>
+</div>
+<!-- 🎫 Modal de choix du type de billet -->
+<div id="ticketTypeModal" class="modal hidden">
+  <div class="modal-content" style="max-width: 360px; text-align: center;">
+    <h3>🎫 Type de billet</h3>
+    <p id="ticketTypeSeat" style="font-weight:600; color:#0d47a1;"></p>
+    <p>Choisis le type de place à attribuer :</p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+      <button class="ticket-type-btn" data-type="adulte" style="background:#1565c0;color:#fff;">🧍 Adulte</button>
+      <button class="ticket-type-btn" data-type="enfant" style="background:#2e7d32;color:#fff;">🧒 Enfant</button>
+      <button class="ticket-type-btn" data-type="moins8" style="background:#f57c00;color:#fff;">🍼 Moins de 8 ans</button>
+      <button id="cancelTicketType" style="background:#757575;color:#fff;">❌ Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔔 Modale de confirmation d'envoi d'email -->
+<div id="emailConfirmModal" class="modal hidden">
+  <div class="modal-content" style="text-align:center; max-width:400px;">
+    <h3>📩 Envoi d’e-mail de mise à jour</h3>
+    <p id="emailConfirmText" style="margin:15px 0;">Souhaitez-vous envoyer un e-mail à cet utilisateur ?</p>
+    <div style="display:flex;justify-content:center;gap:15px;margin-top:10px;">
+      <button id="emailConfirmYes" style="background:#1565c0;color:white;">✅ Oui</button>
+      <button id="emailConfirmNo" style="background:#9e9e9e;color:white;">❌ Non</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 💌 Modale de prévisualisation d’email -->
+<div id="emailPreviewModal" class="modal hidden">
+  <div class="modal-content" style="max-width:600px;max-height:80vh;overflow:auto;text-align:left;">
+    <h3>📧 Aperçu de l’email</h3>
+    <div id="emailPreviewContent" style="border:1px solid #ccc;padding:10px;margin-top:10px;background:#fff;"></div>
+    <div style="text-align:center;margin-top:12px;">
+      <button id="closeEmailPreview" style="background:#1565c0;color:white;">Fermer</button>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById("retour-dashboard").addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+  // ===================================================
+// ❌ Bouton FERMER – aperçu email
+// ===================================================
+document.addEventListener("click", (e) => {
+  if (e.target.id === "closeEmailPreview") {
+    document.getElementById("emailPreviewModal").classList.add("hidden");
+  }
+});
+
+</script>
+
+<!-- 📨 Indicateur visuel du mode email -->
+<div id="emailModeBanner" style="
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: #607d8b;
+  color: white;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 10000;
+  display: none;
+">
+  ✉️ Mode email : TEST
+</div>
+<!-- 📧 Modale choix destinataires rappel -->
+<div id="bulkSelectModal" class="modal hidden">
+  <div class="modal-content" style="max-width:520px;">
+    <h3>🔔 Rappel réservation</h3>
+    <p>Choisissez les destinataires :</p>
+
+    <div style="margin-bottom:10px;">
+      <label style="font-weight:600;">
+        <input type="checkbox" id="selectAllClients">
+        ✔️ Tous les réservants
+      </label>
+    </div>
+
+    <div id="clientCheckboxList"
+         style="max-height:260px;overflow:auto;border:1px solid #ddd;
+                padding:8px;border-radius:6px;margin-bottom:12px;">
+      <!-- rempli dynamiquement -->
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button id="bulkCancel" style="background:#9e9e9e;">Annuler</button>
+      <button id="bulkSendSelected" style="background:#1976d2;">📧 Envoyer</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
