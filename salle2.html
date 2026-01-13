@@ -2756,6 +2756,10 @@ document.getElementById("bulkReminder").onclick = () => {
         <strong>${c.name}</strong>
         <span style="font-size:12px;color:#666;">(${c.email})</span>
       </label>
+      <div class="participants" id="participants-${resId}">
+  <em>Chargement des participants…</em>
+</div>
+
     `;
     list.appendChild(div);
   });
@@ -2989,6 +2993,29 @@ document.addEventListener("click", (e) => {
     document.getElementById("emailPreviewModal").classList.add("hidden");
   }
 });
+async function loadParticipantsForSalle(resId) {
+  const snap = await get(ref(db, `participants/${resId}`));
+  const container = document.getElementById(`participants-${resId}`);
+
+  if (!container) return;
+
+  if (!snap.exists()) {
+    container.innerHTML = "<em>Aucun participant</em>";
+    return;
+  }
+
+  const participants = snap.val();
+  container.innerHTML = "";
+
+  Object.values(participants).forEach(p => {
+    const div = document.createElement("div");
+    div.className = "participant-line";
+    div.innerHTML = `
+      👤 <b>${p.name}</b> — ${p.email} — ${p.phone}
+    `;
+    container.appendChild(div);
+  });
+}
 
 </script>
 
