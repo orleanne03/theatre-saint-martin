@@ -1396,7 +1396,20 @@ document.getElementById("save").onclick = async () => {
   const amount = nbAdult * (typeof PRICE_ADULT === "number" ? PRICE_ADULT : 14)
                + nbChild * (typeof PRICE_CHILD === "number" ? PRICE_CHILD : 10);
 
-  const user = { name, email, phone, paid, nbAdult, nbChild, nbBaby, amount };
+const reservationId = crypto.randomUUID();
+
+const user = { 
+  reservationId,
+  name,
+  email,
+  phone,
+  paid,
+  nbAdult,
+  nbChild,
+  nbBaby,
+  amount
+};
+
 
   // Répartition des types par siège
   let adultRemaining = nbAdult;
@@ -1872,6 +1885,10 @@ for (const [id, data] of entries) {
 
   const content = document.createElement("div");
   content.className = "accordion-content";
+  const pBox = document.createElement("div");
+pBox.id = `participants-${reservationId}`;
+content.appendChild(pBox);
+
   // --- Ajout à faire juste avant content.innerHTML = ...
   const adults = info.seats.filter(s => s.type === "adulte");
 const children = info.seats.filter(s => s.type === "enfant");
@@ -2969,27 +2986,37 @@ document.addEventListener("click", (e) => {
   }
 });
 async function sendViaBrevo(to, subject, html) {
-  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev", {
+  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      to,
-      subject,
-      html
-    })
+    body: JSON.stringify({ to, subject, html })
   });
 
-  const result = await res.json();
-  console.log("📨 Brevo:", result);
+  const text = await res.text();
+  console.log("📨 Brevo RAW:", text);
 
-  if (!res.ok) {
-    throw new Error(result.error || "Erreur Brevo");
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error("Réponse Brevo invalide");
   }
 
-  return result;
+  if (!res.ok) {
+    throw new Error("HTTP " + res.status);
+  }
+
+  // 🔴 Brevo a refusé
+  if (json.mail && json.mail.includes("code")) {
+    console.error("❌ Brevo:", json.mail);
+    throw new Error("Brevo a refusé l'email");
+  }
+
+  return json;
 }
+
 
 
 
