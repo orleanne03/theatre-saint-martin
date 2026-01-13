@@ -1574,6 +1574,29 @@ async function sendReminderEmail(user) {
   });
 }
 
+// ===================================================
+// 📤 Envoi Brevo (utilisé par Participants + Rappels)
+// ===================================================
+async function sendViaBrevo(to, subject, html) {
+  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      to,
+      subject,
+      html
+    })
+  });
+
+  const result = await res.json();
+  console.log("📨 Brevo:", result);
+
+  if (!result.ok) {
+    throw new Error(result.brevo || "Brevo error");
+  }
+}
 
 
 async function notifyClientUpdate(email) {
