@@ -1039,6 +1039,15 @@ button#retour-dashboard {
 
 
 <div id="reservations">
+  <h3>👥 Participants</h3>
+<div id="participantsList" style="
+  background:#fff;
+  border-radius:8px;
+  padding:10px;
+  margin-top:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+"></div>
+
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
     <h3>📋 Liste des réservations</h3>
 	<h4 id="total-amount" style="
@@ -2762,6 +2771,35 @@ document.getElementById("bulkSendSelected").onclick = async () => {
   alert("✅ Rappel envoyé aux clients sélectionnés");
   document.getElementById("bulkSelectModal").classList.add("hidden");
 };
+const participantsRef = ref(db, "participants");
+
+onValue(participantsRef, snapshot => {
+  const data = snapshot.val() || {};
+  const container = document.getElementById("participantsList");
+
+  if (!container) {
+    console.error("❌ participantsList introuvable dans le HTML");
+    return;
+  }
+
+  if (!Object.keys(data).length) {
+    container.innerHTML = "<p>Aucun participant.</p>";
+    return;
+  }
+
+  let html = "";
+  for (const p of Object.values(data)) {
+    html += `
+      <div style="border-bottom:1px solid #ddd;padding:6px 0;">
+        <strong>${p.nom}</strong><br>
+        📧 ${p.email}<br>
+        📞 ${p.telephone || ""}
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+});
 
 
 </script>
