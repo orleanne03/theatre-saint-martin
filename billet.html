@@ -47,7 +47,9 @@ const app = initializeApp({
 });
 const db = getDatabase(app);
 
-const id = new URLSearchParams(location.search).get("id");
+const params = new URLSearchParams(location.search);
+const id = params.get("id");
+const email = params.get("email"); // si présent => participant
 
 async function load(){
   if(!id){
@@ -56,39 +58,80 @@ async function load(){
   }
 
   const snap = await get(ref(db,"spectacles/salle_bessay/"+id));
-  const r = snap.val();
-
-  if(!r){
+  if(!snap.exists()){
     document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
     return;
   }
 
-  document.getElementById("ticket").innerHTML = `
-    <h1>🎭 Théâtre Saint-Martin</h1>
-    <h3>Salle de Bessay – 23 janvier 2026</h3>
+  const r = snap.val();
 
-    <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
+  // 🔍 Mode participant ?
+  let participantName = null;
+  if (email) {
+    const pSnap = await get(ref(db, "participants/" + id));
+    if (pSnap.exists()) {
+      const list = Object.values(pSnap.val());
+      const found = list.find(p => (p.email || "").toLowerCase() === email.toLowerCase());
+      if (found) participantName = found.name;
+    }
+  }
 
-    <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
+  // -------------------------
+  // AFFICHAGE PARTICIPANT
+  // -------------------------
+  if (email && participantName) {
+    document.getElementById("ticket").innerHTML = `
+      <h1>🎭 Théâtre Saint-Martin</h1>
+      <h3>Salle de Bessay – 23 janvier 2026</h3>
 
-    <p>👨‍👩‍👧 <b>Adultes :</b> ${r.nbAdult}</p>
-    <p>👧 <b>Enfants -12 ans :</b> ${r.nbChild}</p>
+      <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
 
-    <p style="font-size:1.2rem; margin-top:25px; font-weight:bold; color:#2e7d32;">
-      Total : ${r.amount.toFixed(2)} €
-    </p>
+      <p style="font-size:1.3rem; font-weight:bold;">${participantName}</p>
 
-    <div class="info-box">
-      📍 Salle de Bessay<br>
-      📅 Vendredi 23 janvier 2026 – 20h30
-    </div>
-  `;
+      <div class="info-box">
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026<br>
+        🕗 Présence à 19h00 — Spectacle à 20h30
+      </div>
+
+      <p style="font-size:16px;color:#d81b60;margin-top:15px;">
+        Billet nominatif (réservation de <b>${r.name}</b>)
+      </p>
+    `;
+  }
+
+  // -------------------------
+  // AFFICHAGE CLIENT PRINCIPAL
+  // -------------------------
+  else {
+    document.getElementById("ticket").innerHTML = `
+      <h1>🎭 Théâtre Saint-Martin</h1>
+      <h3>Salle de Bessay – 23 janvier 2026</h3>
+
+      <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
+
+      <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
+
+      <p>👨‍👩‍👧 <b>Adultes :</b> ${r.nbAdult}</p>
+      <p>👧 <b>Enfants -12 ans :</b> ${r.nbChild}</p>
+
+      <p style="font-size:1.2rem; margin-top:25px; font-weight:bold; color:#2e7d32;">
+        Total : ${Number(r.amount || 0).toFixed(2)} €
+      </p>
+
+      <div class="info-box">
+        📍 Salle de Bessay<br>
+        📅 Vendredi 23 janvier 2026 – 20h30
+      </div>
+    `;
+  }
 
   setTimeout(()=>window.print(), 600);
 }
 
 load();
 </script>
+
 </head>
 
 <body>
