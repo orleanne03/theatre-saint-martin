@@ -176,27 +176,10 @@ document.getElementById("participantsForm").addEventListener("submit", async (e)
   // ➕ MODE AJOUT
   await push(ref(db, `participants/${resId}`), data);
 
-  // 🔽 Récupère la réservation principale
-  const resSnap = await get(ref(db, `spectacles/${salle}/${resId}`));
-  if (!resSnap.exists()) {
-    alert("❌ Réservation introuvable");
-    return;
-  }
+// ✅ Salle : on n’essaie PAS de relire la réservation
+alert("✅ Participant enregistré");
 
-  const reservationMain = resSnap.val();
 
-  try {
-    // ✉️ Envoi du billet
-    await sendParticipantTicket(data, {
-      ...reservationMain,
-      id: resId
-    });
-
-    alert("✅ Participant enregistré et billet envoyé !");
-  } catch (err) {
-    console.error(err);
-    alert("⚠️ Participant enregistré.");
-  }
 
   // 🔥 Le formulaire se vide TOUJOURS
   e.target.reset();
