@@ -116,6 +116,24 @@ form button:hover { background:#b71c1c; }
 }
 #testNotice { left:15px; background:#2196f3; }
 #adminNotice { right:15px; background:#d81b60; }
+div#bulkRecipients label {
+    text-align: left;
+}
+/* 🎟️ Réservation gratuite */
+.free-line {
+  background: #ffe0b2 !important;
+  border-left: 6px solid #fb8c00;
+}
+.free-badge {
+  background: #fb8c00;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
 </style>
 </head>
 
@@ -134,6 +152,11 @@ form button:hover { background:#b71c1c; }
     <input type="checkbox" id="paid" style="width:auto;">
     <span>Paiement reçu 💶</span>
   </label>
+  <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+  <input type="checkbox" id="free" style="width:auto;">
+  <span>🎟️ Réservation gratuite</span>
+</label>
+
   <p id="totalPrice">Total : 0 €</p>
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
@@ -152,9 +175,16 @@ form button:hover { background:#b71c1c; }
   <button class="admin-btn" id="priceBtn" style="display:none;">💵 Modifier les tarifs</button>
   <button class="admin-btn" id="testEmailBtn" style="display:none;">✉️ Mode Email : TEST</button>
   <button class="admin-btn" id="exportBtn" style="display:none;">💾 Enregistrer les réservations</button>
+  <button class="admin-btn" id="exportEmailsBtn" style="display:none;">📧 Exporter tous les emails</button>
+
   <button id="sendBulkEmail" style="display:none;background:#ff9800;">
   📢 Email groupé (erratum)
 </button>
+<button id="sendAllTickets" style="display:none;background:#2e7d32;color:white;padding:10px 15px;border:none;border-radius:6px;cursor:pointer;">
+📬 Renvoyer TOUS les billets (Bessay)
+</button>
+
+
 
 </div>
 
@@ -169,10 +199,51 @@ form button:hover { background:#b71c1c; }
     <button id="closeModalBtn" style="display:block;margin:20px auto 0;background:#d32f2f;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:600;cursor:pointer;">Fermer</button>
   </div>
 </div>
+<!-- 📢 Modale Email groupé (erratum) -->
+<div id="bulkEmailModal" style="
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.5);
+  display:none; justify-content:center; align-items:center;
+  z-index:2000;
+">
+  <div style="
+    background:white; border-radius:12px;
+    padding:25px 30px; max-width:500px; width:90%;
+    box-shadow:0 5px 12px rgba(0,0,0,0.3);
+  ">
+    <h3 style="margin-top:0;">📢 Email groupé (erratum)</h3>
+
+    <input id="bulkSubject"
+      placeholder="Sujet de l’email"
+      style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+
+    <textarea id="bulkMessage"
+      placeholder="Message à envoyer"
+      style="width:100%;height:140px;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+
+    <!-- 🟢 LISTE DES DESTINATAIRES -->
+    <div id="bulkRecipients"
+      style="margin:15px 0; max-height:160px; overflow:auto;
+             border:1px solid #ddd; border-radius:8px; padding:10px;
+             font-size:0.9rem;">
+    </div>
+
+    <div style="margin-top:15px;text-align:right;">
+      <button id="bulkCancel" style="margin-right:10px;">Annuler</button>
+      <button id="bulkSend"
+        style="background:#ff9800;color:white;border:none;
+               border-radius:8px;padding:10px 16px;font-weight:600;">
+        Envoyer
+      </button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove, push } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove, push, get } 
+from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
 
 /* EmailJS */
 emailjs.init("E4g_UFzGYQZBNH07m");
@@ -194,7 +265,11 @@ const refSpectacle = ref(db, "spectacles/salle_bessay");
 let reservations = {};
 let adminMode = false;
 let emailTestMode = false;
+let singleTargetEmail = null;
+
 let priceAdult = 22, priceChild = 15;
+let participantsTargetReservationId = null;
+
 
 /* DOM refs */
 const list = document.getElementById("list");
@@ -202,6 +277,8 @@ const adminToggleBtn = document.getElementById("adminToggle");
 const priceBtn = document.getElementById("priceBtn");
 const testEmailBtn = document.getElementById("testEmailBtn");
 const exportBtn = document.getElementById("exportBtn");
+const exportEmailsBtn = document.getElementById("exportEmailsBtn");
+
 const testNotice = document.getElementById("testNotice");
 const adminNotice = document.getElementById("adminNotice");
 const resForm = document.getElementById("resForm");
@@ -248,15 +325,32 @@ function buildEmailHTML(data){
         <p style="margin:0; font-size:14px;">Salle de Bessay – Spectacle du 23 janvier 2026</p>
       </div>
       <div style="padding:35px 30px 40px 30px; line-height:1.65;">
+<h3 style="color:#d32f2f; margin-top:0;">
+  ${data.free ? "🎟️ Invitation gratuite" : "Confirmation de réservation"}
+</h3>
 
-        <h3 style="color:#d32f2f; margin-top:0;">Confirmation de réservation</h3>
-        <p>Bonjour <b>${data.name}</b>,</p>
-        <p>Merci pour votre réservation ! Voici le récapitulatif à imprimer et présenter :</p>
+<p>Bonjour <b>${data.name}</b>,</p>
+
+<p>
+  ${data.free
+    ? "Vous bénéficiez d’une <b>invitation gratuite</b>. Voici votre billet à présenter à l’entrée :"
+    : "Merci pour votre réservation ! Voici le récapitulatif à imprimer et présenter :"
+  }
+</p>
+
         <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:15px;">
           <tr><td style="padding:6px 0;">🎫 <b>Adultes :</b></td><td style="text-align:right;">${data.nbAdult}</td></tr>
           <tr><td style="padding:6px 0;">👧 <b>Enfants -12 ans :</b></td><td style="text-align:right;">${data.nbChild}</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:8px 0; font-weight:bold;">Total de places</td><td style="text-align:right; font-weight:bold;">${data.nbPlaces}</td></tr>
-          <tr><td style="padding:8px 0; font-weight:bold; color:#388e3c;">Montant total</td><td style="text-align:right; font-weight:bold; color:#388e3c;">${data.amount.toFixed(2)} €</td></tr>
+          ${data.free ? "" : `
+<tr>
+  <td style="padding:8px 0; font-weight:bold; color:#388e3c;">Montant total</td>
+  <td style="text-align:right; font-weight:bold; color:#388e3c;">
+    ${data.amount.toFixed(2)} €
+  </td>
+</tr>
+`}
+
         </table>
 <div style="margin-top:32px; padding:22px; background:#fff8e1; border-radius:8px;">
           <p style="margin:0; font-size:14px;">
@@ -269,7 +363,8 @@ function buildEmailHTML(data){
         <div style="text-align:center; margin-top:20px;">
           <!-- Ce bouton lancera l'impression dans la modale / navigateur. 
                Dans un client mail, l'impression auto peut être bloquée mais le bouton reste visible. -->
-<a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?id=${data.id}"
+<a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?id=${data.id}${data.participantEmail ? `&email=${encodeURIComponent(data.participantEmail)}` : ""}"
+
    style="background:#388e3c; color:white; text-decoration:none; padding:10px 18px; border-radius:6px; font-weight:bold; display:inline-block;">
    🖨️ Imprimer mon billet
 </a>
@@ -315,13 +410,17 @@ resForm.addEventListener("submit", async (e)=>{
   const nbAdult = +aI.value||0, nbChild = +cI.value||0;
   const nbPlaces = nbAdult + nbChild;
   if (!name || !email || !phone || nbPlaces===0) return alert("❌ Formulaire incomplet !");
-  const data = {
-    name, email, phone,
-    nbAdult, nbChild, nbPlaces,
-    amount: (nbAdult*priceAdult + nbChild*priceChild),
-    paid: document.getElementById("paid").checked,
-    present: false
-  };
+const isFree = document.getElementById("free").checked;
+
+const data = {
+  name, email, phone,
+  nbAdult, nbChild, nbPlaces,
+  amount: isFree ? 0 : (nbAdult*priceAdult + nbChild*priceChild),
+  paid: isFree ? true : document.getElementById("paid").checked,
+  free: isFree,
+  present: false
+};
+
   const newRef = push(ref(db, "spectacles/salle_bessay"));
 await set(newRef, { ...data, id:newRef.key });
 
@@ -374,9 +473,14 @@ let summary = `
     const presClass= r.present ? "paid" : "unpaid";
     const presTxt  = r.present ? "🎟️ Présent" : "🚫 Absent";
     html += `
-      <div class="accordion-card ${r.present ? 'present-card' : ''}" data-card="${id}">
+<div class="accordion-card ${r.present ? 'present-card' : ''} ${r.free ? 'free-line' : ''}" data-card="${id}">
+
         <div class="accordion-header" data-toggle="${id}">
-          <span><b>${r.name}</b> – ${r.nbPlaces} places</span>
+<span>
+  <b>${r.name}</b> – ${r.nbPlaces} places
+  ${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
+</span>
+
           <span class="${payClass}">${payTxt}</span>
         </div>
         <div class="accordion-body" id="body-${id}">
@@ -395,6 +499,22 @@ ${adminMode ? `
     data-id="${id}">
     📧 Renvoyer le billet
   </button>
+<button class="action-btn"
+  style="background:#2e7d32;"
+  data-action="participants"
+  data-id="${id}">
+  📩 Demander les infos des participants
+</button>
+
+  <div class="participants-list" id="participants-${id}">
+    <p style="font-weight:600;margin-top:10px;">
+      👥 Participants :
+    </p>
+    <div style="font-size:0.9rem;color:#444;">
+      Chargement…
+    </div>
+  </div>
+
 
   <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
 ` : ""}
@@ -403,6 +523,11 @@ ${adminMode ? `
       </div>`;
   }
   list.innerHTML = html;
+  // 🔽 Charger les participants pour chaque réservation (admin)
+if (adminMode) {
+  Object.keys(reservations).forEach(id => loadParticipants(id));
+}
+
 }
 list.addEventListener("click", async (e)=>{
   const header = e.target.closest("[data-toggle]");
@@ -437,16 +562,71 @@ list.addEventListener("click", async (e)=>{
 
   if (!confirm(`📧 Renvoyer le billet à ${r.email} ?`)) return;
 
-  await sendEmail({
-    ...r,
-    id
-  });
+const html = buildEmailHTML({
+  ...r,
+  id
+});
+
+await sendTicketViaBrevo(
+  r.email,
+  "🎟️ Votre billet – Salle de Bessay",
+  html
+);
+
 
   alert("✅ Billet renvoyé");
 }
+else if (action === "participants") {
+  const r = reservations[id];
+
+  participantsTargetReservationId = id;
+
+
+
+document.getElementById("bulkSubject").value =
+  "🎟️ Informations nécessaires pour l’envoi des billets – Bessay";
+
+
+const formLink =
+  "https://orleanne03.github.io/theatre-saint-martin/participants.html?resId=" +
+  id;
+
+document.getElementById("bulkSubject").value =
+  "🎟️ Informations nécessaires pour l’envoi des billets – Bessay";
+
+document.getElementById("bulkMessage").value =
+  "Bonjour " + r.name + ",\n\n" +
+  "Vous avez réservé " + r.nbPlaces + " places pour le spectacle à la Salle de Bessay.\n\n" +
+  "Afin que chaque participant puisse recevoir son billet nominatif, " +
+  "merci de compléter les informations des autres participants " +
+  "(email et téléphone) via le lien ci-dessous :\n\n" +
+  formLink + "\n\n" +
+  "Une fois le formulaire complété, nous pourrons envoyer les billets " +
+  "à chaque personne concernée.\n\n" +
+  "À très bientôt 🎭\n" +
+  "La troupe du Théâtre Saint-Martin";
+
+
+
+  document.getElementById("bulkEmailModal").style.display = "flex";
+}
+
 
 });
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".delete-participant");
+  if (!btn) return;
 
+  const resId = btn.dataset.resid;
+  const pid = btn.dataset.pid;
+
+  if (!confirm("Supprimer ce participant ?")) return;
+
+  await remove(ref(db, `participants/${resId}/${pid}`));
+
+  // Recharge la liste
+  loadParticipants(resId);
+});
 /* Bouton Admin + boutons admin */
 adminToggleBtn.addEventListener("click", ()=>{
   if (!adminMode){
@@ -456,7 +636,12 @@ adminToggleBtn.addEventListener("click", ()=>{
     document.body.classList.add("admin-mode");
     adminNotice.style.display = "block";
     adminToggleBtn.textContent = "🚪 Sortir du mode admin";
-[priceBtn,testEmailBtn,exportBtn, bulkBtn].forEach(b=>b.style.display="inline-block");
+[priceBtn,testEmailBtn,exportBtn, exportEmailsBtn].forEach(b=>b.style.display="inline-block");
+document.getElementById("sendBulkEmail").style.display = "inline-block";
+document.getElementById("sendAllTickets").style.display = "inline-block";
+
+
+
 
   } else {
     adminMode = false;
@@ -464,7 +649,11 @@ adminToggleBtn.addEventListener("click", ()=>{
     document.body.classList.remove("admin-mode");
     adminNotice.style.display = "none";
     adminToggleBtn.textContent = "🔐 Mode Admin";
-[priceBtn,testEmailBtn,exportBtn, bulkBtn].forEach(b=>b.style.display="none");
+[priceBtn,testEmailBtn,exportBtn, exportEmailsBtn].forEach(b=>b.style.display="none");
+document.getElementById("sendBulkEmail").style.display = "none";
+document.getElementById("sendAllTickets").style.display = "none";
+
+
 
     testNotice.style.display = "none";
   }
@@ -510,6 +699,52 @@ function exportReservationsCSV(obj){
   }catch(err){console.error("[EXPORT] Erreur:",err);alert("Erreur pendant l’export CSV.");}
 }
 exportBtn.addEventListener("click", ()=>exportReservationsCSV(reservations));
+async function exportAllEmailsCSV() {
+  const emails = new Set();
+
+  // 1) Emails des réservations principales
+  Object.values(reservations).forEach(r => {
+    if (r?.email) emails.add(String(r.email).toLowerCase().trim());
+  });
+
+  // 2) Emails des participants
+  for (const resId of Object.keys(reservations)) {
+    const snap = await get(ref(db, `participants/${resId}`));
+    if (!snap.exists()) continue;
+
+    Object.values(snap.val()).forEach(p => {
+      if (p?.email) emails.add(String(p.email).toLowerCase().trim());
+    });
+  }
+
+  if (!emails.size) {
+    alert("Aucun email trouvé.");
+    return;
+  }
+
+  const header = "email";
+  const rows = [header, ...Array.from(emails).sort()];
+  const csv = "\uFEFF" + rows.join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const date = new Date().toISOString().split("T")[0];
+  const filename = `emails_bessay_${date}.csv`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  alert(`✅ Export terminé : ${emails.size} emails`);
+}
+
+exportEmailsBtn.addEventListener("click", exportAllEmailsCSV);
+
 // ===================================================
 // 📢 EMAIL GROUPÉ (ERRATUM) — MODE ADMIN
 // ===================================================
@@ -517,8 +752,10 @@ const bulkBtn = document.getElementById("sendBulkEmail");
 const bulkModal = document.getElementById("bulkEmailModal");
 
 bulkBtn.addEventListener("click", ()=>{
+  populateBulkRecipients();
   bulkModal.style.display = "flex";
 });
+
 
 document.getElementById("bulkCancel").onclick = ()=>{
   bulkModal.style.display = "none";
@@ -533,11 +770,36 @@ document.getElementById("bulkSend").onclick = async ()=>{
     return;
   }
 
-  // 🔍 Récupération des emails uniques
-  const emailsSet = new Set();
-  Object.values(reservations).forEach(r=>{
+// 🔍 Récupération des emails uniques
+const emailsSet = new Set();
+
+// 🔎 Emails cochés
+const checked = document.querySelectorAll(".bulk-recipient:checked");
+
+// 🎯 1️⃣ Cas : demande infos participants → UNE SEULE PERSONNE
+if (participantsTargetReservationId) {
+  const r = reservations[participantsTargetReservationId];
+  if (r?.email) {
+    emailsSet.add(r.email.toLowerCase());
+  }
+}
+// ☑️ 2️⃣ Cas : erratum avec cases cochées
+else if (checked.length > 0) {
+  checked.forEach(cb => {
+    const r = reservations[cb.value];
+    if (r?.email) emailsSet.add(r.email.toLowerCase());
+  });
+}
+// 📢 3️⃣ Cas : erratum global (personne cochée)
+else {
+  Object.values(reservations).forEach(r => {
     if (r.email) emailsSet.add(r.email.toLowerCase());
   });
+}
+
+
+participantsTargetReservationId = null;
+
 
   if (!emailsSet.size){
     alert("❌ Aucun email trouvé");
@@ -651,38 +913,286 @@ document.getElementById("bulkSend").onclick = async ()=>{
       : `✅ ${sent} emails envoyés`
   );
 };
+function populateBulkRecipients() {
+  const container = document.getElementById("bulkRecipients");
+  container.innerHTML = "";
 
-</script>
-<!-- 📢 Modale Email groupé (erratum) -->
-<div id="bulkEmailModal" style="
-  position:fixed; inset:0;
-  background:rgba(0,0,0,0.5);
-  display:none; justify-content:center; align-items:center;
-  z-index:2000;
-">
-  <div style="
-    background:white; border-radius:12px;
-    padding:25px 30px; max-width:500px; width:90%;
-    box-shadow:0 5px 12px rgba(0,0,0,0.3);
-  ">
-    <h3 style="margin-top:0;">📢 Email groupé (erratum)</h3>
+  Object.entries(reservations).forEach(([id, r]) => {
+    if (!r.email) return;
 
-    <input id="bulkSubject"
-      placeholder="Sujet de l’email"
-      style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+    const label = document.createElement("label");
+    label.style.display = "block";
+    label.style.cursor = "pointer";
 
-    <textarea id="bulkMessage"
-      placeholder="Message à envoyer"
-      style="width:100%;height:140px;padding:10px;border-radius:8px;border:1px solid #ccc;"></textarea>
+    label.innerHTML = `
+      <input type="checkbox"
+             class="bulk-recipient"
+             value="${id}"
+             style="margin-right:6px;">
+      ${r.name} — ${r.email}
+    `;
 
-    <div style="margin-top:15px;text-align:right;">
-      <button id="bulkCancel" style="margin-right:10px;">Annuler</button>
-      <button id="bulkSend" style="background:#ff9800;color:white;border:none;border-radius:8px;padding:10px 16px;font-weight:600;">
-        Envoyer
-      </button>
+    container.appendChild(label);
+  });
+}
+
+
+async function loadParticipants(resId) {
+  
+  const container = document.getElementById(`participants-${resId}`);
+  if (!container) return;
+  container.innerHTML = "";
+  const snap = await get(ref(db, `participants/${resId}`));
+
+  if (!snap.exists()) {
+    container.innerHTML = "<p>— Aucun participant</p>";
+    return;
+  }
+
+  const participants = Object.entries(snap.val());
+
+  let html = "<ul style='padding-left:18px;'>";
+
+participants.forEach(([pid, p]) => {
+  html += `
+    <li style="display:flex;align-items:center;justify-content:space-between;">
+      <span>
+        ${p.name} — ${p.email} ${p.phone ? "— " + p.phone : ""}
+      </span>
+
+      <span>
+        <!-- 🖨️ ENVOYER LE BILLET -->
+        <button
+          class="send-ticket-participant"
+          data-resid="${resId}"
+          data-pid="${pid}"
+          style="background:none;border:none;cursor:pointer;font-size:18px;margin-right:6px;"
+          title="Envoyer le billet"
+        >
+          🖨️
+        </button>
+
+        <!-- ❌ SUPPRIMER -->
+        <button
+          class="delete-participant"
+          data-resid="${resId}"
+          data-pid="${pid}"
+          style="background:none;border:none;cursor:pointer;font-size:18px;color:#e53935;"
+          title="Supprimer"
+        >
+          ❌
+        </button>
+      </span>
+    </li>
+  `;
+});
+
+
+
+  html += "</ul>";
+  container.innerHTML = html;
+}
+
+
+
+
+
+
+async function sendParticipantTicket(participant, reservation) {
+  const html = `
+  <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;background:#f9f9f9;">
+    <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;
+                box-shadow:0 3px 10px rgba(0,0,0,.15);overflow:hidden;">
+
+      <div style="background:#2e7d32;color:white;text-align:center;padding:18px;">
+        <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
+        <p style="margin:5px 0 0;">Salle de Bessay – 23 janvier 2026</p>
+      </div>
+
+      <div style="padding:25px;line-height:1.6;">
+        <p>Bonjour <b>${participant.name}</b>,</p>
+
+        <p>
+          Suite à la réservation effectuée par
+          <b>${reservation.name}</b>,
+          voici <b>votre billet nominatif</b> à présenter à votre arrivée.
+        </p>
+
+        <p>
+          📍 Salle de Bessay<br>
+          🕗 Présence à 19h00 – Spectacle à 20h30
+        </p>
+
+        <div style="text-align:center;margin:25px 0;">
+<a href="https://orleanne03.github.io/theatre-saint-martin/billet.html?id=${reservation.id}&email=${encodeURIComponent(participant.email)}"
+
+   style="background:#388e3c;color:white;padding:12px 20px;
+          text-decoration:none;border-radius:6px;font-weight:bold;">
+  🖨️ Imprimer mon billet
+</a>
+
+        </div>
+
+        <p style="font-size:14px;color:#555;">
+          Merci de présenter ce billet (imprimé ou sur téléphone) à l’entrée.
+        </p>
+
+        <p style="font-size:14px;color:#777;">
+          À très bientôt 🎭<br>
+          Théâtre Saint-Martin
+        </p>
+      </div>
     </div>
   </div>
-</div>
+  `;
+
+  if (emailTestMode){
+    document.getElementById("emailPreview").innerHTML = html;
+    document.getElementById("emailModal").classList.add("show");
+    return;
+  }
+
+await sendTicketViaBrevo(
+  participant.email,
+  "🎟️ Votre billet – Troupe Saint Martin",
+  html
+);
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".send-ticket-participant");
+  if (!btn) return;
+
+  const resId = btn.dataset.resid;
+  const pid = btn.dataset.pid;
+
+  // 🔎 Récupération participant
+  const pSnap = await get(ref(db, `participants/${resId}/${pid}`));
+  if (!pSnap.exists()) {
+    alert("❌ Participant introuvable");
+    return;
+  }
+  const participant = pSnap.val();
+
+  // 🔎 Récupération réservation principale
+  const rSnap = await get(ref(db, `spectacles/salle_bessay/${resId}`));
+  if (!rSnap.exists()) {
+    alert("❌ Réservation introuvable");
+    return;
+  }
+  const reservation = rSnap.val();
+
+  if (!participant.email) {
+    alert("❌ Email du participant manquant");
+    return;
+  }
+
+  if (!confirm(`Envoyer le billet à ${participant.email} ?`)) return;
+
+  await sendParticipantTicket(participant, {
+    ...reservation,
+    id: resId
+  });
+
+  alert("✅ Billet envoyé au participant");
+});
+
+// ===================================================
+// 📬 RENVOYER TOUS LES BILLETS — BESSSAY (MODE ADMIN)
+// ===================================================
+document.getElementById("sendAllTickets").onclick = async () => {
+  if (!confirm("Renvoyer TOUS les billets Bessay (clients + participants) ?")) return;
+
+  let totalSent = 0;
+
+  const resSnap = await get(ref(db, "spectacles/salle_bessay"));
+  if (!resSnap.exists()) {
+    alert("Aucune réservation trouvée.");
+    return;
+  }
+
+  const reservations = resSnap.val();
+
+  for (const resId of Object.keys(reservations)) {
+    const reservation = reservations[resId];
+
+    // 1️⃣ Envoi au client principal
+    if (reservation.email) {
+      await sendEmail({
+        ...reservation,
+        id: resId
+      });
+      totalSent++;
+    }
+
+    // 2️⃣ Envoi aux participants
+    const partSnap = await get(ref(db, `participants/${resId}`));
+    if (!partSnap.exists()) continue;
+
+    const participants = partSnap.val();
+
+    for (const pid of Object.keys(participants)) {
+      const participant = participants[pid];
+      if (!participant.email) continue;
+
+      await sendParticipantTicket(participant, {
+        ...reservation,
+        id: resId
+      });
+
+      totalSent++;
+    }
+  }
+
+  alert(`🎟️ ${totalSent} billets envoyés (clients + participants)`);
+};
+
+async function sendTicketViaBrevo(toEmail, subject, html) {
+  const API_KEY = "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";
+
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "api-key": API_KEY
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "Théâtre Saint-Martin",
+        email: "theatre.sm.03@gmail.com"
+      },
+      to: [{ email: toEmail }],
+      subject: subject,
+      htmlContent: html
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+}
+async function sendViaBrevo(to, subject, html) {
+  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      to: to,
+      subject: subject,
+      html: html
+    })
+  });
+
+  const result = await res.json();
+  console.log("📨 Brevo:", result);
+}
+
+
+</script>
+
 
 </body>
 </html>
