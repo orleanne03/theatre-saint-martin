@@ -24,7 +24,7 @@
 <!-- ✅ Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+  import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyXXXX_TON_API_KEY",
@@ -43,6 +43,7 @@
   window._firebaseRef = ref;
   window._firebaseSet = set;
   window._firebaseOnValue = onValue;
+  window._firebaseGet = get;
 
   console.log("🔥 Firebase initialisé :", db);
 </script>
@@ -657,7 +658,7 @@ button:active {
 .accordion-header span {
   font-size: 0.9rem;
   font-weight: normal;
-  color: #e3f2fd;
+  color: #060606;
 }
 
 .seat-list {
@@ -961,7 +962,44 @@ button#retour-dashboard {
   filter: brightness(1.1);
   transform: scale(1.05);
 }
+/* 🟧 Réservation GRATUITE */
+.accordion-header.free-line {
+    background: #ed00ed !important;
+    color: #ffffff;
+    border-left: 6px solid #fb8c00;
+}
 
+/* 🔵 Badge G = place gratuite dans la réservation */
+.free-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#1976d2; /* bleu */
+  color:white;
+  font-weight:700;
+  font-size:12px;
+  line-height:1;
+}
+/* 🟣 SIÈGE GRATUIT */
+.seat.free-ticket {
+  background: magenta !important;
+  box-shadow: 0 0 8px rgba(142,36,170,0.7);
+  color: #fff;
+}
+
+/* badge texte du siège */
+.seat.free-ticket span {
+  color: #fff;
+}
+/* 🟣 SIÈGE GRATUIT */
+.seat.free-ticket {
+background: magenta !important;
+  color: #fff !important;
+  box-shadow: 0 0 8px rgba(142,36,170,0.7);
+}
 
 </style>
 </head>
@@ -1038,7 +1076,7 @@ button#retour-dashboard {
 
 
 <div id="reservations">
-  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
     <h3>📋 Liste des réservations</h3>
 	<h4 id="total-amount" style="
   text-align:right;
@@ -1078,6 +1116,11 @@ button#retour-dashboard {
   <label for="babyCount">- de 8 ans</label>
   <input id="babyCount" type="number" min="0" value="0" step="1">
 </div>
+<div class="payment-line">
+  <label for="freeCount">Accompagnants</label>
+  <input id="freeCount" type="number" min="0" value="0" step="1">
+</div>
+
 
       <div class="payment-line">
         <label for="adultCount">Adultes</label>
@@ -1118,7 +1161,8 @@ await new Promise(resolve => {
 let PRICE_ADULT = parseFloat(localStorage.getItem("PRICE_ADULT")) || 14;
 let PRICE_CHILD = parseFloat(localStorage.getItem("PRICE_CHILD")) || 10;
 // === MODE EMAIL (source unique) ===
-let EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "true";
+window.EMAIL_TEST_MODE = localStorage.getItem("EMAIL_TEST_MODE") === "true";
+
 
 
 
@@ -1126,6 +1170,7 @@ const db = window._firebaseDB;
 const ref = window._firebaseRef;
 const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
+const get = window._firebaseGet;
 
 let seats = {}, selected = [], admin = false;
 
@@ -1164,7 +1209,11 @@ function makeSeat(id, label, extra){
   labelSpan.textContent = label;
   d.appendChild(labelSpan);
 
-  d.onclick = () => toggle(id, d);
+d.onclick = (e) => {
+  e.stopPropagation();
+  toggle(id, d);
+};
+
   return d;
 }
 
@@ -1223,10 +1272,20 @@ function render() {
     if (wasStrap) el.classList.add("strapontin");
 
     const seatData = seats[id];
-    if (seatData) {
-      if (seatData.paid) el.classList.add("paid");
-      else el.classList.add("reserved");
-    } else if (selected.includes(id)) {
+if (seatData) {
+  if (seatData.type === "gratuit") {
+    el.classList.add("free-ticket"); // 🟣 GRATUIT uniquement
+  } else if (seatData.paid) {
+    el.classList.add("paid");
+  } else {
+    el.classList.add("reserved");
+  }
+}
+
+
+
+
+ else if (selected.includes(id)) {
       el.classList.add("selected");
     } else {
       el.classList.add("free");
@@ -1239,7 +1298,14 @@ async function toggle(id, el) {
 
 // 🧩 Si on est en mode suppression groupée → on ne fait pas la logique normale
 if (groupMode === "remove" && admin) {
-  if (el.classList.contains("reserved") || el.classList.contains("paid")) {
+  if (
+    el.classList.contains("reserved") ||
+    el.classList.contains("paid") ||
+    el.classList.contains("free-ticket")
+  ) {
+
+
+
     // Sélectionne ou désélectionne le siège pour suppression
     el.classList.toggle("selected");
 
@@ -1267,7 +1333,8 @@ if (groupMode === "add" && admin) {
 }
 
 // 🧩 Sinon comportement normal
-if (admin && seats[id]) {
+if (admin && seats[id] && groupMode !== "remove") {
+
   if (confirm(`🔓 Libérer le siège ${id} ?`)) {
     const clientName = seats[id].name;
     const clientEmail = seats[id].email;
@@ -1349,13 +1416,18 @@ window.addEventListener("DOMContentLoaded", () => {
   function updateTotal() {
     const nbA = parseInt(adultInput.value) || 0;
 const nbE = parseInt(childInput.value) || 0;
-const nbB = parseInt(document.getElementById("babyCount").value) || 0; // 👶 Moins de 8 ans
-const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // 👶 Gratuit ou tarif 0 €
+const nbB = parseInt(document.getElementById("babyCount").value) || 0;
+const nbG = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // 🎟️ Gratuit
+const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // gratuit ne compte pas en €
+
 
     totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
   }
-  adultInput.addEventListener("input", updateTotal);
-  childInput.addEventListener("input", updateTotal);
+adultInput.addEventListener("input", updateTotal);
+childInput.addEventListener("input", updateTotal);
+document.getElementById("babyCount").addEventListener("input", updateTotal);
+document.getElementById("freeCount").addEventListener("input", updateTotal);
+
 });
 
 /* === Validation + enregistrement === */
@@ -1365,12 +1437,15 @@ document.getElementById("save").onclick = async () => {
   const phone  = formatPhone(document.getElementById("phone").value.trim());
   const paid   = document.getElementById("paid").checked;
 
-  const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
-  const nbChild = parseInt(document.getElementById("childCount").value) || 0;
-  const nbBaby  = parseInt(document.getElementById("babyCount")?.value || "0") || 0; // "Moins de 8 ans" (gratuit)
+const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
+const nbChild = parseInt(document.getElementById("childCount").value) || 0;
+const nbBaby  = parseInt(document.getElementById("babyCount")?.value || "0") || 0;
+const nbFree  = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // 🎟️ Gratuit
+
 
   const totalSeats  = selected.length;                  // ✅ manquait
-  const totalPeople = nbAdult + nbChild + nbBaby;
+const totalPeople = nbAdult + nbChild + nbBaby + nbFree;
+
 
   if (!name || !email || !phone) {
     alert("Tous les champs sont requis.");
@@ -1385,12 +1460,31 @@ document.getElementById("save").onclick = async () => {
   const amount = nbAdult * (typeof PRICE_ADULT === "number" ? PRICE_ADULT : 14)
                + nbChild * (typeof PRICE_CHILD === "number" ? PRICE_CHILD : 10);
 
-  const user = { name, email, phone, paid, nbAdult, nbChild, nbBaby, amount };
+const isFree = amount === 0;
+
+const reservationId = crypto.randomUUID();
+
+const user = { 
+  reservationId,
+  name,
+  email,
+  phone,
+  paid: isFree ? true : paid, // ✅ gratuit = payé
+  free: isFree,               // 🆕 flag gratuit
+  nbAdult,
+  nbChild,
+  nbBaby,
+  amount
+};
+
+
 
   // Répartition des types par siège
-  let adultRemaining = nbAdult;
-  let childRemaining = nbChild;
-  let babyRemaining  = nbBaby;
+let adultRemaining = nbAdult;
+let childRemaining = nbChild;
+let babyRemaining  = nbBaby;
+let freeRemaining  = nbFree;
+
 
   selected.forEach(id => {
     if (!seats[id]) {
@@ -1401,12 +1495,17 @@ document.getElementById("save").onclick = async () => {
       } else if (childRemaining > 0) {
         seatData.type = "enfant";
         childRemaining--;
-      } else if (babyRemaining > 0) {
-        seatData.type = "moins8";
-        babyRemaining--;
-      } else {
-        seatData.type = "autre";
-      }
+} else if (babyRemaining > 0) {
+  seatData.type = "moins8";
+  babyRemaining--;
+} else if (freeRemaining > 0) {
+  seatData.type = "gratuit";
+  seatData.paid = true; // ✅ gratuit = considéré payé
+  freeRemaining--;
+} else {
+  seatData.type = "autre";
+}
+
       seats[id] = seatData;
     }
   });
@@ -1497,10 +1596,18 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
 // ===================================================
 async function sendReminderEmail(user) {
 
-  const reservedSeats = Object.entries(seats)
+// 🎟️ Si sièges fournis directement (participants), on les utilise
+let reservedSeats = "";
+
+if (Array.isArray(user.seats) && user.seats.length) {
+  reservedSeats = user.seats.join(", ");
+} else {
+  reservedSeats = Object.entries(seats)
     .filter(([_, v]) => v.email === user.email)
     .map(([id]) => id)
     .join(", ");
+}
+
 
   const qrData = JSON.stringify({
     nom: user.name,
@@ -1514,11 +1621,19 @@ async function sendReminderEmail(user) {
     <h2>🔔 Rappel : votre spectacle approche — Théâtre Saint Martin</h2>
     <p>Bonjour <strong>${user.name}</strong>,</p>
 
-    <p>Nous vous rappelons votre réservation pour le spectacle à venir.</p>
+<p>
+Nous vous rappelons votre réservation pour le spectacle à venir
+de la part de <strong>${user.mainClientName || "le réservant principal"}</strong>.
+</p>
 
-    <p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
-    <p><strong>💰 Montant :</strong> ${user.amount.toFixed(2)} €</p>
-    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
+
+<p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
+
+${user.isParticipant ? "" : `
+  <p><strong>💰 Montant :</strong> ${user.amount.toFixed(2)} €</p>
+  <p><strong>💳 Statut :</strong> ${user.paid ? "Payé" : "❌ Non payé"}</p>
+`}
+
 
     <p>Merci de présenter ce QR Code à l’entrée :</p>
     <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
@@ -1537,11 +1652,13 @@ async function sendReminderEmail(user) {
     return;
   }
 
-  await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
-    to_email: user.email,
-    subject: "🔔 Rappel — Votre réservation au Théâtre Saint Martin",
-    message_html: html
-  });
+await sendViaBrevo(
+  user.email,
+  "🔔 Rappel — Votre réservation (billet + QR)",
+  html
+);
+
+
 }
 
 
@@ -1723,6 +1840,238 @@ for (const email of emailsSet) {
 };
 
 /* === Liste réservations === */
+
+// ===============================
+// 👥 PARTICIPANTS (affichage dans la réservation)
+// ===============================
+function escapeHTML(str="") {
+  return String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+
+async function loadParticipants(reservationId) {
+  if (!reservationId) return;
+
+  const box = document.getElementById(`participants-${reservationId}`);
+  if (!box) return;
+
+  try {
+    const snap = await get(ref(db, `participants/${reservationId}`));
+    const data = snap.val() || {};
+
+    const list = Object.entries(data);
+
+    if (!list.length) {
+      box.innerHTML = `<div style="margin-top:10px;font-size:13px;color:#666;">👥 Aucun participant enregistré.</div>`;
+      return;
+    }
+
+    // Tri par nom puis prénom
+    list.sort(([,a],[,b]) => ((a.name || `${a.nom||""} ${a.prenom||""}`).trim()).localeCompare(((b.name || `${b.nom||""} ${b.prenom||""}`).trim()), "fr", { sensitivity:"base" }));
+
+    box.innerHTML = `
+      <div style="margin-top:12px;padding:10px;border-radius:10px;background:#f6f7fb;border:1px solid #e1e3ee;">
+        <div style="font-weight:700;margin-bottom:8px;">👥 Participants (${list.length})</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+${list.map(([pid,p]) => `
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:8px;
+    padding:8px 10px;
+  ">
+    <div style="font-size:13px;line-height:1.35;">
+      <div style="font-weight:700;">${escapeHTML(p.name||"")}</div>
+      <div>📧 ${escapeHTML(p.email||"—")}</div>
+      <div>📱 ${escapeHTML(p.phone||"—")}</div>
+    </div>
+
+    <div style="display:flex;gap:6px;">
+      <!-- ✏️ Modifier -->
+      <button
+        class="edit-participant-btn"
+        data-resid="${reservationId}"
+        data-pid="${pid}"
+        style="background:#ffb300;color:#000;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
+        ✏️
+      </button>
+
+      <!-- 🎟️ Envoyer billet -->
+<button
+  class="send-ticket-btn"
+  data-resid="${reservationId}"
+  data-name="${escapeHTML(p.name||"")}"
+  data-email="${escapeHTML(p.email||"")}"
+  data-phone="${escapeHTML(p.phone||"")}"
+  style="background:#1976d2;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
+  🎟️
+</button>
+
+
+      <!-- 🗑️ Supprimer -->
+      ${admin ? `
+      <button
+        class="delete-participant-btn"
+        data-resid="${reservationId}"
+        data-pid="${pid}"
+        style="background:#d32f2f;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
+        ❌
+      </button>
+      ` : ""}
+    </div>
+  </div>
+`).join("")}
+
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("❌ Erreur chargement participants :", err);
+    box.innerHTML = `<div style="margin-top:10px;color:#d32f2f;font-weight:600;">❌ Impossible de charger les participants.</div>`;
+  }
+}
+
+// Suppression participant (admin)
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".delete-participant-btn");
+  if (!btn) return;
+
+  if (!admin) return alert("❌ Mode admin requis");
+
+  const reservationId = btn.dataset.resid;
+  const pid = btn.dataset.pid;
+  if (!reservationId || !pid) return;
+
+  if (!confirm("Supprimer ce participant ?")) return;
+
+  try {
+    await set(ref(db, `participants/${reservationId}/${pid}`), null);
+    await loadParticipants(reservationId);
+    alert("✅ Participant supprimé");
+  } catch (err) {
+    console.error("❌ Erreur suppression participant :", err);
+    alert("❌ Erreur suppression (voir console)");
+  }
+});
+// ✏️ Modifier participant
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".edit-participant-btn");
+  if (!btn) return;
+
+  const reservationId = btn.dataset.resid;
+  const pid = btn.dataset.pid;
+
+  const snap = await get(ref(db, `participants/${reservationId}/${pid}`));
+  if (!snap.exists()) return alert("Participant introuvable");
+
+  const p = snap.val();
+
+  const name = prompt("Nom du participant :", p.name || "");
+  if (!name) return;
+
+  const email = prompt("Email :", p.email || "");
+  const phone = prompt("Téléphone :", p.phone || "");
+
+  await set(ref(db, `participants/${reservationId}/${pid}`), {
+    ...p,
+    name,
+    email,
+    phone
+  });
+
+  await loadParticipants(reservationId);
+});
+let sendingParticipantTicket = false;
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".send-ticket-btn");
+  if (!btn) return;
+
+  if (sendingParticipantTicket) return;
+  sendingParticipantTicket = true;
+
+  const name = btn.dataset.name;
+  const email = btn.dataset.email;
+  const phone = btn.dataset.phone;
+  const reservationId = btn.dataset.resid;
+  // 🔍 Retrouve le réservant principal via reservationId
+let mainClientName = "le réservant principal";
+
+const mainSeat = Object.values(seats).find(
+  s => s.reservationId === reservationId
+);
+
+if (mainSeat && mainSeat.name) {
+  mainClientName = mainSeat.name;
+}
+
+
+  if (!email) {
+    sendingParticipantTicket = false;
+    return alert("❌ Pas d'email pour ce participant");
+  }
+
+  let clientSeatsArray = Object.entries(seats)
+    .filter(([_, s]) => s.reservationId === reservationId)
+    .map(([id]) => id);
+
+  if (!clientSeatsArray.length) {
+    clientSeatsArray = Object.entries(seats)
+      .filter(([_, s]) =>
+        s.email === email &&
+        s.name &&
+        s.name.trim().toUpperCase() === name.trim().toUpperCase()
+      )
+      .map(([id]) => id);
+  }
+
+  if (!clientSeatsArray.length) {
+    sendingParticipantTicket = false;
+    return alert("❌ Impossible de retrouver les sièges");
+  }
+
+  const clientSeats = clientSeatsArray.join(", ");
+
+  const qrData = JSON.stringify({ name, email, phone, sieges: clientSeats });
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+  const html = `
+    <h2>🎭 Votre billet nominatif — Théâtre Saint Martin</h2>
+    <p>
+    <p>
+Suite à l’achat de <strong>${user.mainClientName || "le réservant principal"}</strong>,
+
+
+    <br>
+    voici votre billet à présenter à l’entrée du spectacle,
+      soit <strong>imprimé</strong>, soit sur <strong>votre téléphone</strong>.
+  </p>
+    <p>🎟️ <strong>Les sièges réservés :</strong> ${clientSeats}</p>
+    <img src="${qrUrl}" style="margin-top:10px;" />
+  `;
+
+  try {
+    await sendViaBrevo(
+      email,
+      "🎟️ Votre billet – Théâtre Saint Martin",
+      html
+    );
+    alert("✅ Billet envoyé à " + email);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Erreur lors de l’envoi du billet");
+  }
+
+  // 🔓 OBLIGATOIRE
+  sendingParticipantTicket = false;
+});
+
+
 function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
@@ -1764,14 +2113,36 @@ for (const [id, data] of entries) {
   );
 
   for (const [name, info] of sorted) {
+    let reservationId = info.reservationId || info.resId || info.reservationID || info.reservation_id || null;
+    if (!reservationId) {
+      // ⚠️ anciennes réservations : pas de reservationId stocké
+      reservationId = `legacy-${btoa(unescape(encodeURIComponent((info.email||name||"").toString()))).replace(/=+$/,"")}`;
+    }
   const div = document.createElement("div");
   div.className = "accordion";
   const header = document.createElement("div");
-  header.className = `accordion-header ${info.allPaid ? "paid" : "unpaid"}`;
-  header.innerHTML = `
-    <div>👤 ${name}</div>
-    <div>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</div>
-  `;
+header.className = `accordion-header ${
+  info.free ? "free-line" : (info.allPaid ? "paid" : "unpaid")
+}`;
+const hasFreeSeat = info.seats.some(
+  s => s.type === "gratuit"
+);
+
+
+
+const freeBadge = hasFreeSeat
+  ? '<span style="width:22px;height:22px;border-radius:50%;background:#8e24aa;color:white;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-size:13px;">G</span>'
+  : '';
+
+header.innerHTML = `
+  <div>👤 ${name}</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</span>
+    ${freeBadge}
+  </div>
+`;
+
+
   header.onclick = () => div.classList.toggle("open");
 
   const content = document.createElement("div");
@@ -1784,6 +2155,8 @@ const babies = info.seats.filter(s => s.type === "moins8");
 content.innerHTML = `
   <p><strong>Email :</strong> ${info.email || "—"}</p>
   <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
+
+  <div id="participants-${reservationId}"></div>
 
   <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
     <span style="color:#1565c0;font-weight:600">
@@ -1814,9 +2187,10 @@ content.innerHTML += `
   <div class="seat-list" style="margin-top:8px;">
     ${info.seats.map(s => {
       const icon =
-        s.type === "adulte" ? "🧍" :
-        s.type === "enfant" ? "🧒" :
-        s.type === "moins8" ? "🍼" : "🎟️";
+s.type === "moins8" || s.type === "gratuit" ? "🎟️ GRATUIT" :
+s.type === "adulte" ? "🧍" :
+s.type === "enfant" ? "🧒" : "🎟️";
+
 
       const paidIcon = s.paid ? "💰" : "❌";
 
@@ -1859,7 +2233,10 @@ content.innerHTML += `
 
   div.append(header, content);
   container.append(div);
+  // 👥 charge la liste des participants si disponible
+  loadParticipants(reservationId);
 }
+
 
 
   // === Gestion stable de la case "Tout payé" (sans cumul) ===
@@ -1909,6 +2286,45 @@ content.innerHTML += `
 }); // ← ferme cb.addEventListener
 };   // ← ferme updateTable()
 
+// ===================================================
+// 🎟️ Génération HTML du billet (client principal)
+// ===================================================
+function generateBilletHTML(user) {
+  const reservedSeats = Object.entries(seats)
+    .filter(([_, s]) => s.email === user.email)
+    .map(([id]) => id)
+    .join(", ");
+
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    tel: user.phone,
+    sieges: reservedSeats
+  });
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+
+  return `
+    <h2>🎭 Votre billet — Théâtre Saint Martin</h2>
+
+    <p>
+      Suite à l’achat de <strong>${user.name}</strong>,<br>
+      voici votre billet à présenter à l’entrée du spectacle,
+      soit <strong>imprimé</strong>, soit sur <strong>votre téléphone</strong>.
+    </p>
+
+    <p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
+
+    <img src="${qrUrl}" alt="QR Code" style="margin-top:12px;" />
+
+    <p style="margin-top:12px;">
+      📅 <strong>24 janvier 2026 – 20h30</strong><br>
+      📍 Théâtre Saint Martin
+    </p>
+
+    <p>À très bientôt 🎭</p>
+  `;
+}
 
 // ===================================================
 // 📧 BOUTON ADMIN : RENVOYER LE BILLET AU CLIENT
@@ -1949,7 +2365,15 @@ document.addEventListener("click", async (e) => {
 
   if (!confirm(`📧 Renvoyer le billet à ${email} ?`)) return;
 
-  await sendEmail(user);
+const html = generateBilletHTML(user);
+
+await sendViaBrevo(
+  user.email,
+  "🎟️ Votre billet – Théâtre Saint-Martin (Salle)",
+  html
+);
+
+
 
   alert("✅ Billet renvoyé avec succès");
 });
@@ -2206,9 +2630,10 @@ if (groupMode === "remove") {
           const seatType = await askSeatType(id);
           if (!seatType) continue;
 
-          if (seatType === "adulte") addAdult++;
-          else if (seatType === "enfant") addChild++;
-          else if (seatType === "moins8") addBaby++;
+if (seatType === "adulte") addAdult++;
+else if (seatType === "enfant") addChild++;
+else if (seatType === "moins8" || seatType === "gratuit") addBaby++;
+
 
           seats[id] = {
             name: groupClient,
@@ -2287,7 +2712,16 @@ hall.addEventListener("click", (e) => {
   }
 
   // === Mode SUPPRESSION ===
-  else if (groupMode === "remove" && seatEl.classList.contains("reserved")) {
+else if (
+  groupMode === "remove" &&
+  (
+    seatEl.classList.contains("reserved") ||
+    seatEl.classList.contains("paid") ||
+    seatEl.classList.contains("free-ticket")
+  )
+) {
+
+
     seatEl.classList.toggle("selected", !seatEl.classList.contains("selected"));
     if (seatEl.classList.contains("selected")) {
       seatEl.classList.add("remove-mode");
@@ -2646,16 +3080,50 @@ document.getElementById("bulkSendSelected").onclick = async () => {
 
     if (!clientSeats.length) continue;
 
-    const user = {
-      name: clientSeats[0][1].name,
-      email,
-      phone: clientSeats[0][1].phone || "",
-      paid: clientSeats.every(([_, s]) => s.paid),
-      amount: clientSeats[0][1].amount || 0
-    };
+// 🔍 Nom du réservant principal
+let mainClientName = clientSeats[0][1].name;
+
+const user = {
+  name: clientSeats[0][1].name,
+  email,
+  phone: clientSeats[0][1].phone || "",
+  paid: clientSeats.every(([_, s]) => s.paid),
+  amount: clientSeats[0][1].amount || 0,
+  reservationId: clientSeats[0][1].reservationId || null,
+  mainClientName // 👈 ON LE PASSE ICI
+};
+
 
     try {
       await sendReminderEmail(user); // ✅ billet + QR code
+      // ===============================
+// 👥 ENVOI DU RAPPEL AUX PARTICIPANTS
+// ===============================
+try {
+  const snap = await get(ref(db, `participants/${user.reservationId || ""}`));
+  const participants = snap.val() || {};
+
+  for (const p of Object.values(participants)) {
+    if (!p.email) continue;
+
+const participantUser = {
+  name: p.name,
+  email: p.email,
+  phone: p.phone || "",
+  seats: clientSeats.map(([id]) => id),
+  isParticipant: true,
+  mainClientName: user.mainClientName // 👈 TRANSMIS
+};
+
+
+
+    await sendReminderEmail(participantUser);
+    console.log("📨 Rappel envoyé au participant :", p.email);
+  }
+} catch (err) {
+  console.error("❌ Erreur rappel participants :", err);
+}
+
       console.log("📨 Rappel envoyé à", email);
     } catch (err) {
       console.error("❌ Erreur envoi", email, err);
@@ -2665,6 +3133,11 @@ document.getElementById("bulkSendSelected").onclick = async () => {
   alert("✅ Rappel envoyé aux clients sélectionnés");
   document.getElementById("bulkSelectModal").classList.add("hidden");
 };
+
+
+// 👥 (SUPPRIMÉ) Ancien affichage global des participants
+
+
 
 
 </script>
@@ -2793,6 +3266,11 @@ document.getElementById("bulkSendSelected").onclick = async () => {
       <button class="ticket-type-btn" data-type="adulte" style="background:#1565c0;color:#fff;">🧍 Adulte</button>
       <button class="ticket-type-btn" data-type="enfant" style="background:#2e7d32;color:#fff;">🧒 Enfant</button>
       <button class="ticket-type-btn" data-type="moins8" style="background:#f57c00;color:#fff;">🍼 Moins de 8 ans</button>
+      <button class="ticket-type-btn" data-type="gratuit"
+  style="background:#ff9800;color:#fff;">
+  🎟️ Gratuit
+</button>
+
       <button id="cancelTicketType" style="background:#757575;color:#fff;">❌ Annuler</button>
     </div>
   </div>
@@ -2833,6 +3311,34 @@ document.addEventListener("click", (e) => {
     document.getElementById("emailPreviewModal").classList.add("hidden");
   }
 });
+async function sendViaBrevo(to, subject, html) {
+
+  // 🚫 MODE TEST → AUCUN ENVOI
+  if (window.EMAIL_TEST_MODE === true) {
+    console.warn("🚫 [MODE TEST] Envoi Brevo bloqué");
+    console.log("📧 Destinataire :", to);
+    console.log("📨 Sujet :", subject);
+    return;
+  }
+
+  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ to, subject, html })
+  });
+
+  if (!res.ok) {
+    throw new Error("Erreur Brevo");
+  }
+}
+
+
+
+
+
+
 
 </script>
 
