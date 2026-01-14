@@ -1801,14 +1801,16 @@ ${list.map(([pid,p]) => `
       </button>
 
       <!-- 🎟️ Envoyer billet -->
-      <button
-        class="send-ticket-btn"
-        data-name="${escapeHTML(p.name||"")}"
-        data-email="${escapeHTML(p.email||"")}"
-        data-phone="${escapeHTML(p.phone||"")}"
-        style="background:#1976d2;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
-        🎟️
-      </button>
+<button
+  class="send-ticket-btn"
+  data-resid="${reservationId}"
+  data-name="${escapeHTML(p.name||"")}"
+  data-email="${escapeHTML(p.email||"")}"
+  data-phone="${escapeHTML(p.phone||"")}"
+  style="background:#1976d2;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
+  🎟️
+</button>
+
 
       <!-- 🗑️ Supprimer -->
       ${admin ? `
@@ -1891,34 +1893,78 @@ document.addEventListener("click", async (e) => {
   const name = btn.dataset.name;
   const email = btn.dataset.email;
   const phone = btn.dataset.phone;
+const reservationId = btn.dataset.resid;
 
   if (!email) return alert("❌ Pas d'email pour ce participant");
 
   // Récupère les sièges du client principal
-  const clientSeats = Object.entries(seats)
-    .filter(([_, s]) => s.email === email)
-    .map(([id]) => id)
-    .join(", ");
+let clientSeatsArray = Object.entries(seats)
+  .filter(([_, s]) => s.reservationId === reservationId)
+  .map(([id]) => id);
+
+// 🔁 Fallback anciennes réservations
+if (!clientSeatsArray.length) {
+  clientSeatsArray = Object.entries(seats)
+    .filter(([_, s]) =>
+      s.email === email &&
+      s.name &&
+      s.name.trim().toUpperCase() === name.trim().toUpperCase()
+    )
+    .map(([id]) => id);
+}
+
+const clientSeats = clientSeatsArray.join(", ");
+if (!clientSeatsArray.length) {
+  alert("❌ Impossible de retrouver les sièges de cette réservation.");
+  return;
+}
+
+
 
   const qrData = JSON.stringify({ name, email, phone, sieges: clientSeats });
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
-  const html = `
-    <h2>🎭 Votre billet nominatif — Théâtre Saint Martin</h2>
-    <p>Bonjour <strong>${name}</strong>,</p>
-    <p>Voici votre billet personnel.</p>
-    <p><strong>🎟️ Sièges :</strong> ${clientSeats}</p>
-    <img src="${qrUrl}" style="margin-top:10px;" />
-    <p>À très bientôt 🎭</p>
-  `;
+const html = `
+  <h2>🎭 Votre billet nominatif — Théâtre Saint Martin</h2>
 
-  try {
-    await sendViaBrevo(email, "🎟️ Votre billet – Théâtre Saint Martin", html);
-    alert("✅ Billet envoyé à " + email);
-  } catch (err) {
-    console.error(err);
-    alert("❌ Erreur envoi billet");
-  }
+  <p>Bonjour <strong>${name}</strong>,</p>
+
+<p>
+  Ce billet est valable pour <strong>l’ensemble des places de la réservation</strong>.
+  <br>
+  Il donne accès aux sièges suivants :
+</p>
+
+
+  <div style="
+    margin:10px 0;
+    padding:10px;
+    border-radius:8px;
+    background:#f5f7fb;
+    border:1px solid #dce1f0;
+    font-size:15px;
+    font-weight:600;
+    color:#0d47a1;
+  ">
+    🎟️ ${clientSeats}
+  </div>
+
+  <p>
+    Merci de présenter ce billet (QR code) à l’entrée.
+  </p>
+
+  <img
+    src="${qrUrl}"
+    alt="QR Code"
+    style="margin-top:10px;"
+  />
+
+  <p style="margin-top:15px;">
+    🎭 Théâtre Saint Martin<br>
+    📅 24 janvier 2026 – 20h30
+  </p>
+`;
+
 });
 
 function updateTable() {
