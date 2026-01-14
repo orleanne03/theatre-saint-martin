@@ -326,6 +326,7 @@ h1 {
         </div>
       </div>
 
+<div id="alerts" class="alerts"></div>
 
 
      
@@ -370,7 +371,7 @@ h1 {
   let totalReservations = 0;
   let billetsNonPayes = 0;
   let totalPlacesOccupees = 0;
-  const totalPlacesMax = 200; // capacité max
+  const totalPlacesMax = 342; // capacité max
 
   for (const seatId in data) {
     const seat = data[seatId];
@@ -379,10 +380,11 @@ h1 {
     // 🔹 Considère le siège "réservé" s'il a un type défini (adulte, enfant, moins8)
     const estReserve = seat.type && seat.type.trim() !== "";
 
-    if (estReserve) {
-      totalReservations++;
-      totalPlacesOccupees++;
-    }
+if (seat.paid === true) {
+  totalReservations++;
+  totalPlacesOccupees++;
+}
+
 
     // 🔹 Paiement et encaissement
     if (seat.paid === true) {
