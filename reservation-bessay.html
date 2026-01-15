@@ -267,6 +267,15 @@ let singleTargetEmail = null;
 let priceAdult = 22, priceChild = 15;
 let participantsTargetReservationId = null;
 
+// 🔢 Compte les participants dont le billet n'est PAS encore envoyé
+async function countPendingParticipants(resId) {
+  const snap = await get(ref(db, `participants/${resId}`));
+  if (!snap.exists()) return 0;
+
+  return Object.values(snap.val()).filter(
+    p => p.ticketSent !== true
+  ).length;
+}
 
 /* DOM refs */
 const list = document.getElementById("list");
@@ -429,7 +438,8 @@ updateTotal();
 });
 
 /* Rendu liste + event delegation */
-function renderList(){
+async function renderList(){
+
   let entries = Object.entries(reservations);
 
   // ✅ Tri alphabétique sur le champ "name"
@@ -464,6 +474,8 @@ let summary = `
   let html = summary + "<h3>📋 Réservations</h3>";
 
   for (const [id, r] of entries){
+    const pendingCount = await countPendingParticipants(id);
+
     const payClass = r.paid ? "paid" : "unpaid";
     const payTxt   = r.paid ? "✅ Payé" : "❌";
     const presClass= r.present ? "paid" : "unpaid";
@@ -473,8 +485,26 @@ let summary = `
 
         <div class="accordion-header" data-toggle="${id}">
 <span>
-  <b>${r.name}</b> – ${r.nbPlaces} places
-  ${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
+<b>${r.name}</b> – ${r.nbPlaces} places
+${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
+
+${pendingCount > 0 ? `
+  <span style="
+    background:#fb8c00;
+    color:white;
+    border-radius:50%;
+    padding:3px 8px;
+    font-size:12px;
+    font-weight:700;
+    margin-left:8px;
+    display:inline-block;
+    min-width:20px;
+    text-align:center;
+  ">
+    ${pendingCount}
+  </span>
+` : ""}
+
 </span>
 
           <span class="${payClass}">${payTxt}</span>
@@ -610,20 +640,7 @@ document.getElementById("bulkMessage").value =
 
 
 });
-document.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".delete-participant");
-  if (!btn) return;
 
-  const resId = btn.dataset.resid;
-  const pid = btn.dataset.pid;
-
-  if (!confirm("Supprimer ce participant ?")) return;
-
-  await remove(ref(db, `participants/${resId}/${pid}`));
-
-  // Recharge la liste
-  loadParticipants(resId);
-});
 /* Bouton Admin + boutons admin */
 adminToggleBtn.addEventListener("click", ()=>{
   if (!adminMode){
@@ -948,38 +965,80 @@ async function loadParticipants(resId) {
   let html = "<ul style='padding-left:18px;'>";
 
 participants.forEach(([pid, p]) => {
+  const showBadge = p.entered === true && p.ticketSent !== true;
+
   html += `
     <li style="display:flex;align-items:center;justify-content:space-between;">
       <span>
         ${p.name} — ${p.email} ${p.phone ? "— " + p.phone : ""}
+
+        ${showBadge ? `
+          <span style="
+            background:#2e7d32;
+            color:white;
+            padding:2px 8px;
+            border-radius:6px;
+            font-size:12px;
+            font-weight:600;
+            margin-left:8px;
+          ">
+            🎟️ Entré
+          </span>
+        ` : ""}
       </span>
 
       <span>
-        <!-- 🖨️ ENVOYER LE BILLET -->
-        <button
-          class="send-ticket-participant"
-          data-resid="${resId}"
-          data-pid="${pid}"
-          style="background:none;border:none;cursor:pointer;font-size:18px;margin-right:6px;"
-          title="Envoyer le billet"
-        >
-          🖨️
-        </button>
+        ${adminMode ? `
 
-        <!-- ❌ SUPPRIMER -->
+<button
+  class="mark-entered"
+  data-resid="${resId}"
+  data-pid="${pid}"
+  ${p.entered ? "disabled" : ""}
+  style="
+    background:${p.entered ? '#2e7d32' : '#c62828'};
+    color:white;
+    border:none;
+    border-radius:6px;
+    padding:4px 8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:${p.entered ? 'default' : 'pointer'};
+    margin-right:6px;
+    opacity:${p.entered ? '0.7' : '1'};
+  "
+>
+  ${p.entered ? "Entré" : "Non entré"}
+</button>
+
+
+
         <button
-          class="delete-participant"
-          data-resid="${resId}"
-          data-pid="${pid}"
-          style="background:none;border:none;cursor:pointer;font-size:18px;color:#e53935;"
-          title="Supprimer"
-        >
-          ❌
-        </button>
+  class="send-ticket-participant"
+  data-resid="${resId}"
+  data-pid="${pid}"
+  title="Envoyer le billet"
+  style="background:none;border:none;cursor:pointer;font-size:18px;"
+>
+  🖨️
+</button>
+
+<button
+  class="delete-participant"
+  data-resid="${resId}"
+  data-pid="${pid}"
+  title="Supprimer le participant"
+  style="background:none;border:none;cursor:pointer;font-size:18px;color:#e53935;"
+>
+  ❌
+</button>
+
+        ` : ""}
       </span>
     </li>
   `;
 });
+
 
 
 
@@ -992,7 +1051,8 @@ participants.forEach(([pid, p]) => {
 
 
 
-async function sendParticipantTicket(participant, reservation) {
+async function sendParticipantTicket(participant, reservation, pid) {
+
   const html = `
   <div style="font-family:Segoe UI,Arial,sans-serif;padding:20px;background:#f9f9f9;">
     <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;
@@ -1051,6 +1111,14 @@ await sendViaBrevo(
   "🎟️ Votre billet – Troupe Saint Martin",
   html
 );
+await set(
+  ref(db, `participants/${reservation.id}/${pid}`),
+  {
+    ...participant,
+    ticketSent: true
+  }
+);
+
 
 }
 
@@ -1084,12 +1152,15 @@ document.addEventListener("click", async (e) => {
 
   if (!confirm(`Envoyer le billet à ${participant.email} ?`)) return;
 
-  await sendParticipantTicket(participant, {
-    ...reservation,
-    id: resId
-  });
+await sendParticipantTicket(
+  participant,
+  { ...reservation, id: resId },
+  pid
+);
+
 
   alert("✅ Billet envoyé au participant");
+
 });
 
 // ===================================================
@@ -1132,10 +1203,12 @@ await sendViaBrevo(
       const participant = participants[pid];
       if (!participant.email) continue;
 
-      await sendParticipantTicket(participant, {
-        ...reservation,
-        id: resId
-      });
+await sendParticipantTicket(
+  participant,
+  { ...reservation, id: resId },
+  pid
+);
+
 
       totalSent++;
     }
@@ -1143,6 +1216,47 @@ await sendViaBrevo(
 
   alert(`🎟️ ${totalSent} billets envoyés (clients + participants)`);
 };
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".mark-entered");
+  if (!btn) return;
+
+  const resId = btn.dataset.resid;
+  const pid = btn.dataset.pid;
+
+  const snap = await get(ref(db, `participants/${resId}/${pid}`));
+  if (!snap.exists()) return;
+
+  const participant = snap.val();
+
+  await set(ref(db, `participants/${resId}/${pid}`), {
+    ...participant,
+    entered: true
+  });
+
+  loadParticipants(resId);
+});
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".delete-participant");
+  if (!btn) return;
+
+  const resId = btn.getAttribute("data-resid");
+  const pid = btn.getAttribute("data-pid");
+
+  if (!resId || !pid) {
+    console.error("❌ IDs manquants", { resId, pid });
+    alert("Erreur : identifiants manquants");
+    return;
+  }
+
+  if (!confirm("Supprimer ce participant ?")) return;
+
+  console.log("🔥 Suppression Firebase :", `participants/${resId}/${pid}`);
+
+  await remove(ref(db, `participants/${resId}/${pid}`));
+
+  loadParticipants(resId);
+});
 
 
 async function sendViaBrevo(to, subject, html) {
