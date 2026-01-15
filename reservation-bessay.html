@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🎭 Salle de Bessay – Réservations</title>
 
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
 
 <style>
 body {
@@ -245,8 +244,6 @@ import { getDatabase, ref, set, onValue, remove, push, get }
 from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
 
-/* EmailJS */
-emailjs.init("E4g_UFzGYQZBNH07m");
 
 /* Firebase */
 const app = initializeApp({
@@ -380,25 +377,24 @@ function buildEmailHTML(data){
   </div>`;
 }
 
-/* Envoi / aperçu email */
 async function sendEmail(data){
   const htmlContent = buildEmailHTML(data);
+
   if (emailTestMode){
     document.getElementById("emailPreview").innerHTML = htmlContent;
     document.getElementById("emailModal").classList.add("show");
     return;
   }
-  await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
-    to_email:data.email,
-    to_name:data.name,
-    nbAdult:data.nbAdult,
-    nbChild:data.nbChild,
-    nbPlaces:data.nbPlaces,
-    amount:data.amount.toFixed(2),
-    html_message:htmlContent
-  });
+
+  await sendViaBrevo(
+    data.email,
+    "🎟️ Confirmation de réservation – Salle de Bessay",
+    htmlContent
+  );
+
   alert("✉️ E-mail de confirmation envoyé !");
 }
+
 closeModalBtn.addEventListener("click",()=>document.getElementById("emailModal").classList.remove("show"));
 
 /* Formulaire */
@@ -567,11 +563,12 @@ const html = buildEmailHTML({
   id
 });
 
-await sendTicketViaBrevo(
+await sendViaBrevo(
   r.email,
   "🎟️ Votre billet – Salle de Bessay",
   html
 );
+
 
 
   alert("✅ Billet renvoyé");
@@ -1052,11 +1049,12 @@ async function sendParticipantTicket(participant, reservation) {
     return;
   }
 
-await sendTicketViaBrevo(
+await sendViaBrevo(
   participant.email,
   "🎟️ Votre billet – Troupe Saint Martin",
   html
 );
+
 }
 
 document.addEventListener("click", async (e) => {
@@ -1118,10 +1116,12 @@ document.getElementById("sendAllTickets").onclick = async () => {
 
     // 1️⃣ Envoi au client principal
     if (reservation.email) {
-      await sendEmail({
-        ...reservation,
-        id: resId
-      });
+await sendViaBrevo(
+  reservation.email,
+  "🎟️ Votre billet – Salle de Bessay",
+  buildEmailHTML({ ...reservation, id: resId })
+);
+
       totalSent++;
     }
 
@@ -1147,24 +1147,15 @@ document.getElementById("sendAllTickets").onclick = async () => {
   alert(`🎟️ ${totalSent} billets envoyés (clients + participants)`);
 };
 
-async function sendTicketViaBrevo(toEmail, subject, html) {
-  const API_KEY = "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";
 
-  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+async function sendViaBrevo(to, subject, html) {
+  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev", {
     method: "POST",
-    headers: {
-      "accept": "application/json",
-      "content-type": "application/json",
-      "api-key": API_KEY
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      sender: {
-        name: "Théâtre Saint-Martin",
-        email: "theatre.sm.03@gmail.com"
-      },
-      to: [{ email: toEmail }],
+      to: to,
       subject: subject,
-      htmlContent: html
+      html: html
     })
   });
 
@@ -1173,22 +1164,7 @@ async function sendTicketViaBrevo(toEmail, subject, html) {
     throw new Error(err);
   }
 }
-async function sendViaBrevo(to, subject, html) {
-  const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      to: to,
-      subject: subject,
-      html: html
-    })
-  });
 
-  const result = await res.json();
-  console.log("📨 Brevo:", result);
-}
 
 
 </script>
