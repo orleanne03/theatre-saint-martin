@@ -892,11 +892,8 @@ participantsTargetReservationId = null;
       document.getElementById("emailPreview").innerHTML = html;
       document.getElementById("emailModal").classList.add("show");
     } else {
-      await emailjs.send("service_0lqs9k7","template_w2j3pqp",{
-        to_email: email,
-        subject,
-        html_message: html
-      });
+await sendViaBrevo(email, subject, html);
+
     }
 
     sent++;
