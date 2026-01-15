@@ -9,16 +9,9 @@
 <!-- Librairies externes -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 
-<!-- ✅ Ajoute la librairie EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
-<!-- ✅ Initialise ta clé publique EmailJS -->
-<script>
-  (function() {
-    emailjs.init("E4g_UFzGYQZBNH07m");
-    console.log("✅ EmailJS initialisé !");
-  })();
-</script>
+
+
 
 
 <!-- ✅ Firebase -->
@@ -1513,9 +1506,10 @@ let freeRemaining  = nbFree;
   save();
 
 // 📧 Envoi de l’email (autorisé en mode test même en admin)
-if (!admin || EMAIL_TEST_MODE) {
+if (!EMAIL_TEST_MODE) {
   await sendEmail(user);
 }
+
 
 
 selected = [];
@@ -1579,13 +1573,14 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
 
   alert(`📩 Mode test : aucun envoi, mais aperçu disponible`);
 } else {
-  await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
-    to_email: user.email,
-    subject: "🎭 Confirmation de votre réservation",
-    message_html: html
-  });
-  console.log("✅ Email de confirmation envoyé à", user.email);
+  await sendViaBrevo(
+    user.email,
+    "🎭 Confirmation de votre réservation",
+    html
+  );
+  console.log("✅ Email Brevo envoyé à", user.email);
 }
+
 
 } catch (err) {
   console.error("❌ Erreur EmailJS :", err);
@@ -1740,14 +1735,15 @@ async function notifyClientUpdate(email) {
       previewModal.classList.add("hidden");
 
     alert(`📩 Mode test : aucun email envoyé à ${email}`);
-  } else {
-    await emailjs.send("service_0lqs9k7", "template_hzfgnxs", {
-      to_email: email,
-      subject: "🎭 Mise à jour de votre réservation",
-      message_html: html
-    });
-    console.log("✅ Email envoyé à", email);
-  }
+} else {
+  await sendViaBrevo(
+    email,
+    "🎭 Mise à jour de votre réservation",
+    html
+  );
+  console.log("✅ Email Brevo envoyé à", email);
+}
+
 } catch (err) {
   console.error("❌ Erreur d’envoi du mail :", err);
 }
@@ -2897,9 +2893,10 @@ emailTestBtn.onclick = () => {
   // 🔄 Met à jour le bouton
   updateEmailTestButton();
 
-  alert(
-    `🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (EmailJS actif)"}`
-  );
+alert(
+  `🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (Brevo actif)"}`
+);
+
 };
 
 // ➕ Affiche le bouton seulement en mode admin
@@ -3386,4 +3383,5 @@ async function sendViaBrevo(to, subject, html) {
 
 </body>
 </html>
+
 
