@@ -8,22 +8,22 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{font-family:system-ui;margin:0;padding:16px;text-align:center;
-background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
+body{font-family:system-ui;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
 h1{color:#0d47a1}
-#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;
-box-shadow:0 4px 12px rgba(0,0,0,.15)}
-.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;
-border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden}
+.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px}
 .ok{color:#2e7d32;font-weight:700}
 .err{color:#d32f2f;font-weight:700}
-button{padding:10px 14px;border-radius:8px;border:none;color:#fff;
-cursor:pointer;margin:6px}
-.green{background:#2e7d32}
+button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
 .violet{background:#8e24aa}
+.green{background:#2e7d32}
 #counter{font-weight:700;color:#0d47a1}
-#details{margin-top:10px;text-align:left;background:#f9f9f9;
-padding:10px;border-radius:8px;border:1px solid #ddd}
+#details{margin-top:10px;text-align:left;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
+.accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%}
+.panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #ddd}
+.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
 </style>
 </head>
 
@@ -38,140 +38,156 @@ padding:10px;border-radius:8px;border:1px solid #ddd}
   <p id="status">Prêt à scanner.</p>
   <p id="counter">Billets scannés : 0</p>
   <div id="details" style="display:none;"></div>
+
+  <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
+  <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
+</div>
+
+<button class="accordion">📜 Historique des scans</button>
+<div class="panel-acc" id="historyPanel">
+  <table>
+    <thead>
+      <tr><th>Nom</th><th>Sièges</th><th>Date</th><th></th></tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
 </div>
 
 <script type="module">
+/* 🔥 CONFIG FIREBASE — REMPLACE ICI */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-/* 🔥 CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
   authDomain: "theatre-saint-martin.firebaseapp.com",
-  databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+  databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",",
   projectId: "theatre-saint-martin",
-  storageBucket: "theatre-saint-martin.firebasestorage.app",
-  messagingSenderId: "416838692467",
-  appId: "1:416838692467:web:677e8dafe82831af5dc406"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* UI */
+/* === LOGIQUE SCANNER === */
+let scanner;
+let scanning = false;
+
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 
-let scanner;
-let scanning = false;
-let lastText="", lastTime=0;
+function getScanned(){ return JSON.parse(localStorage.getItem("scannedTickets") || "[]"); }
+function setScanned(v){ localStorage.setItem("scannedTickets", JSON.stringify(v)); }
 
-function flash(color){
-  const d=document.createElement("div");
-  Object.assign(d.style,{
-    position:"fixed",inset:"0",background:color,opacity:.25,zIndex:99
+function updateCounter(){
+  counterEl.textContent = "Billets scannés : " + getScanned().length;
+}
+
+function renderHistory(){
+  const list = getScanned();
+  const tbody = document.getElementById("historyTable");
+  tbody.innerHTML = "";
+
+  list.forEach((s,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.nom}</td>
+      <td>${s.sieges}</td>
+      <td>${s.date}</td>
+      <td><span class="trash">🗑️</span></td>
+    `;
+    tr.querySelector(".trash").onclick = ()=>{
+      list.splice(i,1);
+      setScanned(list);
+      renderHistory();
+      updateCounter();
+    };
+    tbody.appendChild(tr);
   });
-  document.body.append(d);
-  setTimeout(()=>d.remove(),150);
 }
 
 async function startScanner(){
-  if(scanning) return;
-  scanning=true;
-  scanner=new Html5Qrcode("reader");
-  await scanner.start(
-    {facingMode:"environment"},
-    {fps:10,qrbox:{width:250,height:250}},
-    onScanSuccess
-  );
+  if (scanning) return;
+  scanning = true;
+  scanner = new Html5Qrcode("reader");
+  await scanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
 async function stopScanner(){
-  if(scanner){
-    await scanner.stop();
-    scanning=false;
-  }
-}
-
-function safeDecode(t){
-  try{ return decodeURIComponent(t); }catch{ return t; }
+  if(scanner){ await scanner.stop(); scanning=false; }
 }
 
 async function onScanSuccess(text){
-  const now=Date.now();
-  if(text===lastText && now-lastTime<3000) return;
-  lastText=text; lastTime=now;
-
   await stopScanner();
 
   let data=null;
-  try{ data=JSON.parse(safeDecode(text)); }catch{}
+  try{ data=JSON.parse(text); }catch(e){}
 
+  const ticketId = data?.sieges?.replace(/\s+/g,"") || text;
   const sieges = data?.sieges || "";
   const maxScans = sieges.split(",").filter(Boolean).length || 1;
-  const ticketId = sieges.replace(/\s+/g,"") || text;
 
   const ticketRef = ref(db,"scans/"+ticketId);
 
   runTransaction(ticketRef,(current)=>{
-    if(current===null){
-      return {
-        count:1,
-        nom:data?.nom || "Participant",
-        sieges:sieges,
-        lastScan:Date.now()
-      };
+    if(!current){
+      return { count:1, nom:data?.nom||"Participant", sieges };
     }
-
     if(current.count>=maxScans) return;
-
-    if(data?.nom && current.nom==="Participant"){
-      current.nom=data.nom;
-    }
-
+    if(data?.nom && current.nom==="Participant") current.nom=data.nom;
     current.count++;
-    current.lastScan=Date.now();
     return current;
   }).then(res=>{
     if(!res.committed){
       statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
-      flash("red");
-      document.body.style.background=
-        "linear-gradient(180deg,#ffebee,#ffcdd2)";
-      setTimeout(()=>{
-        document.body.style.background=
-          "linear-gradient(180deg,#f9f9f9,#e3f2fd)";
-        statusEl.textContent="Prêt à scanner.";
-        startScanner();
-      },5000);
-      return;
+      startScanner(); return;
     }
 
-    const v=res.snapshot.val();
+    const v = res.snapshot.val();
 
-    statusEl.innerHTML=
-      `<span class='ok'>✅ Scan ${v.count} / ${maxScans}</span>`;
+    // ✅ HISTORIQUE LOCAL (UI COMME AVANT)
+    const list = getScanned();
+    list.push({
+      ticketId,
+      nom: v.nom,
+      sieges: v.sieges,
+      date: new Date().toLocaleString()
+    });
+    setScanned(list);
+    renderHistory();
+    updateCounter();
 
-    counterEl.textContent="Billets scannés : "+v.count;
-
+    statusEl.innerHTML = `<span class='ok'>✅ Scan ${v.count}/${maxScans}</span>`;
     detailsEl.style.display="block";
-    detailsEl.innerHTML=`
+    detailsEl.innerHTML = `
       <strong>Réservation au nom de :</strong><br>
-      <span style="font-size:18px;font-weight:700;color:#0d47a1">
-        ${v.nom}
-      </span>
-      <hr>
+      <b>${v.nom}</b><hr>
       <strong>🎟️ Sièges :</strong> ${v.sieges}
     `;
 
-    flash("lime");
-    setTimeout(()=>startScanner(),1200);
+    setTimeout(startScanner,1200);
   });
 }
 
-startScanner();
-</script>
+document.querySelector(".accordion").onclick=()=>{
+  const p=document.getElementById("historyPanel");
+  p.style.display=p.style.display==="block"?"none":"block";
+};
 
+document.getElementById("resetScanBtn").onclick=()=>{
+  if(confirm("Tout effacer ?")){
+    localStorage.removeItem("scannedTickets");
+    renderHistory(); updateCounter();
+  }
+};
+
+document.getElementById("gotoHome").onclick=()=>location.href="index.html";
+
+window.onload=()=>{
+  startScanner();
+  renderHistory();
+  updateCounter();
+};
+</script>
 </body>
 </html>
