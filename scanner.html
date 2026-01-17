@@ -214,14 +214,10 @@ const entry = {
   }
 
 setTimeout(() => {
-  if (scansForThisTicket.length + 1 < maxScans) {
-    statusEl.textContent = "Prêt pour le scan suivant.";
-    startScanner();
-  } else {
-    statusEl.textContent = "Quota atteint pour ce billet.";
-    newScanBtn.style.display = "inline-block";
-  }
+  statusEl.textContent = "Prêt pour un nouveau scan.";
+  startScanner();
 }, 1200);
+
 
 }
 
