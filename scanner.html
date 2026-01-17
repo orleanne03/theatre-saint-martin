@@ -223,9 +223,10 @@ const scannedList = getScanned();
 const existing = scannedList.find(s => s.ticketId === ticketId);
 
 const nomPrincipal =
-  data?.nomPrincipal ||
+  data?.parentNom ||
+  existing?.nom ||
+  data?.nom ||
   "(nom non précisé)";
-
 
 
 detailsEl.style.display = "block";
@@ -235,9 +236,8 @@ detailsEl.innerHTML = `
     ${nomPrincipal}
   </span>
   <hr style="margin:8px 0">
-  <strong>🎟️ Sièges :</strong> ${data?.sieges || "(inconnu)"}
+  <strong>🎟️ Sièges :</strong> ${data?.sieges || existing?.sieges || "(inconnu)"}
 `;
-
 
 
 setTimeout(() => {
