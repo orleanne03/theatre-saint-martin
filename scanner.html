@@ -160,25 +160,6 @@ async function onScanSuccess(text){
 const decoded = safeDecode(text);
 let data = null;
 try { data = JSON.parse(decoded); } catch(e){}
-// ⛔ Billet non payé
-if (!data || data.paid !== false) {
-
-  statusEl.innerHTML = "<span class='err'>⛔ Billet non payé</span>";
-  flash("red");
-
-  // écran rouge
-  document.body.style.background =
-    "linear-gradient(180deg,#ffebee,#ffcdd2)";
-
-  setTimeout(() => {
-    document.body.style.background =
-      "linear-gradient(180deg,#f9f9f9,#e3f2fd)";
-    statusEl.textContent = "Prêt pour un nouveau scan.";
-    startScanner();
-  }, 5000);
-
-  return;
-}
 
 const ticketId =
   (data && typeof data === "object" && data.sieges)
