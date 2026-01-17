@@ -161,7 +161,8 @@ const decoded = safeDecode(text);
 let data = null;
 try { data = JSON.parse(decoded); } catch(e){}
 // ⛔ Billet non payé
-if (data && data.paid === false) {
+if (!data || data.paid !== true) {
+
   statusEl.innerHTML = "<span class='err'>⛔ Billet non payé</span>";
   flash("red");
 
