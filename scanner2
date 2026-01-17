@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎟️ Scanner — Théâtre Saint Martin</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  margin:0;padding:16px;text-align:center;
+  background:linear-gradient(180deg,#f9f9f9,#e3f2fd)
+}
+h1{color:#0d47a1;margin:6px 0}
+#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.ok{color:#2e7d32;font-weight:700}
+.err{color:#d32f2f;font-weight:700}
+#counter{font-weight:700;color:#0d47a1}
+#details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
+</style>
+</head>
+
+<body>
+<h1>🎭 Théâtre Saint Martin — Scanner</h1>
+<p>Alignez le QR dans le carré pour valider un billet.</p>
+
+<div id="reader"></div>
+
+<div class="panel">
+  <p id="status">Prêt à scanner.</p>
+  <p id="counter">Billets scannés : 0</p>
+  <div id="details" style="display:none;"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+/* 🔥 CONFIG FIREBASE */
+const firebaseConfig = {
+  apiKey: "TA_API_KEY",
+  authDomain: "TON_PROJET.firebaseapp.com",
+  databaseURL: "https://TON_PROJET-default-rtdb.firebaseio.com",
+  projectId: "TON_PROJET"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* UI */
+const statusEl = document.getElementById("status");
+const counterEl = document.getElementById("counter");
+const detailsEl = document.getElementById("details");
+
+let scanner;
+let scanning = false;
+let lastText = "";
+let lastTime = 0;
+
+/* Scanner */
+async function startScanner(){
+  if (scanning) return;
+  scanning = true;
+  scanner = new Html5Qrcode("reader");
+
+  await scanner.start(
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    onScanSuccess
+  );
+}
+
+async function stopScanner(){
+  if (scanner) {
+    await scanner.stop();
+    scanning = false;
+  }
+}
+
+function safeDecode(str){
+  try { return decodeURIComponent(str); } catch { return str; }
+}
+
+/* 🎯 SCAN */
+async function onScanSuccess(text){
+  const now = Date.now();
+  if (text === lastText && now - lastTime < 3000) return;
+  lastText = text; lastTime = now;
+
+  await stopScanner();
+
+  let data = null;
+  try { data = JSON.parse(safeDecode(text)); } catch {}
+
+  const ticketId = data?.sieges
+    ? String(data.sieges).replace(/\s+/g,"")
+    : text;
+
+  const seats = data?.sieges || "";
+  const maxScans = seats
+    ? seats.split(",").map(s=>s.trim()).filter(Boolean).length
+    : 1;
+
+  const ticketRef = ref(db, "scans/" + ticketId);
+
+  runTransaction(ticketRef, (current) => {
+    if (current === null) {
+      return {
+        count: 1,
+        nom: data?.nom || "Participant",
+        sieges: seats,
+        updated: Date.now()
+      };
+    }
+
+    if (current.count >= maxScans) return;
+
+    if (data?.nom && current.nom === "Participant") {
+      current.nom = data.nom;
+    }
+
+    current.count++;
+    current.updated = Date.now();
+    return current;
+  }).then(result => {
+
+    if (!result.committed) {
+      statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
+      document.body.style.background = "#ffcdd2";
+      setTimeout(() => {
+        document.body.style.background = "";
+        startScanner();
+      }, 3000);
+      return;
+    }
+
+    const v = result.snapshot.val();
+
+    statusEl.innerHTML = `<span class="ok">✅ Scan ${v.count} / ${maxScans}</span>`;
+    counterEl.textContent = "Billets scannés : " + v.count;
+
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `
+      <strong>Réservation au nom de :</strong><br>
+      <span style="font-size:18px;font-weight:700;color:#0d47a1">${v.nom}</span>
+      <hr>
+      <strong>🎟️ Sièges :</strong> ${v.sieges}
+    `;
+
+    setTimeout(startScanner, 1200);
+  });
+}
+
+window.addEventListener("load", startScanner);
+</script>
+</body>
+</html>
