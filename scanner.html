@@ -223,9 +223,11 @@ const scannedList = getScanned();
 const existing = scannedList.find(s => s.ticketId === ticketId);
 
 const nomPrincipal =
+  data?.parentNom ||
   existing?.nom ||
   data?.nom ||
   "(nom non précisé)";
+
 
 detailsEl.style.display = "block";
 detailsEl.innerHTML = `
