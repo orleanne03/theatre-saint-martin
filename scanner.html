@@ -56,8 +56,7 @@ th,td{padding:8px;border-bottom:1px solid #ddd}
 <script type="module">
 /* 🔥 CONFIG FIREBASE — REMPLACE ICI */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
@@ -91,29 +90,55 @@ function renderHistory(){
   const tbody = document.getElementById("historyTable");
   tbody.innerHTML = "";
 
-  list.forEach((s,i)=>{
+  const grouped = {};
+  list.forEach(item => {
+    if (!grouped[item.ticketId]) {
+      grouped[item.ticketId] = { nom: item.nom, sieges: item.sieges, count: 0, lastDate: item.date };
+    }
+    grouped[item.ticketId].count++;
+    grouped[item.ticketId].lastDate = item.date;
+  });
+
+  Object.entries(grouped).forEach(([ticketId, item]) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${s.nom}</td>
-      <td>${s.sieges}</td>
-      <td>${s.date}</td>
-      <td><span class="trash">🗑️</span></td>
+      <td>${item.nom}</td>
+      <td>${item.sieges}</td>
+      <td>${item.lastDate}</td>
+      <td>
+        <strong>${item.count}</strong>
+        <span class="trash" style="margin-left:8px;">🗑️</span>
+      </td>
     `;
-tr.querySelector(".trash").onclick = async () => {
-  // 1️⃣ supprimer local
-  list.splice(i,1);
-  setScanned(list);
-  renderHistory();
-  updateCounter();
-
-  // 2️⃣ supprimer côté Firebase
-  const ticketRef = ref(db, "scans/" + s.ticketId);
-  await set(ticketRef, null);
-};
-
     tbody.appendChild(tr);
+
+    // 🗑️ supprime 1 scan (décrémente)
+    tr.querySelector(".trash").onclick = async () => {
+      // 1) local : enlève le dernier scan de CE ticket
+      const local = getScanned();
+      const idx = local.map(s => s.ticketId).lastIndexOf(ticketId);
+      if (idx !== -1) {
+        local.splice(idx, 1);
+        setScanned(local);
+      }
+
+      // 2) firebase : décrémente count (et supprime le node si count=0)
+      const ticketRef = ref(db, "scans/" + ticketId);
+      await runTransaction(ticketRef, (current) => {
+        if (!current) return null;
+        const c = Number(current.count || 0);
+        if (c <= 1) return null;  // supprime le billet si plus aucun scan
+        current.count = c - 1;
+        current.lastScan = Date.now();
+        return current;
+      });
+
+      renderHistory();
+      updateCounter();
+    };
   });
 }
+
 
 async function startScanner(){
   if (scanning) return;
@@ -198,36 +223,45 @@ document.querySelector(".accordion").onclick=()=>{
 
 
 document.getElementById("resetScanBtn").onclick = async () => {
+  const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
+  if (pwd !== "admin123") return alert("❌ Mot de passe incorrect.");
+
   if (!confirm("Tout effacer (Firebase + historique local) ?")) return;
 
-  // 🔥 vider Firebase
-  await set(ref(db, "scans"), null);
-
-  // 🧹 vider local
-  localStorage.removeItem("scannedTickets");
+  await set(ref(db, "scans"), null);              // ✅ vide Firebase
+  localStorage.removeItem("scannedTickets");      // ✅ vide local
 
   renderHistory();
   updateCounter();
 };
 
 
+
 async function syncFromFirebase() {
   const snap = await get(ref(db, "scans"));
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    localStorage.removeItem("scannedTickets");
+    return;
+  }
 
   const data = snap.val();
   const list = [];
 
-  Object.values(data).forEach(v => {
-    list.push({
-      nom: v.nom || "Participant",
-      sieges: v.sieges || "",
-      date: new Date(v.lastScan || Date.now()).toLocaleString()
-    });
+  Object.entries(data).forEach(([ticketId, v]) => {
+    const count = Number(v.count || 0);
+    for (let i = 0; i < count; i++) {
+      list.push({
+        ticketId,
+        nom: v.nom || "Participant",
+        sieges: v.sieges || "",
+        date: new Date(v.lastScan || Date.now()).toLocaleString()
+      });
+    }
   });
 
-  localStorage.setItem("scannedTickets", JSON.stringify(list));
+  setScanned(list);
 }
+
 
 window.onload = async () => {
   await syncFromFirebase(); // 🔥 récupère Firebase
