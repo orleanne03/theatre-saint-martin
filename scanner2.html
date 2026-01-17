@@ -138,10 +138,26 @@ async function onScanSuccess(text){
     current.count++;
     return current;
   }).then(res=>{
-    if(!res.committed){
-      statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
-      startScanner(); return;
-    }
+if (!res.committed) {
+  statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
+  flash("red");
+
+  // ✅ AJOUTE DANS L'HISTORIQUE LOCAL
+  const list = getScanned();
+  list.push({
+    ticketId,
+    nom: data?.nom || "Participant",
+    sieges: data?.sieges || "",
+    date: new Date().toLocaleString()
+  });
+  setScanned(list);
+  renderHistory();
+  updateCounter();
+
+  startScanner();
+  return;
+}
+
 
     const v = res.snapshot.val();
 
