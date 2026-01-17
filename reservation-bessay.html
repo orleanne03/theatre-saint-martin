@@ -132,6 +132,16 @@ div#bulkRecipients label {
   font-weight: 700;
   margin-left: 6px;
 }
+.accompagnant-badge {
+  background:#1976d2;
+  color:white;
+  padding:3px 8px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:700;
+  margin-left:8px;
+  vertical-align:middle;
+}
 
 </style>
 </head>
@@ -145,16 +155,15 @@ div#bulkRecipients label {
   <input id="name" placeholder="Nom et Prénom" required>
   <input id="email" placeholder="Email" type="email" required>
   <input id="phone" placeholder="Téléphone" required>
-  <input id="adult" type="number" min="0" placeholder="Adulte(s)">
-  <input id="child" type="number" min="0" placeholder="Enfant(s) -12 ans">
+  <input id="adult" type="number" min="0" placeholder="Nb adulte(s) / ( dîner + spectacle ) / 22€">
+  <input id="child" type="number" min="0" placeholder="Nb enfant(s) - 12 ans / ( dîner + spectacle ) / 15€ ">
+  <input id="dinner" type="number" min="0" placeholder="Nb Accompagnant (12€) prix du dîner / places offertes ">
+
   <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
     <input type="checkbox" id="paid" style="width:auto;">
     <span>Paiement reçu 💶</span>
   </label>
-  <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-  <input type="checkbox" id="free" style="width:auto;">
-  <span>🎟️ Réservation gratuite</span>
-</label>
+
 
   <p id="totalPrice">Total : 0 €</p>
   <button type="submit">✅ Confirmer la réservation</button>
@@ -264,7 +273,8 @@ let adminMode = false;
 let emailTestMode = false;
 let singleTargetEmail = null;
 
-let priceAdult = 22, priceChild = 15;
+let priceAdult = 22, priceChild = 15, priceDinner = 12;
+
 let participantsTargetReservationId = null;
 
 // 🔢 Compte les participants dont le billet n'est PAS encore envoyé
@@ -308,11 +318,18 @@ phoneInput.addEventListener("input",()=>{
 
 /* Total */
 function updateTotal(){
-  const a=+aI.value||0, c=+cI.value||0;
-  totalEl.textContent = `Total : ${(a*priceAdult + c*priceChild).toFixed(2)} €`;
+  const a = +aI.value || 0;
+  const c = +cI.value || 0;
+  const d = +document.getElementById("dinner").value || 0;
+
+  totalEl.textContent =
+    `Total : ${(a*priceAdult + c*priceChild + d*priceDinner).toFixed(2)} €`;
 }
+
 aI.addEventListener("input",updateTotal);
 cI.addEventListener("input",updateTotal);
+document.getElementById("dinner").addEventListener("input", updateTotal);
+
 updateTotal();
 
 /* Live data */
@@ -323,6 +340,11 @@ onValue(refSpectacle, snap => {
 
 /* Email HTML (avec bouton Imprimer) */
 function buildEmailHTML(data){
+  const isAccompagnant =
+  Number(data.nbAdult || 0) === 0 &&
+  Number(data.nbChild || 0) === 0 &&
+  Number(data.nbDinner || 0) > 0;
+
   return `
   <div style="font-family:'Segoe UI',Arial,sans-serif; background-color:#f9f9f9; padding:20px;">
     <div style="max-width:600px; margin:0 auto; background:white; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); overflow:hidden;">
@@ -332,22 +354,41 @@ function buildEmailHTML(data){
       </div>
       <div style="padding:35px 30px 40px 30px; line-height:1.65;">
 <h3 style="color:#d32f2f; margin-top:0;">
-  ${data.free ? "🎟️ Invitation gratuite" : "Confirmation de réservation"}
+  🎟️ Confirmation de réservation
 </h3>
+
 
 <p>Bonjour <b>${data.name}</b>,</p>
 
 <p>
-  ${data.free
-    ? "Vous bénéficiez d’une <b>invitation gratuite</b>. Voici votre billet à présenter à l’entrée :"
-    : "Merci pour votre réservation ! Voici le récapitulatif à imprimer et présenter :"
-  }
+  Merci pour votre réservation !  
+  Voici le récapitulatif de votre <b>dîner-spectacle</b> à présenter à l’entrée :
 </p>
+${isAccompagnant ? `
+<div style="
+  margin:18px 0;
+  padding:14px 16px;
+  background:#e3f2fd;
+  border-left:5px solid #1976d2;
+  border-radius:6px;
+  font-size:15px;
+">
+  👥 <b>Réservation accompagnant</b><br>
+  Cette réservation correspond à un <b>dîner uniquement</b>.<br>
+  Le spectacle est inclus et offert par la troupe.
+</div>
+` : ""}
+
 
         <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:15px;">
           <tr><td style="padding:6px 0;">🎫 <b>Adultes :</b></td><td style="text-align:right;">${data.nbAdult}</td></tr>
           <tr><td style="padding:6px 0;">👧 <b>Enfants -12 ans :</b></td><td style="text-align:right;">${data.nbChild}</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:8px 0; font-weight:bold;">Total de places</td><td style="text-align:right; font-weight:bold;">${data.nbPlaces}</td></tr>
+          <tr>
+  <td style="padding:6px 0;">🍽️ <b>Dîner accompagnant :</b></td>
+  <td style="text-align:right;">${data.nbDinner || 0}</td>
+</tr>
+
           ${data.free ? "" : `
 <tr>
   <td style="padding:8px 0; font-weight:bold; color:#388e3c;">Montant total</td>
@@ -412,19 +453,31 @@ resForm.addEventListener("submit", async (e)=>{
   const name = nameInput.value.trim().toUpperCase();
   const email = emailInput.value.trim().toLowerCase();
   const phone = phoneInput.value.trim();
-  const nbAdult = +aI.value||0, nbChild = +cI.value||0;
-  const nbPlaces = nbAdult + nbChild;
-  if (!name || !email || !phone || nbPlaces===0) return alert("❌ Formulaire incomplet !");
-const isFree = document.getElementById("free").checked;
+const nbAdult = +aI.value || 0;
+const nbChild = +cI.value || 0;
+const nbDinner = +document.getElementById("dinner").value || 0;
+
+const nbPlaces = nbAdult + nbChild + nbDinner;
+
+if (!name || !email || !phone || nbPlaces === 0)
+  return alert("❌ Formulaire incomplet !");
+
 
 const data = {
   name, email, phone,
-  nbAdult, nbChild, nbPlaces,
-  amount: isFree ? 0 : (nbAdult*priceAdult + nbChild*priceChild),
-  paid: isFree ? true : document.getElementById("paid").checked,
-  free: isFree,
+  nbAdult, nbChild,
+  nbDinner,
+nbPlaces: nbAdult + nbChild + nbDinner,
+
+  amount:
+    (nbAdult * priceAdult) +
+    (nbChild * priceChild) +
+    (nbDinner * priceDinner),
+  paid: document.getElementById("paid").checked,
   present: false
 };
+
+
 
   const newRef = push(ref(db, "spectacles/salle_bessay"));
 await set(newRef, { ...data, id:newRef.key });
@@ -474,6 +527,11 @@ let summary = `
   let html = summary + "<h3>📋 Réservations</h3>";
 
   for (const [id, r] of entries){
+    const isAccompagnant =
+  Number(r.nbAdult || 0) === 0 &&
+  Number(r.nbChild || 0) === 0 &&
+  Number(r.nbDinner || 0) > 0;
+
     const pendingCount = await countPendingParticipants(id);
 
     const payClass = r.paid ? "paid" : "unpaid";
@@ -486,6 +544,8 @@ let summary = `
         <div class="accordion-header" data-toggle="${id}">
 <span>
 <b>${r.name}</b> – ${r.nbPlaces} places
+${isAccompagnant ? `<span class="accompagnant-badge">ACCOMPAGNANT</span>` : ""}
+
 ${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
 
 ${pendingCount > 0 ? `
@@ -512,7 +572,12 @@ ${pendingCount > 0 ? `
         <div class="accordion-body" id="body-${id}">
           <p>📞 ${r.phone}</p>
           <p>📧 ${r.email}</p>
-          <p>👨‍👩‍👧 ${r.nbAdult} adulte(s), ${r.nbChild} enfant(s)</p>
+<p>
+  👨‍👩‍👧 ${r.nbAdult} adulte(s),
+  ${r.nbChild} enfant(s),
+  🍽️ ${r.nbDinner || 0} dîner(s)
+</p>
+
           <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
 
           <p><b>🎟️ Statut :</b> <span class="${presClass}">${presTxt}</span></p>
@@ -693,13 +758,20 @@ function safeCell(v){return v==null?"":String(v).replace(/\r?\n/g," ").trim();}
 function exportReservationsCSV(obj){
   try{
     if(!obj||!Object.keys(obj).length){alert("Aucune réservation à exporter.");return;}
-    const header=["Nom","Email","Téléphone","Adultes","Enfants","Total places","Montant (€)","Payé","Présent"];
+const header=["Nom","Email","Téléphone","Adultes","Enfants","Dîners","Total places","Montant (€)","Payé","Présent"];
+
     const rows=[header];
     Object.values(obj).forEach(r=>{
       const amountNum=Number(r?.amount||0);
-      rows.push([safeCell(r?.name),safeCell(r?.email),safeCell(r?.phone),
-        Number(r?.nbAdult||0),Number(r?.nbChild||0),Number(r?.nbPlaces||0),
-        amountNum.toFixed(2),r?.paid?"Oui":"Non",r?.present?"Oui":"Non"]);
+rows.push([safeCell(r?.name),safeCell(r?.email),safeCell(r?.phone),
+  Number(r?.nbAdult||0),
+  Number(r?.nbChild||0),
+  Number(r?.nbDinner||0),
+  Number(r?.nbPlaces||0),
+  amountNum.toFixed(2),
+  r?.paid?"Oui":"Non",
+  r?.present?"Oui":"Non"]);
+
     });
     const csv="\uFEFF"+rows.map(l=>l.join(";")).join("\n");
     const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
