@@ -385,7 +385,7 @@ ${isAccompagnant ? `
           <tr><td style="padding:6px 0;">👧 <b>Enfants -12 ans :</b></td><td style="text-align:right;">${data.nbChild}</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:8px 0; font-weight:bold;">Total de places</td><td style="text-align:right; font-weight:bold;">${data.nbPlaces}</td></tr>
           <tr>
-  <td style="padding:6px 0;">🍽️ <b>Dîner accompagnant :</b></td>
+  <td style="padding:6px 0;">🍽️ <b>Accompagnant troupe :</b></td>
   <td style="text-align:right;">${data.nbDinner || 0}</td>
 </tr>
 
@@ -575,7 +575,8 @@ ${pendingCount > 0 ? `
 <p>
   👨‍👩‍👧 ${r.nbAdult} adulte(s),
   ${r.nbChild} enfant(s),
-  🍽️ ${r.nbDinner || 0} dîner(s)
+👥 ${r.nbDinner || 0} accompagnant(s) troupe
+
 </p>
 
           <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
