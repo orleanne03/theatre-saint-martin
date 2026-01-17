@@ -182,7 +182,8 @@ const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
 // 🔁 Si on découvre le nom principal PLUS TARD, on le met à jour partout
 if (data?.nom) {
   scanned = scanned.map(s => {
-    if (s.ticketId === ticketId && s.nom === "(non précisé)") {
+if (s.ticketId === ticketId && (s.nom === "(non précisé)" || s.nom === "Participant")) {
+
       return {
         ...s,
         nom: data.nom
