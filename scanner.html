@@ -89,7 +89,21 @@
     </table>
   </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "TA_API_KEY",
+  authDomain: "TON_PROJET.firebaseapp.com",
+  databaseURL: "https://TON_PROJET-default-rtdb.firebaseio.com",
+  projectId: "TON_PROJET"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+  
 let scanner;
 let scanning = false;
 let lastScanText = "";
@@ -179,6 +193,60 @@ const maxScans = siegesStr
 
 
 const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
+// 🔥 Firebase — compteur partagé entre tous les téléphones
+const ticketRef = ref(db, "scans/" + ticketId);
+
+runTransaction(ticketRef, (current) => {
+  if (current === null) {
+    return {
+      count: 1,
+      nom: data?.nom || "Participant",
+      sieges: data?.sieges || "",
+      lastScan: Date.now()
+    };
+  }
+
+  if (current.count >= maxScans) {
+    return;
+  }
+
+  if (data?.nom && current.nom === "Participant") {
+    current.nom = data.nom;
+  }
+
+  current.count++;
+  current.lastScan = Date.now();
+  return current;
+}).then(result => {
+
+  if (!result.committed) {
+    statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
+    flash("red");
+    startScanner();
+    return;
+  }
+
+  const v = result.snapshot.val();
+
+  statusEl.innerHTML = `<span class='ok'>✅ Scan ${v.count} / ${maxScans}</span>`;
+
+  detailsEl.style.display = "block";
+  detailsEl.innerHTML = `
+    <strong>Réservation au nom de :</strong><br>
+    <span style="font-size:18px;font-weight:700;color:#0d47a1;">
+      ${v.nom}
+    </span>
+    <hr>
+    <strong>🎟️ Sièges :</strong> ${v.sieges}
+  `;
+
+  counterEl.textContent = "Billets scannés : " + v.count;
+
+  flash("lime");
+
+  setTimeout(() => startScanner(), 1200);
+});
+
 // 🔁 Si on découvre le nom principal PLUS TARD, on le met à jour partout
 if (data?.nom) {
   scanned = scanned.map(s => {
@@ -379,6 +447,8 @@ window.addEventListener("load", ()=>{
   startScanner();
   renderHistory();
 });
+
+
 </script>
 </body>
 </html>
