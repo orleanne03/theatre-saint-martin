@@ -290,16 +290,32 @@ function renderHistory(){
     grouped[item.ticketId].lastDate = item.date;
   });
 
-  Object.values(grouped).forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.nom}</td>
-      <td>${item.sieges}</td>
-      <td>${item.lastDate}</td>
-      <td><strong>${item.count}</strong></td>
-    `;
-    historyTable.append(tr);
-  });
+Object.entries(grouped).forEach(([ticketId, item]) => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${item.nom}</td>
+    <td>${item.sieges}</td>
+    <td>${item.lastDate}</td>
+    <td>
+      <strong>${item.count}</strong>
+      <span class="trash" style="margin-left:8px;cursor:pointer;">🗑️</span>
+    </td>
+  `;
+  historyTable.append(tr);
+
+  // 🗑️ Supprimer UN scan (le dernier) pour ce billet
+  tr.querySelector(".trash").onclick = () => {
+    const list = getScanned();
+    const idx = list.map(s => s.ticketId).lastIndexOf(ticketId);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      setScanned(list);
+      updateCounter();
+      renderHistory();
+    }
+  };
+});
+
 }
 
 
