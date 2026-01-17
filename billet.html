@@ -48,16 +48,23 @@ const app = initializeApp({
 const db = getDatabase(app);
 
 const params = new URLSearchParams(location.search);
-const id = params.get("id");
-const email = params.get("email"); // si présent => participant
+const participantId = params.get("id");     // billet participant
+const resId = params.get("resId");           // billet accompagnant / client
+const email = params.get("email");           // si présent => participant
+
 
 async function load(){
-  if(!id){
-    document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
-    return;
-  }
+if(!participantId && !resId){
+  document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
+  return;
+}
 
-  const snap = await get(ref(db,"spectacles/salle_bessay/"+id));
+
+const snap = await get(ref(
+  db,
+  "spectacles/salle_bessay/" + (resId || participantId)
+));
+
   if(!snap.exists()){
     document.body.innerHTML = "<p style='margin-top:40px;'>Billet introuvable.</p>";
     return;
@@ -67,8 +74,9 @@ async function load(){
 
   // 🔍 Mode participant ?
   let participantName = null;
-  if (email) {
-    const pSnap = await get(ref(db, "participants/" + id));
+if (email && participantId) {
+  const pSnap = await get(ref(db, "participants/" + participantId));
+
     if (pSnap.exists()) {
       const list = Object.values(pSnap.val());
       const found = list.find(p => (p.email || "").toLowerCase() === email.toLowerCase());
