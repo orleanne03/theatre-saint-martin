@@ -157,27 +157,46 @@ async function onScanSuccess(text){
   await stopScanner();
 
   let scanned = getScanned();
-  const already = scanned.some(s=>s.text===text);
+const decoded = safeDecode(text);
+let data = null;
+try { data = JSON.parse(decoded); } catch(e){}
 
-  const decoded = safeDecode(text);
-  let data = null;
-  try { data = JSON.parse(decoded); } catch(e){ data = null; }
+const ticketId = (data && typeof data === "object" && data.id) ? data.id : text;
 
-  if (already) {
-    statusEl.innerHTML = "<span class='err'>⚠️ Billet déjà validé</span>";
-    flash("red");
-  } else {
-    const entry = {
-      text,
-      nom: data?.nom || "(non précisé)",
-      sieges: data?.sieges || "(inconnu)",
-      date: new Date().toLocaleString()
-    };
+const siegesStr =
+  (data && typeof data === "object" && data.sieges)
+    ? String(data.sieges)
+    : "";
+
+const maxScans = siegesStr
+  ? siegesStr.split(",").map(s => s.trim()).filter(Boolean).length
+  : 1;
+
+
+
+const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
+
+if (scansForThisTicket.length >= maxScans) {
+  statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé (quota atteint)</span>";
+  flash("red");
+  return;
+}
+ else {
+const entry = {
+  ticketId,
+  text,
+  nom: data?.nom || "(non précisé)",
+  sieges: data?.sieges || "(inconnu)",
+  date: new Date().toLocaleString()
+};
+
     scanned.push(entry);
+    statusEl.innerHTML = `<span class='ok'>✅ Scan ${scansForThisTicket.length + 1} / ${maxScans}</span>`;
+
     setScanned(scanned);
     updateCounter();
     renderHistory();
-    statusEl.innerHTML = "<span class='ok'>✅ Billet lu avec succès</span>";
+
     flash("lime");
   }
 
@@ -194,10 +213,16 @@ async function onScanSuccess(text){
     detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
 
-  setTimeout(() => {
+setTimeout(() => {
+  if (scansForThisTicket.length + 1 < maxScans) {
+    statusEl.textContent = "Prêt pour le scan suivant.";
+    startScanner();
+  } else {
+    statusEl.textContent = "Quota atteint pour ce billet.";
     newScanBtn.style.display = "inline-block";
-    statusEl.textContent = "Prêt pour un nouveau scan.";
-  }, 5000);
+  }
+}, 1200);
+
 }
 
 function flash(color) {
