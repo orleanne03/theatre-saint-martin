@@ -161,7 +161,11 @@ const decoded = safeDecode(text);
 let data = null;
 try { data = JSON.parse(decoded); } catch(e){}
 
-const ticketId = (data && typeof data === "object" && data.id) ? data.id : text;
+const ticketId =
+  (data && typeof data === "object" && data.sieges)
+    ? String(data.sieges).replace(/\s+/g, "")
+    : text;
+
 
 const siegesStr =
   (data && typeof data === "object" && data.sieges)
