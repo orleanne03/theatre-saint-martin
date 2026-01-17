@@ -274,16 +274,34 @@ const historyTable = document.getElementById("historyTable").querySelector("tbod
 function renderHistory(){
   const list = getScanned();
   historyTable.innerHTML = "";
-  list.forEach((item,i)=>{
+
+  const grouped = {};
+
+  list.forEach(item => {
+    if (!grouped[item.ticketId]) {
+      grouped[item.ticketId] = {
+        nom: item.nom,
+        sieges: item.sieges,
+        count: 0,
+        lastDate: item.date
+      };
+    }
+    grouped[item.ticketId].count++;
+    grouped[item.ticketId].lastDate = item.date;
+  });
+
+  Object.values(grouped).forEach(item => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${item.nom}</td>
       <td>${item.sieges}</td>
-      <td>${item.date}</td>
-      <td><span class="trash" data-i="${i}">🗑️</span></td>
+      <td>${item.lastDate}</td>
+      <td><strong>${item.count}</strong></td>
     `;
     historyTable.append(tr);
   });
+}
+
 
   // gestion corbeille
   historyTable.querySelectorAll(".trash").forEach(btn=>{
@@ -296,7 +314,7 @@ function renderHistory(){
       renderHistory();
     };
   });
-}
+
 
 // Accordéon
 document.querySelector(".accordion").addEventListener("click", function(){
