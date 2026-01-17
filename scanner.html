@@ -8,446 +8,218 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
-  h1{color:#0d47a1;margin:6px 0}
-  #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-  .panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);text-align:center}
-  .ok{color:#2e7d32;font-weight:700;margin:0}
-  .err{color:#d32f2f;font-weight:700;margin:0}
-  button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
-  .violet{background:#8e24aa}.violet:hover{background:#6a1b9a}
-  .green{background:#2e7d32}.green:hover{background:#1b5e20}
-  #counter{font-weight:700;color:#0d47a1}
-  #details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
-  #newScanBtn{display:none;margin-top:10px;}
-  #resetScanBtn{background:#f57c00;}
-  #resetScanBtn:hover{background:#e65100;}
-  @media(max-width:420px){#reader{width:260px}}
-
-  /* Accordéon */
-  .accordion {
-    background-color:#1976d2;
-    color:white;
-    cursor:pointer;
-    padding:10px 16px;
-    width:100%;
-    border:none;
-    text-align:left;
-    outline:none;
-    font-size:16px;
-    border-radius:8px;
-    transition:background 0.2s;
-    max-width:500px;
-    margin:16px auto 0;
-  }
-  .accordion:hover{background-color:#0d47a1}
-  .panel-acc{
-    max-width:500px;
-    margin:0 auto 16px;
-    background:white;
-    display:none;
-    overflow:hidden;
-    border-radius:0 0 10px 10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.12);
-  }
-  table{width:100%;border-collapse:collapse;font-size:14px;}
-  th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;}
-  th{background:#f1f1f1;}
-  td .trash{cursor:pointer;color:#d32f2f;font-weight:bold;}
-  td .trash:hover{color:#b71c1c;}
+body{font-family:system-ui;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
+h1{color:#0d47a1}
+#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden}
+.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px}
+.ok{color:#2e7d32;font-weight:700}
+.err{color:#d32f2f;font-weight:700}
+button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
+.violet{background:#8e24aa}
+.green{background:#2e7d32}
+#counter{font-weight:700;color:#0d47a1}
+#details{margin-top:10px;text-align:left;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
+.accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%}
+.panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #ddd}
+.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
 </style>
 </head>
+
 <body>
-  <h1>🎭 Théâtre Saint Martin — Scanner</h1>
-  <p>Alignez le QR dans le carré pour valider un billet.</p>
 
-  <div id="reader"></div>
+<h1>🎭 Théâtre Saint Martin — Scanner</h1>
+<p>Alignez le QR dans le carré pour valider un billet.</p>
 
-  <div class="panel">
-    <p id="status">Prêt à scanner.</p>
-    <p id="counter">Billets scannés : 0</p>
-    <div id="details" style="display:none;"></div>
+<div id="reader"></div>
 
-    <button id="newScanBtn" class="green">🎬 Nouveau scan</button>
-    <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
-    <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
-  </div>
+<div class="panel">
+  <p id="status">Prêt à scanner.</p>
+  <p id="counter">Billets scannés : 0</p>
+  <div id="details" style="display:none;"></div>
 
-  <!-- Accordéon Historique -->
-  <button class="accordion">📜 Historique des scans</button>
-  <div class="panel-acc" id="historyPanel">
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Sièges</th>
-          <th>Date</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
+  <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
+</div>
+
+<button class="accordion">📜 Historique des scans</button>
+<div class="panel-acc" id="historyPanel">
+  <table>
+    <thead>
+      <tr><th>Nom</th><th>Sièges</th><th>Date</th><th></th></tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
+</div>
 
 <script type="module">
+/* 🔥 CONFIG FIREBASE — REMPLACE ICI */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "TA_API_KEY",
-  authDomain: "TON_PROJET.firebaseapp.com",
-  databaseURL: "https://TON_PROJET-default-rtdb.firebaseio.com",
-  projectId: "TON_PROJET"
+  apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
+  authDomain: "theatre-saint-martin.firebaseapp.com",
+  databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "theatre-saint-martin",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-  
+/* === LOGIQUE SCANNER === */
 let scanner;
 let scanning = false;
-let lastScanText = "";
-let lastScanTime = 0;
 
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
-const newScanBtn = document.getElementById("newScanBtn");
 
-function getScanned(){
-  return JSON.parse(localStorage.getItem("scannedTickets") || "[]");
-}
-function setScanned(list){
-  localStorage.setItem("scannedTickets", JSON.stringify(list));
-}
+function getScanned(){ return JSON.parse(localStorage.getItem("scannedTickets") || "[]"); }
+function setScanned(v){ localStorage.setItem("scannedTickets", JSON.stringify(v)); }
+
 function updateCounter(){
-  const scanned = getScanned();
-  counterEl.textContent = "Billets scannés : " + scanned.length;
+  counterEl.textContent = "Billets scannés : " + getScanned().length;
+}
+
+function renderHistory(){
+  const list = getScanned();
+  const tbody = document.getElementById("historyTable");
+  tbody.innerHTML = "";
+
+  list.forEach((s,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.nom}</td>
+      <td>${s.sieges}</td>
+      <td>${s.date}</td>
+      <td><span class="trash">🗑️</span></td>
+    `;
+    tr.querySelector(".trash").onclick = ()=>{
+      list.splice(i,1);
+      setScanned(list);
+      renderHistory();
+      updateCounter();
+    };
+    tbody.appendChild(tr);
+  });
 }
 
 async function startScanner(){
   if (scanning) return;
   scanning = true;
   scanner = new Html5Qrcode("reader");
-
-  const config = {
-    fps: 10,
-    qrbox: (vw, vh) => {
-      const minEdge = Math.min(vw, vh);
-      const size = Math.floor(minEdge * 0.8);
-      return { width: size, height: size };
-    }
-  };
-
-  try {
-    await scanner.start({ facingMode: "environment" }, config, onScanSuccess, () => {});
-    updateCounter();
-    newScanBtn.style.display = "none";
-  } catch (err) {
-    statusEl.innerHTML = "<span class='err'>Impossible d'accéder à la caméra : "+err+"</span>";
-  }
+  await scanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
 }
 
 async function stopScanner(){
-  if (!scanner) return;
-  try {
-    await scanner.stop();
-    scanning = false;
-  } catch(e){ console.error(e); }
-}
-
-function safeDecode(str){
-  try {
-    if (/%[0-9A-Fa-f]{2}/.test(str)) return decodeURIComponent(str);
-  } catch(e){}
-  return str;
+  if(scanner){ await scanner.stop(); scanning=false; }
 }
 
 async function onScanSuccess(text){
-  const now = Date.now();
-  if (text === lastScanText && now - lastScanTime < 3000) return;
-  lastScanText = text; lastScanTime = now;
-
   await stopScanner();
 
-  let scanned = getScanned();
-const decoded = safeDecode(text);
-let data = null;
-try { data = JSON.parse(decoded); } catch(e){}
+  let data=null;
+  try{ data=JSON.parse(text); }catch(e){}
 
-const ticketId =
-  (data && typeof data === "object" && data.sieges)
-    ? String(data.sieges).replace(/\s+/g, "")
-    : text;
+  const ticketId = data?.sieges?.replace(/\s+/g,"") || text;
+  const sieges = data?.sieges || "";
+  const maxScans = sieges.split(",").filter(Boolean).length || 1;
 
+  const ticketRef = ref(db,"scans/"+ticketId);
 
-const siegesStr =
-  (data && typeof data === "object" && data.sieges)
-    ? String(data.sieges)
-    : "";
+  runTransaction(ticketRef,(current)=>{
+    if(!current){
+return {
+  count: 1,
+  nom: data?.nom || "Participant",
+  sieges,
+  lastScan: Date.now()
+};
 
-const maxScans = siegesStr
-  ? siegesStr.split(",").map(s => s.trim()).filter(Boolean).length
-  : 1;
-
-
-
-const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
-// 🔥 Firebase — compteur partagé entre tous les téléphones
-const ticketRef = ref(db, "scans/" + ticketId);
-
-runTransaction(ticketRef, (current) => {
-  if (current === null) {
-    return {
-      count: 1,
-      nom: data?.nom || "Participant",
-      sieges: data?.sieges || "",
-      lastScan: Date.now()
-    };
-  }
-
-  if (current.count >= maxScans) {
-    return;
-  }
-
-  if (data?.nom && current.nom === "Participant") {
-    current.nom = data.nom;
-  }
-
-  current.count++;
-  current.lastScan = Date.now();
-  return current;
-}).then(result => {
-
-  if (!result.committed) {
-    statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
-    flash("red");
-    startScanner();
-    return;
-  }
-
-  const v = result.snapshot.val();
-
-  statusEl.innerHTML = `<span class='ok'>✅ Scan ${v.count} / ${maxScans}</span>`;
-
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = `
-    <strong>Réservation au nom de :</strong><br>
-    <span style="font-size:18px;font-weight:700;color:#0d47a1;">
-      ${v.nom}
-    </span>
-    <hr>
-    <strong>🎟️ Sièges :</strong> ${v.sieges}
-  `;
-
-  counterEl.textContent = "Billets scannés : " + v.count;
-
-  flash("lime");
-
-  setTimeout(() => startScanner(), 1200);
-});
-
-// 🔁 Si on découvre le nom principal PLUS TARD, on le met à jour partout
-if (data?.nom) {
-  scanned = scanned.map(s => {
-if (s.ticketId === ticketId && (s.nom === "(non précisé)" || s.nom === "Participant")) {
-
-      return {
-        ...s,
-        nom: data.nom
-      };
     }
-    return s;
-  });
-  setScanned(scanned);
-}
+    if(current.count>=maxScans) return;
+    if(data?.nom && current.nom==="Participant") current.nom=data.nom;
+current.count++;
+current.lastScan = Date.now();
+return current;
 
-if (scansForThisTicket.length >= maxScans) {
-  statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé (quota atteint)</span>";
-  flash("red");
+  }).then(res=>{
 
-  // 🔴 écran rouge
-  document.body.style.background =
-    "linear-gradient(180deg,#ffebee,#ffcdd2)";
-
-  setTimeout(() => {
-    document.body.style.background =
-      "linear-gradient(180deg,#f9f9f9,#e3f2fd)";
-    statusEl.textContent = "Prêt pour un nouveau scan.";
-    startScanner();
-  }, 5000);
-
+if (!res.committed) {
+  statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
+  startScanner();
   return;
 }
 
 
- else {
-const entry = {
-  ticketId,
-  text,
-  nom: data?.nom || "Participant",
-  sieges: data?.sieges || "(inconnu)",
-  date: new Date().toLocaleString()
-};
 
-    scanned.push(entry);
-    statusEl.innerHTML = `<span class='ok'>✅ Scan ${scansForThisTicket.length + 1} / ${maxScans}</span>`;
+    const v = res.snapshot.val();
 
-    setScanned(scanned);
-    updateCounter();
-    renderHistory();
-
-    flash("lime");
-  }
-
-// 🔎 récupérer le nom principal déjà enregistré pour ce billet
-const scannedList = getScanned();
-const existing = scannedList.find(s => s.ticketId === ticketId);
-
-const nomPrincipal =
-  data?.parentNom ||
-  existing?.nom ||
-  data?.nom ||
-  "(nom non précisé)";
-
-
-detailsEl.style.display = "block";
-detailsEl.innerHTML = `
-  <strong>Réservation au nom de :</strong><br>
-  <span style="font-size:18px;font-weight:700;color:#0d47a1;">
-    ${nomPrincipal}
-  </span>
-  <hr style="margin:8px 0">
-  <strong>🎟️ Sièges :</strong> ${data?.sieges || existing?.sieges || "(inconnu)"}
-`;
-
-
-setTimeout(() => {
-  statusEl.textContent = "Prêt pour un nouveau scan.";
-  startScanner();
-}, 1200);
-
-
-}
-
-function flash(color) {
-  const overlay = document.createElement("div");
-  Object.assign(overlay.style, {
-    position:"fixed", inset:"0", background:color, opacity:"0.25", zIndex:"99",
-  });
-  document.body.append(overlay);
-  setTimeout(() => overlay.remove(), 150);
-}
-
-newScanBtn.onclick = () => {
-  detailsEl.style.display = "none";
-  statusEl.textContent = "Prêt à scanner.";
-  newScanBtn.style.display = "none";
-  startScanner();
-};
-
-document.getElementById("gotoHome").onclick = ()=>{ window.location.href = "index.html"; };
-
-const resetScanBtn = document.getElementById("resetScanBtn");
-if (resetScanBtn) {
-  resetScanBtn.onclick = () => {
-    const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
-    if (pwd === "admin123") {
-      if (confirm("Voulez-vous vraiment effacer tous les billets scannés ?")) {
-        localStorage.removeItem("scannedTickets");
-        updateCounter();
-        detailsEl.style.display = "none";
-        statusEl.innerHTML = "<span class='ok'>✅ Liste des scans réinitialisée.</span>";
-        newScanBtn.style.display = "none";
-        flash("lime");
-
-        // 🧹 Vide le tableau immédiatement
-        renderHistory();
-      }
-    } else if (pwd !== null) {
-      alert("❌ Mot de passe incorrect.");
-      flash("red");
-    }
-  };
-}
-
-
-// === Historique ===
-const historyPanel = document.getElementById("historyPanel");
-const historyTable = document.getElementById("historyTable").querySelector("tbody");
-
-function renderHistory(){
-  const list = getScanned();
-  historyTable.innerHTML = "";
-
-  const grouped = {};
-
-  list.forEach(item => {
-    if (!grouped[item.ticketId]) {
-      grouped[item.ticketId] = {
-        nom: item.nom,
-        sieges: item.sieges,
-        count: 0,
-        lastDate: item.date
-      };
-    }
-    grouped[item.ticketId].count++;
-    grouped[item.ticketId].lastDate = item.date;
-  });
-
-Object.entries(grouped).forEach(([ticketId, item]) => {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td>${item.nom}</td>
-    <td>${item.sieges}</td>
-    <td>${item.lastDate}</td>
-    <td>
-      <strong>${item.count}</strong>
-      <span class="trash" style="margin-left:8px;cursor:pointer;">🗑️</span>
-    </td>
-  `;
-  historyTable.append(tr);
-
-  // 🗑️ Supprimer UN scan (le dernier) pour ce billet
-  tr.querySelector(".trash").onclick = () => {
+    // ✅ HISTORIQUE LOCAL (UI COMME AVANT)
     const list = getScanned();
-    const idx = list.map(s => s.ticketId).lastIndexOf(ticketId);
-    if (idx !== -1) {
-      list.splice(idx, 1);
-      setScanned(list);
-      updateCounter();
-      renderHistory();
-    }
-  };
-});
+    list.push({
+      ticketId,
+      nom: v.nom,
+      sieges: v.sieges,
+      date: new Date().toLocaleString()
+    });
+    setScanned(list);
+    renderHistory();
+    updateCounter();
 
+    statusEl.innerHTML = `<span class='ok'>✅ Scan ${v.count}/${maxScans}</span>`;
+    detailsEl.style.display="block";
+    detailsEl.innerHTML = `
+      <strong>Réservation au nom de :</strong><br>
+      <b>${v.nom}</b><hr>
+      <strong>🎟️ Sièges :</strong> ${v.sieges}
+    `;
+
+    setTimeout(startScanner,1200);
+  });
 }
 
+document.querySelector(".accordion").onclick=()=>{
+  const p=document.getElementById("historyPanel");
+  p.style.display=p.style.display==="block"?"none":"block";
+};
 
-  // gestion corbeille
-  historyTable.querySelectorAll(".trash").forEach(btn=>{
-    btn.onclick = ()=>{
-      const idx = parseInt(btn.dataset.i);
-      const list = getScanned();
-      list.splice(idx,1);
-      setScanned(list);
-      updateCounter();
-      renderHistory();
-    };
+document.getElementById("resetScanBtn").onclick=()=>{
+  if(confirm("Tout effacer ?")){
+    localStorage.removeItem("scannedTickets");
+    renderHistory(); updateCounter();
+  }
+};
+
+document.getElementById("gotoHome").onclick=()=>location.href="index.html";
+
+window.onload = async () => {
+  await syncFromFirebase(); // ✅ LIGNE CLÉ
+  renderHistory();
+  updateCounter();
+  startScanner();
+};
+
+async function syncFromFirebase() {
+  const snap = await get(ref(db, "scans"));
+  if (!snap.exists()) return;
+
+  const data = snap.val();
+  const list = [];
+
+  Object.values(data).forEach(v => {
+    list.push({
+      nom: v.nom || "Participant",
+      sieges: v.sieges || "",
+      date: new Date(v.lastScan || Date.now()).toLocaleString()
+    });
   });
 
-
-// Accordéon
-document.querySelector(".accordion").addEventListener("click", function(){
-  this.classList.toggle("active");
-  historyPanel.style.display = (historyPanel.style.display === "block") ? "none" : "block";
-});
-
-window.addEventListener("load", ()=>{
-  startScanner();
-  renderHistory();
-});
-
+  localStorage.setItem("scannedTickets", JSON.stringify(list));
+}
 
 </script>
 </body>
