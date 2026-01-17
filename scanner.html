@@ -179,8 +179,22 @@ const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
 if (scansForThisTicket.length >= maxScans) {
   statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé (quota atteint)</span>";
   flash("red");
+
+  // 🔴 écran rouge
+  document.body.style.background =
+    "linear-gradient(180deg,#ffebee,#ffcdd2)";
+
+  setTimeout(() => {
+    document.body.style.background =
+      "linear-gradient(180deg,#f9f9f9,#e3f2fd)";
+    statusEl.textContent = "Prêt pour un nouveau scan.";
+    startScanner();
+  }, 5000);
+
   return;
 }
+
+
  else {
 const entry = {
   ticketId,
