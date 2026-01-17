@@ -216,7 +216,7 @@ if (scansForThisTicket.length >= maxScans) {
 const entry = {
   ticketId,
   text,
-  nom: data?.nom || "(non précisé)",
+  nom: data?.nom || "Participant",
   sieges: data?.sieges || "(inconnu)",
   date: new Date().toLocaleString()
 };
