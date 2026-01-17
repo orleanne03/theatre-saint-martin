@@ -5,6 +5,35 @@
 <title>Billet - Salle de Bessay</title>
 
 <style>
+@media print {
+  body {
+    background: white !important;
+  }
+
+  #ticket {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+  }
+
+  .info-box {
+    background: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .accompagnant-print {
+    display: block !important;
+    background: #e3f2fd !important;
+    border-left: 5px solid #1976d2 !important;
+    padding: 14px 16px !important;
+    margin: 18px auto !important;
+    font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background:#f9f9f9;
@@ -123,7 +152,7 @@ else {
     <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
 
     ${isAccompagnant ? `
-      <div style="
+      <div class="accompagnant-print" style="
         margin:18px auto;
         padding:14px 16px;
         max-width:420px;
