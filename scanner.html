@@ -81,8 +81,10 @@ function getScanned(){ return JSON.parse(localStorage.getItem("scannedTickets") 
 function setScanned(v){ localStorage.setItem("scannedTickets", JSON.stringify(v)); }
 
 function updateCounter(){
-  counterEl.textContent = "Billets scannés : " + getScanned().length;
+  const list = getScanned();
+  counterEl.textContent = "Billets scannés : " + list.length;
 }
+
 
 function renderHistory(){
   const list = getScanned();
@@ -97,12 +99,18 @@ function renderHistory(){
       <td>${s.date}</td>
       <td><span class="trash">🗑️</span></td>
     `;
-    tr.querySelector(".trash").onclick = ()=>{
-      list.splice(i,1);
-      setScanned(list);
-      renderHistory();
-      updateCounter();
-    };
+tr.querySelector(".trash").onclick = async () => {
+  // 1️⃣ supprimer local
+  list.splice(i,1);
+  setScanned(list);
+  renderHistory();
+  updateCounter();
+
+  // 2️⃣ supprimer côté Firebase
+  const ticketRef = ref(db, "scans/" + s.ticketId);
+  await set(ticketRef, null);
+};
+
     tbody.appendChild(tr);
   });
 }
@@ -187,21 +195,21 @@ document.querySelector(".accordion").onclick=()=>{
   p.style.display=p.style.display==="block"?"none":"block";
 };
 
-document.getElementById("resetScanBtn").onclick=()=>{
-  if(confirm("Tout effacer ?")){
-    localStorage.removeItem("scannedTickets");
-    renderHistory(); updateCounter();
-  }
-};
 
-document.getElementById("gotoHome").onclick=()=>location.href="index.html";
 
-window.onload = async () => {
-  await syncFromFirebase(); // ✅ LIGNE CLÉ
+document.getElementById("resetScanBtn").onclick = async () => {
+  if (!confirm("Tout effacer (Firebase + historique local) ?")) return;
+
+  // 🔥 vider Firebase
+  await set(ref(db, "scans"), null);
+
+  // 🧹 vider local
+  localStorage.removeItem("scannedTickets");
+
   renderHistory();
   updateCounter();
-  startScanner();
 };
+
 
 async function syncFromFirebase() {
   const snap = await get(ref(db, "scans"));
@@ -220,6 +228,13 @@ async function syncFromFirebase() {
 
   localStorage.setItem("scannedTickets", JSON.stringify(list));
 }
+
+window.onload = async () => {
+  await syncFromFirebase(); // 🔥 récupère Firebase
+  renderHistory();         // affiche la liste
+  updateCounter();         // met le bon nombre
+  startScanner();          // démarre la caméra
+};
 
 </script>
 </body>
