@@ -108,31 +108,50 @@ if (email && participantId) {
     `;
   }
 
-  // -------------------------
-  // AFFICHAGE CLIENT PRINCIPAL
-  // -------------------------
-  else {
-    document.getElementById("ticket").innerHTML = `
-      <h1>🎭 Théâtre Saint-Martin</h1>
-      <h3>Salle de Bessay – 23 janvier 2026</h3>
+// -------------------------
+// AFFICHAGE CLIENT PRINCIPAL / ACCOMPAGNANT
+// -------------------------
+else {
+  const isAccompagnant = Number(r.nbDinner || 0) > 0;
 
-      <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
+  document.getElementById("ticket").innerHTML = `
+    <h1>🎭 Théâtre Saint-Martin</h1>
+    <h3>Salle de Bessay – 23 janvier 2026</h3>
 
-      <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
+    <hr style="margin:25px 0; border:none; border-top:1px solid #ddd;">
 
+    <p style="font-size:1.15rem; margin-bottom:10px;"><b>${r.name}</b></p>
+
+    ${isAccompagnant ? `
+      <div style="
+        margin:18px auto;
+        padding:14px 16px;
+        max-width:420px;
+        background:#e3f2fd;
+        border-left:5px solid #1976d2;
+        border-radius:6px;
+        font-size:15px;
+        font-weight:600;
+      ">
+        🍽️ ACCOMPAGNANT — Dîner inclus<br>
+        🎭 Accès spectacle compris
+      </div>
+    ` : `
       <p>👨‍👩‍👧 <b>Adultes :</b> ${r.nbAdult}</p>
       <p>👧 <b>Enfants -12 ans :</b> ${r.nbChild}</p>
+    `}
 
-      <p style="font-size:1.2rem; margin-top:25px; font-weight:bold; color:#2e7d32;">
-        Total : ${Number(r.amount || 0).toFixed(2)} €
-      </p>
+    <p style="font-size:1.2rem; margin-top:25px; font-weight:bold; color:#2e7d32;">
+      Total : ${Number(r.amount || 0).toFixed(2)} €
+    </p>
 
-      <div class="info-box">
-        📍 Salle de Bessay<br>
-        📅 Vendredi 23 janvier 2026 – 20h30
-      </div>
-    `;
-  }
+    <div class="info-box">
+      📍 Salle de Bessay<br>
+      📅 Vendredi 23 janvier 2026 – 20h30
+    </div>
+  `;
+}
+
 
   setTimeout(()=>window.print(), 600);
 }
