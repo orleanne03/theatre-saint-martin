@@ -993,6 +993,32 @@ background: magenta !important;
   color: #fff !important;
   box-shadow: 0 0 8px rgba(142,36,170,0.7);
 }
+.participant-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 50%;
+  background: orange;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+}
+.send-ticket-btn {
+  background: #f50707;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.send-ticket-btn.sent {
+  background: #2e7d32; /* vert */
+  color: white;
+}
 
 </style>
 </head>
@@ -1166,6 +1192,7 @@ const onValue = window._firebaseOnValue;
 const get = window._firebaseGet;
 
 let seats = {}, selected = [], admin = false;
+window.seats = seats;
 
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
@@ -1456,6 +1483,8 @@ const totalPeople = nbAdult + nbChild + nbBaby + nbFree;
 const isFree = amount === 0;
 
 const reservationId = crypto.randomUUID();
+// 🔗 Lien réservation ↔ participants
+window.lastReservationId = reservationId;
 
 const user = { 
   reservationId,
@@ -1532,12 +1561,17 @@ async function sendEmail(user) {
     .map(([id]) => id)
     .join(", ");
 
-  const qrData = JSON.stringify({
-    nom: user.name,
-    email: user.email,
-    tel: user.phone,
-    sieges: reservedSeats
-  });
+const maxScans = reservedSeats.split(",").length;
+
+const qrData = JSON.stringify({
+  id: user.reservationId,
+  nom: user.name,
+  email: user.email,
+  tel: user.phone,
+  sieges: reservedSeats,
+  max: maxScans
+});
+
 
 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
@@ -1604,11 +1638,15 @@ if (Array.isArray(user.seats) && user.seats.length) {
 }
 
 
-  const qrData = JSON.stringify({
-    nom: user.name,
-    email: user.email,
-    sieges: reservedSeats
-  });
+const qrData = JSON.stringify({
+  reservationId,
+  nomPrincipal: mainClientName, // 👈 NOM DU RÉSERVANT
+  nomParticipant: name,
+  email,
+  phone,
+  sieges: clientSeats
+});
+
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
@@ -1618,7 +1656,7 @@ if (Array.isArray(user.seats) && user.seats.length) {
 
 <p>
 Nous vous rappelons votre réservation pour le spectacle à venir
-de la part de <strong>${user.mainClientName || "le réservant principal"}</strong>.
+
 </p>
 
 
@@ -1869,6 +1907,22 @@ async function loadParticipants(reservationId) {
     box.innerHTML = `
       <div style="margin-top:12px;padding:10px;border-radius:10px;background:#f6f7fb;border:1px solid #e1e3ee;">
         <div style="font-weight:700;margin-bottom:8px;">👥 Participants (${list.length})</div>
+        <button
+  class="add-participant-btn"
+  data-resid="${reservationId}"
+  style="
+    background:#2e7d32;
+    color:white;
+    border:none;
+    border-radius:6px;
+    padding:6px 10px;
+    cursor:pointer;
+    font-weight:600;
+    margin-bottom:8px;
+  ">
+  ➕ Ajouter un participant
+</button>
+
         <div style="display:flex;flex-direction:column;gap:8px;">
 ${list.map(([pid,p]) => `
   <div style="
@@ -1897,16 +1951,19 @@ ${list.map(([pid,p]) => `
         ✏️
       </button>
 
-      <!-- 🎟️ Envoyer billet -->
+      <!-- 🖨️ Envoyer billet -->
 <button
-  class="send-ticket-btn"
+  class="send-ticket-btn ${p.ticketSent ? "sent" : ""}"
   data-resid="${reservationId}"
+  data-pid="${pid}"
   data-name="${escapeHTML(p.name||"")}"
   data-email="${escapeHTML(p.email||"")}"
   data-phone="${escapeHTML(p.phone||"")}"
-  style="background:#1976d2;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
-  🎟️
+>
+  🖨️
 </button>
+
+
 
 
       <!-- 🗑️ Supprimer -->
@@ -1931,6 +1988,7 @@ ${list.map(([pid,p]) => `
     box.innerHTML = `<div style="margin-top:10px;color:#d32f2f;font-weight:600;">❌ Impossible de charger les participants.</div>`;
   }
 }
+window.loadParticipants = loadParticipants;
 
 // Suppression participant (admin)
 document.addEventListener("click", async (e) => {
@@ -1984,6 +2042,8 @@ document.addEventListener("click", async (e) => {
 });
 let sendingParticipantTicket = false;
 
+
+
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".send-ticket-btn");
   if (!btn) return;
@@ -1993,80 +2053,78 @@ document.addEventListener("click", async (e) => {
 
   const name = btn.dataset.name;
   const email = btn.dataset.email;
-  const phone = btn.dataset.phone;
+  const phone = btn.dataset.phone || "";
   const reservationId = btn.dataset.resid;
-  // 🔍 Retrouve le réservant principal via reservationId
-let mainClientName = "le réservant principal";
-
-const mainSeat = Object.values(seats).find(
-  s => s.reservationId === reservationId
-);
-
-if (mainSeat && mainSeat.name) {
-  mainClientName = mainSeat.name;
-}
-
 
   if (!email) {
     sendingParticipantTicket = false;
     return alert("❌ Pas d'email pour ce participant");
   }
 
-  let clientSeatsArray = Object.entries(seats)
+  const clientSeats = Object.entries(seats)
     .filter(([_, s]) => s.reservationId === reservationId)
-    .map(([id]) => id);
+    .map(([id]) => id)
+    .join(", ");
 
-  if (!clientSeatsArray.length) {
-    clientSeatsArray = Object.entries(seats)
-      .filter(([_, s]) =>
-        s.email === email &&
-        s.name &&
-        s.name.trim().toUpperCase() === name.trim().toUpperCase()
-      )
-      .map(([id]) => id);
-  }
-
-  if (!clientSeatsArray.length) {
+  if (!clientSeats) {
     sendingParticipantTicket = false;
-    return alert("❌ Impossible de retrouver les sièges");
+    return alert("❌ Aucun siège trouvé");
   }
 
-  const clientSeats = clientSeatsArray.join(", ");
+  const qrData = JSON.stringify({
+    name,
+    email,
+    phone,
+    sieges: clientSeats
+  });
 
-  const qrData = JSON.stringify({ name, email, phone, sieges: clientSeats });
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
+const mainClientName =
+  Object.values(seats).find(s => s.reservationId === reservationId)?.name
+  || "le réservant principal";
 
   const html = `
     <h2>🎭 Votre billet nominatif — Théâtre Saint Martin</h2>
-    <p>
-    <p>
-Suite à l’achat de <strong>${user.mainClientName || "le réservant principal"}</strong>,
+  <p>
+  Ce billet vous est transmis suite à la réservation effectuée par
+  <strong>${mainClientName}</strong>.
 
-
-    <br>
-    voici votre billet à présenter à l’entrée du spectacle,
-      soit <strong>imprimé</strong>, soit sur <strong>votre téléphone</strong>.
-  </p>
-    <p>🎟️ <strong>Les sièges réservés :</strong> ${clientSeats}</p>
+          <p style="font-size:14px;color:#555;">
+          Merci de présenter ce billet (imprimé ou sur téléphone) à l’entrée.
+        </p>
+</p>
+    <p><strong>🎟️ Sièges :</strong> ${clientSeats}</p>
     <img src="${qrUrl}" style="margin-top:10px;" />
+    <p>Merci et à très bientôt 🎭</p>
   `;
 
   try {
     await sendViaBrevo(
-      email,
-      "🎟️ Votre billet – Théâtre Saint Martin",
-      html
-    );
-    alert("✅ Billet envoyé à " + email);
+  email,
+  "🎟️ Votre billet – Théâtre Saint Martin",
+  html
+);
+
+// ✅ MARQUE LE BILLET COMME ENVOYÉ
+const pid = btn.closest("[data-pid]")?.dataset.pid;
+if (pid) {
+  await set(
+    ref(db, `participants/${reservationId}/${pid}/ticketSent`),
+    true
+  );
+}
+
+alert("✅ Billet envoyé à " + email);
+updateTable(); // 🔄 rafraîchit le badge
+
   } catch (err) {
-    console.error(err);
-    alert("❌ Erreur lors de l’envoi du billet");
+    alert("❌ Erreur envoi billet");
   }
 
-  // 🔓 OBLIGATOIRE
   sendingParticipantTicket = false;
 });
 
+  
 
 function updateTable() {
   const container = document.getElementById("resBody");
@@ -2120,6 +2178,10 @@ for (const [id, data] of entries) {
 header.className = `accordion-header ${
   info.free ? "free-line" : (info.allPaid ? "paid" : "unpaid")
 }`;
+// 🧹 Supprime un éventuel ancien badge participant (évite doublons)
+const oldBadge = header.querySelector(".participant-badge");
+if (oldBadge) oldBadge.remove();
+
 const hasFreeSeat = info.seats.some(
   s => s.type === "gratuit"
 );
@@ -2130,13 +2192,47 @@ const freeBadge = hasFreeSeat
   ? '<span style="width:22px;height:22px;border-radius:50%;background:#8e24aa;color:white;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-size:13px;">G</span>'
   : '';
 
+
 header.innerHTML = `
-  <div>👤 ${name}</div>
-  <div style="display:flex;align-items:center;gap:8px;">
+<div>
+  👤 ${name}
+  ${
+    info.free
+      ? ""
+      : `<span style="font-weight:600;color: red;">
+           (${(Number(info.nbAdult || 0) + Number(info.nbChild || 0))} places)
+         </span>`
+  }
+</div>
+
+
+
+  <div class="badge-container" style="display:flex;align-items:center;gap:8px;">
     <span>${info.allPaid ? "💰 Tous payés" : "❌ Partiel / Non payé"}</span>
     ${freeBadge}
   </div>
 `;
+
+// 🔔 BADGE PARTICIPANTS NON ENVOYÉS (hors admin)
+if (reservationId && !admin) {
+  get(ref(db, `participants/${reservationId}`)).then(snap => {
+    const participants = snap.val() || {};
+    const notSent = Object.values(participants)
+      .filter(p => !p.ticketSent)
+      .length;
+
+    if (notSent > 0) {
+      const badge = document.createElement("span");
+      badge.className = "participant-badge";
+      badge.textContent = notSent;
+
+      const container = header.querySelector(".badge-container");
+      if (container) container.appendChild(badge);
+    }
+  });
+}
+
+
 
 
   header.onclick = () => div.classList.toggle("open");
@@ -2152,7 +2248,40 @@ content.innerHTML = `
   <p><strong>Email :</strong> ${info.email || "—"}</p>
   <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
 
-  <div id="participants-${reservationId}"></div>
+<button
+  class="open-participants-btn"
+  data-resid="${reservationId}"
+  style="
+    margin:6px 0;
+    background:#6a1b9a;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  ">
+  👥 Gérer les participants
+</button>
+<button
+  class="send-participants-form-btn"
+  data-resid="${reservationId}"
+  data-email="${info.email}"
+  style="
+    margin:6px 0;
+    background:#1976d2;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  ">
+  📨 Envoyer le formulaire participants
+</button>
+
+<div id="participants-${reservationId}"></div>
+
 
   <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
     <span style="color:#1565c0;font-weight:600">
@@ -2230,7 +2359,7 @@ s.type === "enfant" ? "🧒" : "🎟️";
   div.append(header, content);
   container.append(div);
   // 👥 charge la liste des participants si disponible
-  loadParticipants(reservationId);
+
 }
 
 
@@ -2304,8 +2433,8 @@ function generateBilletHTML(user) {
     <h2>🎭 Votre billet — Théâtre Saint Martin</h2>
 
     <p>
-      Suite à l’achat de <strong>${user.name}</strong>,<br>
-      voici votre billet à présenter à l’entrée du spectacle,
+      Merci de votre réservation <strong>${user.name}</strong>,<br>
+      Voici votre billet à présenter à l’entrée du spectacle,
       soit <strong>imprimé</strong>, soit sur <strong>votre téléphone</strong>.
     </p>
 
@@ -3109,7 +3238,7 @@ const participantUser = {
   phone: p.phone || "",
   seats: clientSeats.map(([id]) => id),
   isParticipant: true,
-  mainClientName: user.mainClientName // 👈 TRANSMIS
+
 };
 
 
@@ -3335,7 +3464,95 @@ async function sendViaBrevo(to, subject, html) {
 
 
 
+// 👥 Toggle affichage participants
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".open-participants-btn");
+  if (!btn) return;
 
+  const reservationId = btn.dataset.resid;
+  const box = document.getElementById(`participants-${reservationId}`);
+  if (!box) return;
+
+  if (box.innerHTML.trim() !== "") {
+    box.innerHTML = "";
+  } else {
+    await loadParticipants(reservationId);
+  }
+});
+
+// ➕ Ajout participant
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".add-participant-btn");
+  if (!btn) return;
+
+  const reservationId = btn.dataset.resid;
+  if (!reservationId) return;
+
+  const name = prompt("Nom du participant :");
+  if (!name) return;
+
+  const email = prompt("Email :") || "";
+  const phone = prompt("Téléphone :") || "";
+
+  const pid = crypto.randomUUID();
+
+  await set(ref(db, `participants/${reservationId}/${pid}`), {
+    name,
+    email,
+    phone
+  });
+
+  await loadParticipants(reservationId);
+});
+// 📨 Envoi formulaire participants
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".send-participants-form-btn");
+  if (!btn) return;
+
+  const email = btn.dataset.email;
+  const reservationId = btn.dataset.resid;
+
+  if (!email || !reservationId) {
+    return alert("❌ Email ou réservation manquante");
+  }
+
+const formLink = `https://orleanne03.github.io/theatre-saint-martin/participants.html?resId=${encodeURIComponent(reservationId)}&salle=salle`;
+
+
+const html = `
+  <h2>👥 Informations des participants — Théâtre Saint Martin</h2>
+
+  <p>
+    Afin de finaliser votre réservation, merci de compléter
+    le formulaire ci-dessous avec les informations des participants.
+  </p>
+
+  <p>
+    👉 <a href="${formLink}" target="_blank"
+      style="font-weight:600;color:#1976d2;">
+      Remplir le formulaire participants
+    </a>
+  </p>
+
+  <p style="font-size:14px;color:#555;">
+    Ce lien est personnel et lié à votre réservation.
+  </p>
+
+  <p>Merci et à très bientôt 🎭</p>
+`;
+
+
+  try {
+    await sendViaBrevo(
+      email,
+      "👥 Formulaire participants – Théâtre Saint Martin",
+      html
+    );
+    alert("✅ Formulaire envoyé");
+  } catch (err) {
+    alert("❌ Erreur envoi formulaire");
+  }
+});
 
 </script>
 
@@ -3383,5 +3600,6 @@ async function sendViaBrevo(to, subject, html) {
 
 </body>
 </html>
+
 
 
