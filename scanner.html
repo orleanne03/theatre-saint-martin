@@ -218,21 +218,25 @@ const entry = {
     flash("lime");
   }
 
-if (data && typeof data === "object") {
-  detailsEl.style.display = "block";
-  detailsEl.innerHTML = `
-    <strong>Réservation au nom de :</strong><br>
-    <span style="font-size:18px;font-weight:700;color:#0d47a1;">
-      ${data.nom || "(nom non précisé)"}
-    </span>
-    <hr style="margin:8px 0">
-    <strong>🎟️ Sièges :</strong> ${data.sieges || "(inconnu)"}
-  `;
-}
- else {
-    detailsEl.style.display = "block";
-    detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
-  }
+// 🔎 récupérer le nom principal déjà enregistré pour ce billet
+const scannedList = getScanned();
+const existing = scannedList.find(s => s.ticketId === ticketId);
+
+const nomPrincipal =
+  existing?.nom ||
+  data?.nom ||
+  "(nom non précisé)";
+
+detailsEl.style.display = "block";
+detailsEl.innerHTML = `
+  <strong>Réservation au nom de :</strong><br>
+  <span style="font-size:18px;font-weight:700;color:#0d47a1;">
+    ${nomPrincipal}
+  </span>
+  <hr style="margin:8px 0">
+  <strong>🎟️ Sièges :</strong> ${data?.sieges || existing?.sieges || "(inconnu)"}
+`;
+
 
 setTimeout(() => {
   statusEl.textContent = "Prêt pour un nouveau scan.";
