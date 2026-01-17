@@ -179,6 +179,19 @@ const maxScans = siegesStr
 
 
 const scansForThisTicket = scanned.filter(s => s.ticketId === ticketId);
+// 🔁 Si on découvre le nom principal PLUS TARD, on le met à jour partout
+if (data?.nom) {
+  scanned = scanned.map(s => {
+    if (s.ticketId === ticketId && s.nom === "(non précisé)") {
+      return {
+        ...s,
+        nom: data.nom
+      };
+    }
+    return s;
+  });
+  setScanned(scanned);
+}
 
 if (scansForThisTicket.length >= maxScans) {
   statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé (quota atteint)</span>";
