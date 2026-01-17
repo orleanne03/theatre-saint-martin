@@ -8,22 +8,27 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
-  margin:0;padding:16px;text-align:center;
-  background:linear-gradient(180deg,#f9f9f9,#e3f2fd)
-}
-h1{color:#0d47a1;margin:6px 0}
-#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}
-.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+body{font-family:system-ui;margin:0;padding:16px;text-align:center;
+background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
+h1{color:#0d47a1}
+#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden;
+box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;
+border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .ok{color:#2e7d32;font-weight:700}
 .err{color:#d32f2f;font-weight:700}
+button{padding:10px 14px;border-radius:8px;border:none;color:#fff;
+cursor:pointer;margin:6px}
+.green{background:#2e7d32}
+.violet{background:#8e24aa}
 #counter{font-weight:700;color:#0d47a1}
-#details{margin-top:10px;text-align:left;font-size:15px;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
+#details{margin-top:10px;text-align:left;background:#f9f9f9;
+padding:10px;border-radius:8px;border:1px solid #ddd}
 </style>
 </head>
 
 <body>
+
 <h1>🎭 Théâtre Saint Martin — Scanner</h1>
 <p>Alignez le QR dans le carré pour valider un billet.</p>
 
@@ -57,104 +62,113 @@ const detailsEl = document.getElementById("details");
 
 let scanner;
 let scanning = false;
-let lastText = "";
-let lastTime = 0;
+let lastText="", lastTime=0;
 
-/* Scanner */
+function flash(color){
+  const d=document.createElement("div");
+  Object.assign(d.style,{
+    position:"fixed",inset:"0",background:color,opacity:.25,zIndex:99
+  });
+  document.body.append(d);
+  setTimeout(()=>d.remove(),150);
+}
+
 async function startScanner(){
-  if (scanning) return;
-  scanning = true;
-  scanner = new Html5Qrcode("reader");
-
+  if(scanning) return;
+  scanning=true;
+  scanner=new Html5Qrcode("reader");
   await scanner.start(
-    { facingMode:"environment" },
-    { fps:10, qrbox:250 },
+    {facingMode:"environment"},
+    {fps:10,qrbox:{width:250,height:250}},
     onScanSuccess
   );
 }
 
 async function stopScanner(){
-  if (scanner) {
+  if(scanner){
     await scanner.stop();
-    scanning = false;
+    scanning=false;
   }
 }
 
-function safeDecode(str){
-  try { return decodeURIComponent(str); } catch { return str; }
+function safeDecode(t){
+  try{ return decodeURIComponent(t); }catch{ return t; }
 }
 
-/* 🎯 SCAN */
 async function onScanSuccess(text){
-  const now = Date.now();
-  if (text === lastText && now - lastTime < 3000) return;
-  lastText = text; lastTime = now;
+  const now=Date.now();
+  if(text===lastText && now-lastTime<3000) return;
+  lastText=text; lastTime=now;
 
   await stopScanner();
 
-  let data = null;
-  try { data = JSON.parse(safeDecode(text)); } catch {}
+  let data=null;
+  try{ data=JSON.parse(safeDecode(text)); }catch{}
 
-  const ticketId = data?.sieges
-    ? String(data.sieges).replace(/\s+/g,"")
-    : text;
+  const sieges = data?.sieges || "";
+  const maxScans = sieges.split(",").filter(Boolean).length || 1;
+  const ticketId = sieges.replace(/\s+/g,"") || text;
 
-  const seats = data?.sieges || "";
-  const maxScans = seats
-    ? seats.split(",").map(s=>s.trim()).filter(Boolean).length
-    : 1;
+  const ticketRef = ref(db,"scans/"+ticketId);
 
-  const ticketRef = ref(db, "scans/" + ticketId);
-
-  runTransaction(ticketRef, (current) => {
-    if (current === null) {
+  runTransaction(ticketRef,(current)=>{
+    if(current===null){
       return {
-        count: 1,
-        nom: data?.nom || "Participant",
-        sieges: seats,
-        updated: Date.now()
+        count:1,
+        nom:data?.nom || "Participant",
+        sieges:sieges,
+        lastScan:Date.now()
       };
     }
 
-    if (current.count >= maxScans) return;
+    if(current.count>=maxScans) return;
 
-    if (data?.nom && current.nom === "Participant") {
-      current.nom = data.nom;
+    if(data?.nom && current.nom==="Participant"){
+      current.nom=data.nom;
     }
 
     current.count++;
-    current.updated = Date.now();
+    current.lastScan=Date.now();
     return current;
-  }).then(result => {
-
-    if (!result.committed) {
-      statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
-      document.body.style.background = "#ffcdd2";
-      setTimeout(() => {
-        document.body.style.background = "";
+  }).then(res=>{
+    if(!res.committed){
+      statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
+      flash("red");
+      document.body.style.background=
+        "linear-gradient(180deg,#ffebee,#ffcdd2)";
+      setTimeout(()=>{
+        document.body.style.background=
+          "linear-gradient(180deg,#f9f9f9,#e3f2fd)";
+        statusEl.textContent="Prêt à scanner.";
         startScanner();
-      }, 3000);
+      },5000);
       return;
     }
 
-    const v = result.snapshot.val();
+    const v=res.snapshot.val();
 
-    statusEl.innerHTML = `<span class="ok">✅ Scan ${v.count} / ${maxScans}</span>`;
-    counterEl.textContent = "Billets scannés : " + v.count;
+    statusEl.innerHTML=
+      `<span class='ok'>✅ Scan ${v.count} / ${maxScans}</span>`;
 
-    detailsEl.style.display = "block";
-    detailsEl.innerHTML = `
+    counterEl.textContent="Billets scannés : "+v.count;
+
+    detailsEl.style.display="block";
+    detailsEl.innerHTML=`
       <strong>Réservation au nom de :</strong><br>
-      <span style="font-size:18px;font-weight:700;color:#0d47a1">${v.nom}</span>
+      <span style="font-size:18px;font-weight:700;color:#0d47a1">
+        ${v.nom}
+      </span>
       <hr>
       <strong>🎟️ Sièges :</strong> ${v.sieges}
     `;
 
-    setTimeout(startScanner, 1200);
+    flash("lime");
+    setTimeout(()=>startScanner(),1200);
   });
 }
 
-window.addEventListener("load", startScanner);
+startScanner();
 </script>
+
 </body>
 </html>
