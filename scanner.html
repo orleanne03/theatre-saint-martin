@@ -218,15 +218,18 @@ const entry = {
     flash("lime");
   }
 
-  if (data && typeof data === "object") {
-    detailsEl.style.display = "block";
-    detailsEl.innerHTML = `
-      <strong>Nom :</strong> ${data.nom || "(non précisé)"}<br>
-      <strong>Email :</strong> ${data.email || "(non précisé)"}<br>
-      <strong>Téléphone :</strong> ${data.tel || "(non précisé)"}<br>
-      <strong>Sièges :</strong> ${data.sieges || "(inconnu)"}
-    `;
-  } else {
+if (data && typeof data === "object") {
+  detailsEl.style.display = "block";
+  detailsEl.innerHTML = `
+    <strong>Réservation au nom de :</strong><br>
+    <span style="font-size:18px;font-weight:700;color:#0d47a1;">
+      ${data.nom || "(nom non précisé)"}
+    </span>
+    <hr style="margin:8px 0">
+    <strong>🎟️ Sièges :</strong> ${data.sieges || "(inconnu)"}
+  `;
+}
+ else {
     detailsEl.style.display = "block";
     detailsEl.innerHTML = "<em>Format inconnu — aucune donnée exploitable trouvée.</em>";
   }
