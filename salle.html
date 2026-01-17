@@ -1638,15 +1638,11 @@ if (Array.isArray(user.seats) && user.seats.length) {
 }
 
 
-const qrData = JSON.stringify({
-  reservationId,
-  nomPrincipal: mainClientName, // 👈 NOM DU RÉSERVANT
-  nomParticipant: name,
-  email,
-  phone,
-  sieges: clientSeats
-});
-
+  const qrData = JSON.stringify({
+    nom: user.name,
+    email: user.email,
+    sieges: reservedSeats
+  });
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
