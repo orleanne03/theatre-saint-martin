@@ -58,6 +58,7 @@ form button:hover { background:#b71c1c; }
   border-bottom:1px solid #f0f0f0;
   padding-bottom:6px;
   cursor:pointer;
+      text-align: left;
 }
 .accordion-body {
   display:none;
@@ -543,7 +544,7 @@ let summary = `
 
         <div class="accordion-header" data-toggle="${id}">
 <span>
-<b>${r.name}</b> – ${r.nbPlaces} places
+<b>${r.name}</b><br>${r.nbPlaces} places
 ${isAccompagnant ? `<span class="accompagnant-badge">ACCOMPAGNANT</span>` : ""}
 
 ${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
