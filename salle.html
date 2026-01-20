@@ -1581,6 +1581,8 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
     <h2>🎭 Confirmation de votre réservation — Théâtre Saint Martin</h2>
     <p>Bonjour <strong>${user.name}</strong>,</p>
     <p>Merci pour votre réservation.</p>
+	<p>Lieu: ISLEA Avermes.</p>
+	<p>Samedi 24 Janvier 2026 - 20h30.</p>
     <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
     <p><strong>💰 Montant total :</strong> ${user.amount.toFixed(2)} €</p>
     <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
@@ -3607,6 +3609,7 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
 
 </body>
 </html>
+
 
 
 
