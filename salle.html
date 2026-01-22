@@ -2202,7 +2202,8 @@ header.innerHTML = `
     info.free
       ? ""
       : `<br><span style="font-weight:600;color: red;">
-           (${(Number(info.nbAdult || 0) + Number(info.nbChild || 0))} places)
+        (${info.seats.length} places)
+
          </span>`
   }
 </div>
