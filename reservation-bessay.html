@@ -508,20 +508,41 @@ async function renderList(){
     return;
   }
   /* --- AJOUT : Calcul des totaux --- */
-let totalAdult = 0, totalChild = 0, totalAmount = 0;
+  let totalAdult = 0, totalChild = 0, totalDinner = 0;
+let totalAdultAmount = 0, totalChildAmount = 0, totalDinnerAmount = 0;
+let totalAmount = 0;
+
+
 for (const r of Object.values(reservations)){
-  totalAdult += Number(r.nbAdult||0);
-  totalChild += Number(r.nbChild||0);
-  totalAmount += Number(r.amount||0);
+  const a = Number(r.nbAdult || 0);
+  const c = Number(r.nbChild || 0);
+  const d = Number(r.nbDinner || 0);
+
+  totalAdult += a;
+  totalChild += c;
+  totalDinner += d;
+
+  totalAdultAmount += a * priceAdult;
+  totalChildAmount += c * priceChild;
+  totalDinnerAmount += d * priceDinner;
 }
+
+totalAmount = totalAdultAmount + totalChildAmount + totalDinnerAmount;
+
+
 
 /* Affichage résumé */
 let summary = `
   <div style="max-width:600px;margin:0 auto 15px auto;padding:12px;
               background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);
               font-weight:600;font-size:1rem;text-align:center;">
-    👨‍👩‍👧 Adultes : ${totalAdult} &nbsp; | &nbsp; 👧 Enfants : ${totalChild} <br>
-    💶 Total encaissé (si tous payés) : ${totalAmount.toFixed(2)} €
+              👨‍👩‍👧 Adultes : ${totalAdult} — ${totalAdultAmount.toFixed(2)} €<br><br>
+👧 Enfants : ${totalChild} — ${totalChildAmount.toFixed(2)} €<br><br>
+👥 Accompagnants : ${totalDinner} — ${totalDinnerAmount.toFixed(2)} €<br><br>
+<hr style="margin:8px 0;">
+💶 <b>Total encaissé (si tous payés)</b> : ${totalAmount.toFixed(2)} €
+
+
   </div>
 `;
 
