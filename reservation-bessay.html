@@ -143,6 +143,77 @@ div#bulkRecipients label {
   margin-left:8px;
   vertical-align:middle;
 }
+/* =========================
+   MODE PORTIER XXL
+========================= */
+body.portier-mode {
+  background: #000;
+  color: #fff;
+}
+
+.portier-card {
+  max-width: 100%;
+  margin: 20px auto;
+  padding: 30px;
+  border-radius: 20px;
+  background: #111;
+  box-shadow: none;
+}
+
+.portier-counter {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 30px 0;
+}
+
+.portier-btn {
+  width: 100%;
+  font-size: 32px;
+  padding: 25px;
+  margin: 15px 0;
+  border-radius: 16px;
+  border: none;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.portier-add {
+  background: #2e7d32;
+  color: white;
+}
+
+.portier-remove {
+  background: #c62828;
+  color: white;
+}
+
+.portier-exit {
+  background: #444;
+  color: white;
+  font-size: 20px;
+}
+/* =========================
+   BOUTONS XXL DANS ACCORDÉON OUVERT
+========================= */
+.accordion-body.open .action-btn[data-action="add-entry"],
+.accordion-body.open .action-btn[data-action="remove-entry"] {
+  width: 100%;
+  font-size: 20x;
+  padding: 15px;
+  margin: 15px 0;
+
+  font-weight: 900;
+}
+
+/* Vert XXL */
+.accordion-body.open .action-btn[data-action="add-entry"] {
+  background: #2e7d32 !important;
+}
+
+/* Rouge XXL */
+.accordion-body.open .action-btn[data-action="remove-entry"] {
+  background: #c62828 !important;
+}
 
 </style>
 </head>
@@ -185,6 +256,10 @@ div#bulkRecipients label {
   <button class="admin-btn" id="testEmailBtn" style="display:none;">✉️ Mode Email : TEST</button>
   <button class="admin-btn" id="exportBtn" style="display:none;">💾 Enregistrer les réservations</button>
   <button class="admin-btn" id="exportEmailsBtn" style="display:none;">📧 Exporter tous les emails</button>
+  <button class="admin-btn" id="portierModeBtn" style="display:none;">
+🚪 Mode Portier XXL
+</button>
+
 
   <button id="sendBulkEmail" style="display:none;background:#ff9800;">
   📢 Email groupé (erratum)
@@ -271,6 +346,8 @@ const refSpectacle = ref(db, "spectacles/salle_bessay");
 /* État */
 let reservations = {};
 let adminMode = false;
+let openedAccordionId = null;
+
 let emailTestMode = false;
 let singleTargetEmail = null;
 
@@ -295,6 +372,8 @@ const priceBtn = document.getElementById("priceBtn");
 const testEmailBtn = document.getElementById("testEmailBtn");
 const exportBtn = document.getElementById("exportBtn");
 const exportEmailsBtn = document.getElementById("exportEmailsBtn");
+const portierModeBtn = document.getElementById("portierModeBtn");
+
 
 const testNotice = document.getElementById("testNotice");
 const adminNotice = document.getElementById("adminNotice");
@@ -468,14 +547,16 @@ const data = {
   name, email, phone,
   nbAdult, nbChild,
   nbDinner,
-nbPlaces: nbAdult + nbChild + nbDinner,
+  nbPlaces: nbAdult + nbChild + nbDinner,
 
   amount:
     (nbAdult * priceAdult) +
     (nbChild * priceChild) +
     (nbDinner * priceDinner),
+
   paid: document.getElementById("paid").checked,
-  present: false
+  present: false,
+  enteredCount: 0   // ✅ ICI
 };
 
 
@@ -549,6 +630,8 @@ let summary = `
   let html = summary + "<h3>📋 Réservations</h3>";
 
   for (const [id, r] of entries){
+  const isComplete = (r.enteredCount || 0) >= r.nbPlaces;
+
     const isAccompagnant =
   Number(r.nbAdult || 0) === 0 &&
   Number(r.nbChild || 0) === 0 &&
@@ -561,11 +644,14 @@ let summary = `
     const presClass= r.present ? "paid" : "unpaid";
     const presTxt  = r.present ? "🎟️ Présent" : "🚫 Absent";
     html += `
-<div class="accordion-card ${r.present ? 'present-card' : ''} ${r.free ? 'free-line' : ''}" data-card="${id}">
+<div class="accordion-card ${isComplete ? 'present-card' : ''} ${r.free ? 'free-line' : ''}" data-card="${id}">
+
 
         <div class="accordion-header" data-toggle="${id}">
 <span>
-<b>${r.name}</b><br>${r.nbPlaces} places
+<b>${r.name}</b><br>
+🎟️ Entrés : ${r.enteredCount || 0} / ${r.nbPlaces}
+
 ${isAccompagnant ? `<span class="accompagnant-badge">ACCOMPAGNANT</span>` : ""}
 
 ${r.free ? `<span class="free-badge">GRATUIT</span>` : ""}
@@ -603,7 +689,7 @@ ${pendingCount > 0 ? `
 
           <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
 
-          <p><b>🎟️ Statut :</b> <span class="${presClass}">${presTxt}</span></p>
+   
 ${adminMode ? `
   <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
   <button class="action-btn" style="background:#8e24aa;" data-action="toggle-present" data-id="${id}" data-next="${!r.present}">🎟️ Valider billet</button>
@@ -631,6 +717,22 @@ ${adminMode ? `
 
 
   <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
+  <button class="action-btn"
+  style="background:#2e7d32;"
+  data-action="add-entry"
+  data-id="${id}">
+  ➕ Entrée
+</button>
+<button class="action-btn"
+  style="background:#c62828;"
+  data-action="remove-entry"
+  data-id="${id}">
+  ➖ Supp. entrée
+</button>
+
+
+
+
 ` : ""}
 
         </div>
@@ -641,15 +743,35 @@ ${adminMode ? `
 if (adminMode) {
   Object.keys(reservations).forEach(id => loadParticipants(id));
 }
+// 🔁 Rouvrir l'accordéon précédemment ouvert
+if (openedAccordionId) {
+  const body = document.getElementById(`body-${openedAccordionId}`);
+  if (body) body.classList.add("open");
+}
 
 }
 list.addEventListener("click", async (e)=>{
-  const header = e.target.closest("[data-toggle]");
-  if (header){
-    const id = header.getAttribute("data-toggle");
-    document.getElementById(`body-${id}`).classList.toggle("open");
-    return;
+const header = e.target.closest("[data-toggle]");
+if (header){
+  const id = header.getAttribute("data-toggle");
+  const body = document.getElementById(`body-${id}`);
+
+  const isOpen = body.classList.contains("open");
+
+  // on ferme tout
+  document.querySelectorAll(".accordion-body.open")
+    .forEach(el => el.classList.remove("open"));
+
+  if (!isOpen) {
+    body.classList.add("open");
+    openedAccordionId = id;   // ✅ mémorise
+  } else {
+    openedAccordionId = null; // fermé manuellement
   }
+
+  return;
+}
+
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
   const action = btn.getAttribute("data-action");
@@ -667,7 +789,59 @@ list.addEventListener("click", async (e)=>{
       await remove(ref(db,`spectacles/salle_bessay/${id}`));
     }
   }
+  else if (action === "add-entry") {
+  const r = reservations[id];
+  const current = r.enteredCount || 0;
+
+  if (current >= r.nbPlaces) {
+    alert("✅ Toutes les personnes sont déjà entrées");
+    return;
+  }
+
+  await set(ref(db, `spectacles/salle_bessay/${id}`), {
+    ...r,
+    enteredCount: current + 1
+  });
+
+  return;
+}
+
+else if (action === "remove-entry") {
+  const r = reservations[id];
+  const current = r.enteredCount || 0;
+
+  if (current <= 0) {
+    alert("❌ Aucune entrée à annuler");
+    return;
+  }
+
+  await set(ref(db, `spectacles/salle_bessay/${id}`), {
+    ...r,
+    enteredCount: current - 1
+  });
+
+  return;
+}
+
+  else if (action === "add-entry") {
+  const r = reservations[id];
+  const current = r.enteredCount || 0;
+
+  if (current >= r.nbPlaces) {
+    alert("✅ Toutes les personnes sont déjà entrées");
+    return;
+  }
+
+  await set(ref(db, `spectacles/salle_bessay/${id}`), {
+    ...r,
+    enteredCount: current + 1
+  });
+
+  return;
+}
+
   else if (action === "resend-ticket") {
+  
   const r = reservations[id];
   if (!r || !r.email) {
     alert("❌ Email introuvable");
@@ -675,6 +849,8 @@ list.addEventListener("click", async (e)=>{
   }
 
   if (!confirm(`📧 Renvoyer le billet à ${r.email} ?`)) return;
+
+
 
 const html = buildEmailHTML({
   ...r,
@@ -1371,6 +1547,12 @@ async function sendViaBrevo(to, subject, html) {
   }
 }
 
+let portierMode = false;
+
+portierModeBtn.addEventListener("click", () => {
+  portierMode = !portierMode;
+  document.body.classList.toggle("portier-mode");
+});
 
 
 </script>
