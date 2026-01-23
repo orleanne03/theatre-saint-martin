@@ -147,8 +147,8 @@ div#bulkRecipients label {
    MODE PORTIER XXL
 ========================= */
 body.portier-mode {
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: rgb(10, 10, 10);
 }
 
 .portier-card {
@@ -214,6 +214,57 @@ body.portier-mode {
 .accordion-body.open .action-btn[data-action="remove-entry"] {
   background: #c62828 !important;
 }
+.entry-xxl {
+  flex: 1;
+  height: 80px;
+ 
+  border: none;
+  font-size: 28px;
+  font-weight: 900;
+  cursor: pointer;
+  color: white;
+  line-height: 1.1;
+}
+
+.entry-add {
+  background: #2e7d32;
+}
+
+.entry-remove {
+  background: #c62828;
+}
+/* =========================
+   CORRECTION VISIBILITÉ MODE PORTIER
+========================= */
+body.portier-mode .accordion-card {
+  background: rgb(247, 244, 244);
+  color: rgb(8, 8, 8);
+}
+
+/* ✅ PRIORITÉ AU COMPLET */
+body.portier-mode .accordion-card.present-card {
+  background-color:#e8f5e9 !important;
+  border:2px solid #2e7d32 !important;
+}
+
+
+body.portier-mode .accordion-header {
+  border-bottom: 1px solid #333;
+}
+
+body.portier-mode .accordion-body {
+  color: rgb(14, 13, 13);
+}
+
+body.portier-mode .accordion-body p {
+  color: rgb(8, 8, 8);
+}
+
+/* masquer les boutons admin normaux en portier */
+body.portier-mode .action-btn,
+body.portier-mode .delete-btn {
+  display: none !important;
+}
 
 </style>
 </head>
@@ -240,7 +291,19 @@ body.portier-mode {
   <p id="totalPrice">Total : 0 €</p>
   <button type="submit">✅ Confirmer la réservation</button>
 </form>
-
+<div style="margin-top:25px;">
+  <button class="admin-btn" id="adminToggle">🔐 Mode Admin</button>
+  <button class="admin-btn" id="portierAccessBtn">
+    🚪 Accès Portier
+    </button>
+    
+  <button class="admin-btn"
+    <a href="accueil.html"
+       style="display:inline-block; background-color:#6d4c41; color:#fff; text-decoration:none;
+              padding:8px 16px; border-radius:8px; font-weight:600; font-size:0.9rem;">
+      🏠 Accueil
+    </a>
+  </div>
 <div id="list"></div>
 
 <div style="margin-top:25px;">
@@ -347,6 +410,7 @@ const refSpectacle = ref(db, "spectacles/salle_bessay");
 let reservations = {};
 let adminMode = false;
 let openedAccordionId = null;
+let portierOnlyMode = false;
 
 let emailTestMode = false;
 let singleTargetEmail = null;
@@ -373,6 +437,7 @@ const testEmailBtn = document.getElementById("testEmailBtn");
 const exportBtn = document.getElementById("exportBtn");
 const exportEmailsBtn = document.getElementById("exportEmailsBtn");
 const portierModeBtn = document.getElementById("portierModeBtn");
+const portierAccessBtn = document.getElementById("portierAccessBtn");
 
 
 const testNotice = document.getElementById("testNotice");
@@ -690,50 +755,26 @@ ${pendingCount > 0 ? `
           <p><b>💶 Montant :</b> ${Number(r.amount||0).toFixed(2)} €</p>
 
    
-${adminMode ? `
+          ${adminMode ? `
   <button class="action-btn" data-action="toggle-paid" data-id="${id}" data-next="${!r.paid}">💶 Basculer paiement</button>
   <button class="action-btn" style="background:#8e24aa;" data-action="toggle-present" data-id="${id}" data-next="${!r.present}">🎟️ Valider billet</button>
-
-  <button class="action-btn" style="background:#1976d2;"
-    data-action="resend-ticket"
-    data-id="${id}">
-    📧 Renvoyer le billet
-  </button>
-<button class="action-btn"
-  style="background:#2e7d32;"
-  data-action="participants"
-  data-id="${id}">
-  📩 Demander les infos des participants
-</button>
-
-  <div class="participants-list" id="participants-${id}">
-    <p style="font-weight:600;margin-top:10px;">
-      👥 Participants :
-    </p>
-    <div style="font-size:0.9rem;color:#444;">
-      Chargement…
-    </div>
-  </div>
-
-
+  <button class="action-btn" style="background:#1976d2;" data-action="resend-ticket" data-id="${id}">📧 Renvoyer le billet</button>
+  <button class="action-btn" style="background:#2e7d32;" data-action="participants" data-id="${id}">📩 Demander les infos des participants</button>
   <button class="delete-btn" data-action="delete" data-id="${id}">🗑 Supprimer</button>
-  <button class="action-btn"
-  style="background:#2e7d32;"
-  data-action="add-entry"
-  data-id="${id}">
-  ➕ Entrée
-</button>
-<button class="action-btn"
-  style="background:#c62828;"
-  data-action="remove-entry"
-  data-id="${id}">
-  ➖ Supp. entrée
-</button>
 
+  <button class="action-btn" style="background:#2e7d32;" data-action="add-entry" data-id="${id}">➕ Entrée</button>
+  <button class="action-btn" style="background:#c62828;" data-action="remove-entry" data-id="${id}">➖ Supp. entrée</button>
+` : portierOnlyMode ? `
+  <div style="margin-top:20px; display:flex; gap:15px;">
+    <button class="entry-xxl entry-add" data-action="add-entry" data-id="${id}">
+      ➕
+    </button>
+    <button class="entry-xxl entry-remove" data-action="remove-entry" data-id="${id}">
+      ➖
+    </button>
+  </div>
+` : ``}
 
-
-
-` : ""}
 
         </div>
       </div>`;
@@ -789,24 +830,11 @@ if (header){
       await remove(ref(db,`spectacles/salle_bessay/${id}`));
     }
   }
-  else if (action === "add-entry") {
-  const r = reservations[id];
-  const current = r.enteredCount || 0;
 
-  if (current >= r.nbPlaces) {
-    alert("✅ Toutes les personnes sont déjà entrées");
-    return;
-  }
-
-  await set(ref(db, `spectacles/salle_bessay/${id}`), {
-    ...r,
-    enteredCount: current + 1
-  });
-
-  return;
-}
 
 else if (action === "remove-entry") {
+
+
   const r = reservations[id];
   const current = r.enteredCount || 0;
 
@@ -832,12 +860,20 @@ else if (action === "remove-entry") {
     return;
   }
 
+  const newCount = current + 1;
+
   await set(ref(db, `spectacles/salle_bessay/${id}`), {
     ...r,
-    enteredCount: current + 1
+    enteredCount: newCount
   });
 
+  // ✅ SI COMPLET → FERMER L'ACCORDÉON
+  if (newCount >= r.nbPlaces) {
+    openedAccordionId = null;
+  }
+
   return;
+
 }
 
   else if (action === "resend-ticket") {
@@ -935,6 +971,21 @@ document.getElementById("sendAllTickets").style.display = "none";
 
     testNotice.style.display = "none";
   }
+  renderList();
+});
+portierAccessBtn.addEventListener("click", () => {
+  const pass = prompt("Code portier :");
+  if (pass !== "portier123") {
+    alert("❌ Code incorrect");
+    return;
+  }
+
+  adminMode = false;
+  portierOnlyMode = true;
+
+  document.body.classList.remove("admin-mode");
+  document.body.classList.add("portier-mode");
+
   renderList();
 });
 
