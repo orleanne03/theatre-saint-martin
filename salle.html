@@ -1029,6 +1029,94 @@ background: magenta !important;
   border-radius: 0 0 12px 12px;
 }
 
+
+body.portier .badge-container,
+body.portier .paid-toggle-client,
+body.portier .group-actions,
+body.portier .open-participants-btn,
+body.portier .send-participants-form-btn {
+  display: none !important;
+}
+
+body.portier .accordion {
+  padding: 10px;
+}
+
+body.portier .accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* =========================
+   MODE PORTIER (BESSAY)
+========================= */
+/* MODE PORTIER : on garde la liste, on cache seulement le détail */
+body.portier .accordion-content p,
+body.portier .open-participants-btn,
+body.portier .send-participants-form-btn,
+body.portier .paid-toggle-client,
+body.portier .group-actions,
+body.portier .badge-container {
+  display: none !important;
+}
+
+/* On garde le header bien visible */
+body.portier .accordion-header {
+  cursor: default;
+}
+
+
+body.portier .badge-container {
+  display: none !important;
+}
+
+body.portier .accordion {
+  padding: 16px !important;
+}
+
+body.portier .accordion-header {
+  justify-content: space-between;
+  align-items: center;
+}
+/* Boutons portier visibles seulement si accordéon ouvert */
+.accordion .portier-controls {
+  display: none;
+}
+
+.accordion.open .portier-controls {
+  display: flex;
+  gap: 14px;
+  margin: 10px 0 6px 10px;
+}
+
+
+.portier-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}
+
+.portier-plus {
+  background: #2e7d32;
+  color: white;
+}
+
+.portier-minus {
+  background: #d32f2f;
+  color: white;
+}
+.full {
+  background-color: #ffcccc !important;
+}
+.portier-all {
+  background: #1976d2;
+  color: white;
+}
+
 </style>
 </head>
 
@@ -1060,6 +1148,8 @@ background: magenta !important;
 <div class="buttons">
   <button id="confirm">✅ Confirmer</button>
   <button id="admin">🔐 Admin</button>
+  <button id="portierBtn" style="background:#37474f;">🚪 Portier</button>
+
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
@@ -1201,7 +1291,13 @@ const onValue = window._firebaseOnValue;
 const get = window._firebaseGet;
 
 let seats = {}, selected = [], admin = false;
+let portierMode = false;
+let localEntered = {}; // ✅ OBLIGATOIRE (mode portier)
+window.localEntered = localEntered;
+
 window.seats = seats;
+// ⚡ Compteur local pour le mode portier (instantané)
+
 
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
@@ -1214,6 +1310,7 @@ const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
 
 rows.forEach(r => {
   const row = document.createElement("div");
+  
   row.className = "row";
 
   const label = document.createElement("div");
@@ -1250,13 +1347,36 @@ d.onclick = (e) => {
 const seatsRef = ref(db, "seats");
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
+
+  // 🔄 Initialise le compteur local PAR reservationId (mode portier)
+for (const k in localEntered) {
+  delete localEntered[k];
+}
+
+
+  for (const data of Object.values(seats)) {
+    const resid = data.reservationId;
+    if (!resid) continue;
+
+    const v = data.enteredCount || 0;
+    if (localEntered[resid] === undefined || v > localEntered[resid]) {
+      localEntered[resid] = v;
+    }
+  }
+
   render();
   updateTable();
-  updateStatsBar(); // ✅ AJOUT ICI — met à jour les compteurs au chargement
+  updateStatsBar();
   setTimeout(() => loader.classList.add("hidden"), 400);
-});
+}); // ✅ ← CETTE LIGNE MANQUAIT
 
-function save(){ set(seatsRef, seats); }
+function save(){ 
+  return set(seatsRef, seats); 
+}
+
+window.save = save;
+
+
 // 🎨 Nouvelle modale de choix du type de billet (accessible partout)
 async function askSeatType(id) {
   return new Promise(resolve => {
@@ -1831,6 +1951,16 @@ adminBtn.onclick = () => {
     toggleAdminUI(); // ✅ déjà présent ici
   }
 };
+document.getElementById("portierBtn").onclick = () => {
+  const code = prompt("Code portier :");
+  if (code !== "portier123") return alert("❌ Code incorrect");
+
+  portierMode = !portierMode;
+  document.body.classList.toggle("portier", portierMode);
+
+  alert(portierMode ? "🚪 Mode portier ACTIVÉ" : "🚪 Mode portier DÉSACTIVÉ");
+  updateTable();
+};
 
 
 
@@ -2184,6 +2314,13 @@ for (const [id, data] of entries) {
     }
   const div = document.createElement("div");
   div.className = "accordion";
+  const entered = localEntered[reservationId] ?? 0;
+const total = info.seats.length;
+
+if (entered >= total && total > 0) {
+  div.classList.add("full");
+}
+
   const header = document.createElement("div");
 header.className = `accordion-header ${
   info.free ? "free-line" : (info.allPaid ? "paid" : "unpaid")
@@ -2211,18 +2348,25 @@ header.innerHTML = `
       ? ""
       : `<br><span style="font-weight:600;color: red;">
         (${info.seats.length} places)
-
          </span>`
   }
+  <br>
+🎟️ Entrés : ${localEntered[reservationId] ?? 0} / ${info.seats.length}
+
+
+
+
+
+
+
 </div>
 
-
-
-  <div class="badge-container" style="display:flex;align-items:center;gap:8px;">
-    <span>${info.allPaid ? "💰" : "❌ Partiel / Non payé"}</span>
-    ${freeBadge}
-  </div>
+<div class="badge-container" style="display:flex;align-items:center;gap:8px;">
+  <span>${info.allPaid ? "💰" : "❌ Partiel / Non payé"}</span>
+  ${freeBadge}
+</div>
 `;
+
 
 // 🔔 BADGE PARTICIPANTS NON ENVOYÉS (hors admin)
 if (reservationId && !admin) {
@@ -2246,7 +2390,25 @@ if (reservationId && !admin) {
 
 
 
-  header.onclick = () => div.classList.toggle("open");
+header.onclick = () => {
+  const isOpen = div.classList.contains("open");
+
+  document.querySelectorAll(".accordion.open").forEach(acc => {
+    acc.classList.remove("open");
+  });
+
+  if (!isOpen) {
+    div.classList.add("open");
+
+  } else {
+
+  }
+};
+
+
+
+
+
 
   const content = document.createElement("div");
   content.className = "accordion-content";
@@ -2367,7 +2529,31 @@ s.type === "enfant" ? "🧒" : "🎟️";
 
   `;
 
-  div.append(header, content);
+div.append(header);
+
+if (portierMode) {
+  const controls = document.createElement("div");
+  controls.className = "portier-controls";
+controls.innerHTML = `
+<button class="portier-btn portier-plus"
+        data-resid="${reservationId}"
+        data-max="${info.seats.length}">+</button>
+
+<button class="portier-btn portier-minus"
+        data-resid="${reservationId}">−</button>
+
+<button class="portier-btn portier-all"
+        data-resid="${reservationId}"
+        data-max="${info.seats.length}">✓</button>
+`;
+
+
+  div.append(controls);
+  
+}
+
+div.append(content);
+
   container.append(div);
   // 👥 charge la liste des participants si disponible
 
@@ -2394,7 +2580,8 @@ s.type === "enfant" ? "🧒" : "🎟️";
     for (const [id, data] of Object.entries(seats)) {
       if (data.name === clientName) {
         data.paid = isPaid;
-        await set(ref(db, `seats/${id}`), data);
+await update(ref(db, `seats/${id}`), { paid: isPaid });
+
       }
     }
 
@@ -2421,6 +2608,7 @@ s.type === "enfant" ? "🧒" : "🎟️";
 
 }); // ← ferme cb.addEventListener
 };   // ← ferme updateTable()
+window.updateTable = updateTable;
 
 // ===================================================
 // 🎟️ Génération HTML du billet (client principal)
@@ -2517,7 +2705,8 @@ await sendViaBrevo(
 
 // === Ajouter des sièges manuellement (mode admin) ===
 document.querySelectorAll(".add-seat-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
+btn.addEventListener("click", async () => {
+
     if (!admin) return alert("⚠️ Activez le mode admin.");
     const clientName = btn.dataset.name;
     const clientSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
@@ -3437,17 +3626,11 @@ const participantUser = {
   </div>
 </div>
 <script>
-  document.getElementById("retour-dashboard").addEventListener("click", () => {
-    window.location.href = "index.html";
-  });
+
   // ===================================================
 // ❌ Bouton FERMER – aperçu email
 // ===================================================
-document.addEventListener("click", (e) => {
-  if (e.target.id === "closeEmailPreview") {
-    document.getElementById("emailPreviewModal").classList.add("hidden");
-  }
-});
+
 async function sendViaBrevo(to, subject, html) {
 
   // 🚫 MODE TEST → AUCUN ENVOI
@@ -3574,6 +3757,99 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
   }
 });
 
+
+
+// ==========================
+// 🚪 MODE PORTIER : + / −
+// ==========================
+
+function syncPortier(reservationId) {
+
+  // 🔄 met à jour les sièges liés à la réservation
+  for (const seat of Object.values(seats)) {
+    if (seat.reservationId === reservationId) {
+      seat.enteredCount = localEntered[reservationId];
+    }
+  }
+
+  // 🔥 sauvegarde Firebase (en arrière-plan)
+  save();
+
+  // ⚡ rafraîchit l’affichage immédiatement
+  updateTable();
+}
+window.syncPortier = syncPortier;
+
+document.addEventListener("click", (e) => {
+  if (e.target.id === "closeEmailPreview") {
+    document.getElementById("emailPreviewModal").classList.add("hidden");
+  }
+});
+
+// ==========================
+// 🚪 MODE PORTIER : + / − (INSTANTANÉ)
+// ==========================
+document.addEventListener("click", (e) => {
+  const plus = e.target.closest(".portier-plus");
+  const minus = e.target.closest(".portier-minus");
+  const all = e.target.closest(".portier-all");
+  if (!plus && !minus && !all) return;
+
+
+  e.stopPropagation(); // ✅ AJOUT ICI
+
+const resid = (plus || minus || all).dataset.resid;
+
+  if (!resid) return;
+
+  if (localEntered[resid] === undefined) {
+    localEntered[resid] = 0;
+  }
+
+let max = 0;
+if (plus) max = parseInt(plus.dataset.max || 0, 10);
+if (all)  max = parseInt(all.dataset.max || 0, 10);
+
+if (all) {
+  localEntered[resid] = max;
+
+  for (const s of Object.values(seats)) {
+    if (s.reservationId === resid) {
+      s.enteredCount = localEntered[resid];
+    }
+  }
+  save();
+  syncPortier(resid);
+  return;
+}
+
+if (plus && localEntered[resid] < max) {
+  localEntered[resid]++;
+
+  for (const s of Object.values(seats)) {
+    if (s.reservationId === resid) {
+      s.enteredCount = localEntered[resid];
+    }
+  }
+  save();
+}
+
+if (minus && localEntered[resid] > 0) {
+  localEntered[resid]--;
+
+  for (const s of Object.values(seats)) {
+    if (s.reservationId === resid) {
+      s.enteredCount = localEntered[resid];
+    }
+  }
+  save();
+}
+
+syncPortier(resid);
+
+});
+
+
 </script>
 
 <!-- 📨 Indicateur visuel du mode email -->
@@ -3620,6 +3896,7 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
 
 </body>
 </html>
+
 
 
 
