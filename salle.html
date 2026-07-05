@@ -3419,8 +3419,7 @@ function escapeMailingHTML(value) {
 function buildNewPieceEmailHTML(name, bodyText) {
   const personalizedIntro = String(bodyText || "").replaceAll("{nom}", name || "");
   const safeIntro = escapeMailingHTML(personalizedIntro)
-    .replace(/
-/g, "<br>");
+    .replace(/\n/g, "<br>");
 
   const afficheUrl = "https://orleanne03.github.io/theatre-saint-martin/affiche-amies.png";
 
