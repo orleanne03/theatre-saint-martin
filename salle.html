@@ -3419,128 +3419,37 @@ function escapeMailingHTML(value) {
 function buildNewPieceEmailHTML(name, bodyText) {
   const personalizedIntro = String(bodyText || "").replaceAll("{nom}", name || "");
   const safeIntro = escapeMailingHTML(personalizedIntro)
-    .replace(/\n/g, "<br>");
+    .replace(/
+/g, "<br>");
 
   const afficheUrl = "https://orleanne03.github.io/theatre-saint-martin/affiche-amies.png";
 
   return `
-    <div style="margin:0;padding:0;background:#f6ead2;font-family:Arial,Helvetica,sans-serif;color:#3a1f12;">
-      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f6ead2;padding:24px 0;">
+    <div style="margin:0;padding:0;background:#f7ead0;font-family:Arial,Helvetica,sans-serif;color:#3a1f12;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f7ead0;padding:18px 0;">
         <tr>
           <td align="center">
-            <table width="620" cellpadding="0" cellspacing="0" role="presentation" style="max-width:620px;width:100%;background:#fff8e8;border-radius:18px;overflow:hidden;border:1px solid #d7a85f;">
+            <table width="560" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;width:100%;background:#fff8e8;border-radius:16px;overflow:hidden;border:1px solid #d7a85f;">
 
               <tr>
-                <td align="center" style="padding:0;">
-                  <img src="${afficheUrl}" alt="Affiche Je préfère qu’on reste amies - La Troupe Saint-Martin" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
+                <td style="padding:22px 24px 14px 24px;text-align:left;font-size:16px;line-height:1.55;color:#3a1f12;">
+                  ${safeIntro}
                 </td>
               </tr>
 
               <tr>
-                <td style="padding:26px 30px 8px 30px;text-align:center;">
-                  <div style="font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8b3f1f;">
-                    La Troupe Saint-Martin présente
+                <td align="center" style="padding:0 18px 18px 18px;">
+                  <img src="${afficheUrl}" alt="Affiche de la pièce" style="display:block;width:100%;max-width:500px;height:auto;border:0;border-radius:12px;">
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 24px 26px 24px;">
+                  <div style="background:#2f7b64;color:#ffffff;border-radius:14px;padding:18px 16px;">
+                    <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Réservation uniquement par téléphone</div>
+                    <div style="font-size:28px;font-weight:bold;letter-spacing:1px;">06 46 32 06 49</div>
                   </div>
-                  <h1 style="margin:12px 0 8px 0;font-size:32px;line-height:1.15;color:#b94825;font-family:Georgia,'Times New Roman',serif;">
-                    Je préfère qu’on reste amies
-                  </h1>
-                  <div style="font-size:18px;color:#5c2c18;">
-                    Une pièce de <strong>Laurent Ruquier</strong>
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <td style="padding:14px 34px 6px 34px;text-align:center;">
-                  <div style="background:#fff1d0;border-radius:14px;padding:18px;border:1px solid #e6bd78;font-size:16px;line-height:1.55;">
-                    ${safeIntro}
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <td style="padding:18px 30px 8px 30px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                    <tr>
-                      <td width="50%" align="center" style="padding:10px;vertical-align:top;">
-                        <div style="font-size:17px;font-weight:bold;color:#2d2d2d;">
-                          Marie-Ange<br>Marion Ramdani
-                        </div>
-                        <div style="font-size:14px;margin-top:6px;color:#7a4a2a;">dans le rôle de</div>
-                        <div style="font-size:25px;font-weight:bold;color:#c94b2b;font-family:Georgia,'Times New Roman',serif;">
-                          Valentine
-                        </div>
-                      </td>
-                      <td width="50%" align="center" style="padding:10px;vertical-align:top;">
-                        <div style="font-size:17px;font-weight:bold;color:#2d2d2d;">
-                          Nelly Lacombe
-                        </div>
-                        <div style="font-size:14px;margin-top:6px;color:#7a4a2a;">dans le rôle de</div>
-                        <div style="font-size:25px;font-weight:bold;color:#2f7b64;font-family:Georgia,'Times New Roman',serif;">
-                          Claudine
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-
-              <tr>
-                <td style="padding:14px 38px 10px 38px;">
-                  <div style="background:#fff1d0;border-radius:14px;padding:22px;border:1px solid #e6bd78;">
-                    <p style="margin:0;font-size:16px;line-height:1.65;text-align:center;">
-                      C’est décidé ! Ce soir, <strong>Claudine</strong>, fleuriste, annoncera à <strong>Valentine</strong>,
-                      sa « meilleure amie », tout l’amour qu’elle éprouve pour elle.
-                      Non seulement cette dernière n’est pas sur la même longueur d’onde, mais cette déclaration
-                      va déclencher un flot de révélations en découvrant la vraie Valentine.
-                      <br><br>
-                      <strong>Elle n’est pas au bout de ses surprises !</strong>
-                    </p>
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <td style="padding:20px 30px 8px 30px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                    <tr>
-                      <td width="50%" style="padding:8px;vertical-align:top;">
-                        <div style="background:#fff8e8;border:2px solid #d79a42;border-radius:14px;padding:16px;text-align:center;">
-                          <div style="font-size:15px;font-weight:bold;color:#5c2c18;">📅 Date</div>
-                          <div style="font-size:20px;margin-top:8px;color:#c84624;font-weight:bold;">11 octobre 2026</div>
-                          <div style="font-size:18px;color:#c84624;">à 20h30</div>
-                        </div>
-                      </td>
-                      <td width="50%" style="padding:8px;vertical-align:top;">
-                        <div style="background:#fff8e8;border:2px solid #d79a42;border-radius:14px;padding:16px;text-align:center;">
-                          <div style="font-size:15px;font-weight:bold;color:#5c2c18;">📍 Lieu</div>
-                          <div style="font-size:20px;margin-top:8px;color:#c84624;font-weight:bold;">Salle ISLEA</div>
-                          <div style="font-size:18px;color:#c84624;">Avermes 03</div>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-
-              <tr>
-                <td align="center" style="padding:24px 30px 30px 30px;">
-                  <div style="background:#2f7b64;color:#ffffff;border-radius:16px;padding:22px 20px;">
-                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">Réservation uniquement par téléphone</div>
-                    <div style="font-size:30px;font-weight:bold;letter-spacing:1px;">06 46 32 06 49</div>
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <td align="center" style="padding:0 30px 28px 30px;">
-                  <p style="margin:0;font-size:15px;line-height:1.5;color:#6b3b24;">
-                    Nous serions heureux de vous retrouver pour cette nouvelle soirée de théâtre.
-                  </p>
-                  <p style="margin:16px 0 0 0;font-size:16px;font-weight:bold;color:#3a1f12;">
-                    La Troupe Saint-Martin
-                  </p>
-                  <p style="font-size:12px;color:#777;margin:18px 0 0 0;">
+                  <p style="font-size:12px;color:#777;margin:16px 0 0 0;line-height:1.4;">
                     Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
                   </p>
                 </td>
@@ -4009,18 +3918,27 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
     <p style="font-size:13px;color:#555;text-align:left;margin:0 0 10px;">
       Les destinataires sont récupérés depuis ISLEA et Bessay, puis dédupliqués par adresse email.
     </p>
+    <p style="font-size:13px;color:#7a4a2a;text-align:left;margin:0 0 10px;">
+      Le mail envoyé ajoute automatiquement l’affiche et le bloc réservation par téléphone. Ne colle pas de HTML ici.
+    </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
-    <input id="mailingSubject" type="text" value="Nouvelle pièce : Je préfère qu’on reste amies – 11 octobre 2026" style="width:96%;">
+    <input id="mailingSubject" type="text" value="🎭 Je préfère qu’on reste amies — 11 octobre 2026" style="width:96%;">
 
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
     <textarea id="mailingBody" style="width:96%;min-height:160px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
 
-Nous avons le plaisir de vous annoncer la nouvelle pièce de La Troupe Saint-Martin.
+Et si une déclaration d’amour à sa meilleure amie faisait tout basculer ?
 
-Découvrez l’affiche et toutes les informations ci-dessous.
+La Troupe Saint-Martin vous présente sa nouvelle comédie :
+« Je préfère qu’on reste amies »
 
-Réservation au 06 46 32 06 49.</textarea>
+Une pièce de Laurent Ruquier.
+
+Découvrez l’affiche ci-dessous.
+
+À très bientôt,
+La Troupe Saint-Martin</textarea>
 
     <div style="margin:14px 0 8px;text-align:left;">
       <label style="font-weight:600;">
