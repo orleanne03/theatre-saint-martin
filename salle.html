@@ -3428,23 +3428,23 @@ function buildNewPieceEmailHTML(name, bodyText) {
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f7ead0;padding:26px 0;">
         <tr>
           <td align="center">
-            <table width="660" cellpadding="0" cellspacing="0" role="presentation" style="max-width:660px;width:100%;background:#fff8e8;border-radius:18px;overflow:hidden;border:1px solid #d7a85f;">
+            <table width="720" cellpadding="0" cellspacing="0" role="presentation" style="max-width:720px;width:100%;background:#fff8e8;border-radius:20px;overflow:hidden;border:1px solid #d7a85f;">
 
               <tr>
-                <td style="padding:34px 42px 24px 42px;text-align:left;font-size:17px;line-height:1.75;color:#3a1f12;">
+                <td style="padding:46px 58px 34px 58px;text-align:left;font-size:18px;line-height:1.95;color:#3a1f12;">
                   ${safeIntro}
                 </td>
               </tr>
 
               <tr>
-                <td align="center" style="padding:0 32px 26px 32px;">
-                  <img src="${afficheUrl}" alt="Affiche de la pièce" style="display:block;width:100%;max-width:590px;height:auto;border:0;border-radius:14px;">
+                <td align="center" style="padding:0 40px 34px 40px;">
+                  <img src="${afficheUrl}" alt="Affiche de la pièce" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">
                 </td>
               </tr>
 
               <tr>
-                <td align="center" style="padding:0 42px 34px 42px;">
-                  <div style="background:#2f7b64;color:#ffffff;border-radius:16px;padding:20px 18px;">
+                <td align="center" style="padding:0 58px 44px 58px;">
+                  <div style="background:#2f7b64;color:#ffffff;border-radius:18px;padding:24px 20px;">
                     <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Réservation uniquement par téléphone</div>
                     <div style="font-size:28px;font-weight:bold;letter-spacing:1px;">06 46 32 06 49</div>
                   </div>
@@ -3912,7 +3912,7 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
 </div>
 <!-- 📢 Modale mailing nouvelle pièce -->
 <div id="newPieceMailingModal" class="modal hidden">
-  <div class="modal-content" style="max-width:720px;width:92%;max-height:90vh;overflow:auto;">
+  <div class="modal-content" style="max-width:900px;width:94%;max-height:90vh;overflow:auto;">
     <h3>📢 Mailing nouvelle pièce</h3>
     <p style="font-size:13px;color:#555;text-align:left;margin:0 0 10px;">
       Les destinataires sont récupérés depuis ISLEA et Bessay, puis dédupliqués par adresse email.
@@ -3922,10 +3922,10 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
     </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
-    <input id="mailingSubject" type="text" value="🎭 Je préfère qu’on reste amies — 11 octobre 2026" style="width:96%;">
+    <input id="mailingSubject" type="text" value="🎭 Je préfère qu’on reste amies — 11 octobre 2026" style="width:100%;box-sizing:border-box;">
 
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
-    <textarea id="mailingBody" style="width:96%;min-height:160px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
+    <textarea id="mailingBody" style="width:100%;min-height:330px;padding:16px;border:1px solid #ccc;border-radius:8px;font-family:Arial,sans-serif;font-size:15px;line-height:1.55;box-sizing:border-box;resize:vertical;">Bonjour {nom},
 
 La Troupe Saint-Martin vous donne rendez-vous pour sa nouvelle comédie :
 
