@@ -3417,23 +3417,139 @@ function escapeMailingHTML(value) {
 }
 
 function buildNewPieceEmailHTML(name, bodyText) {
-  const personalized = String(bodyText || "").replaceAll("{nom}", name || "");
-  const safeBody = escapeMailingHTML(personalized)
-    .replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0d47a1;">$1</a>')
+  const personalizedIntro = String(bodyText || "").replaceAll("{nom}", name || "");
+  const safeIntro = escapeMailingHTML(personalizedIntro)
     .replace(/\n/g, "<br>");
 
+  const afficheUrl = "https://orleanne03.github.io/theatre-saint-martin/affiche-amies.png";
+
   return `
-    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:640px;margin:auto;">
-      <div style="background:#7b0000;color:#fff;padding:16px;border-radius:10px 10px 0 0;text-align:center;">
-        <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
-      </div>
-      <div style="border:1px solid #eee;border-top:0;padding:18px;border-radius:0 0 10px 10px;">
-        ${safeBody}
-        <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
-        <p style="font-size:12px;color:#777;margin:0;">
-          Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
-        </p>
-      </div>
+    <div style="margin:0;padding:0;background:#f6ead2;font-family:Arial,Helvetica,sans-serif;color:#3a1f12;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f6ead2;padding:24px 0;">
+        <tr>
+          <td align="center">
+            <table width="620" cellpadding="0" cellspacing="0" role="presentation" style="max-width:620px;width:100%;background:#fff8e8;border-radius:18px;overflow:hidden;border:1px solid #d7a85f;">
+
+              <tr>
+                <td align="center" style="padding:0;">
+                  <img src="${afficheUrl}" alt="Affiche Je préfère qu’on reste amies - La Troupe Saint-Martin" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:26px 30px 8px 30px;text-align:center;">
+                  <div style="font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8b3f1f;">
+                    La Troupe Saint-Martin présente
+                  </div>
+                  <h1 style="margin:12px 0 8px 0;font-size:32px;line-height:1.15;color:#b94825;font-family:Georgia,'Times New Roman',serif;">
+                    Je préfère qu’on reste amies
+                  </h1>
+                  <div style="font-size:18px;color:#5c2c18;">
+                    Une pièce de <strong>Laurent Ruquier</strong>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px 34px 6px 34px;text-align:center;">
+                  <div style="background:#fff1d0;border-radius:14px;padding:18px;border:1px solid #e6bd78;font-size:16px;line-height:1.55;">
+                    ${safeIntro}
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:18px 30px 8px 30px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                      <td width="50%" align="center" style="padding:10px;vertical-align:top;">
+                        <div style="font-size:17px;font-weight:bold;color:#2d2d2d;">
+                          Marie-Ange<br>Marion Ramdani
+                        </div>
+                        <div style="font-size:14px;margin-top:6px;color:#7a4a2a;">dans le rôle de</div>
+                        <div style="font-size:25px;font-weight:bold;color:#c94b2b;font-family:Georgia,'Times New Roman',serif;">
+                          Valentine
+                        </div>
+                      </td>
+                      <td width="50%" align="center" style="padding:10px;vertical-align:top;">
+                        <div style="font-size:17px;font-weight:bold;color:#2d2d2d;">
+                          Nelly Lacombe
+                        </div>
+                        <div style="font-size:14px;margin-top:6px;color:#7a4a2a;">dans le rôle de</div>
+                        <div style="font-size:25px;font-weight:bold;color:#2f7b64;font-family:Georgia,'Times New Roman',serif;">
+                          Claudine
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:14px 38px 10px 38px;">
+                  <div style="background:#fff1d0;border-radius:14px;padding:22px;border:1px solid #e6bd78;">
+                    <p style="margin:0;font-size:16px;line-height:1.65;text-align:center;">
+                      C’est décidé ! Ce soir, <strong>Claudine</strong>, fleuriste, annoncera à <strong>Valentine</strong>,
+                      sa « meilleure amie », tout l’amour qu’elle éprouve pour elle.
+                      Non seulement cette dernière n’est pas sur la même longueur d’onde, mais cette déclaration
+                      va déclencher un flot de révélations en découvrant la vraie Valentine.
+                      <br><br>
+                      <strong>Elle n’est pas au bout de ses surprises !</strong>
+                    </p>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:20px 30px 8px 30px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                      <td width="50%" style="padding:8px;vertical-align:top;">
+                        <div style="background:#fff8e8;border:2px solid #d79a42;border-radius:14px;padding:16px;text-align:center;">
+                          <div style="font-size:15px;font-weight:bold;color:#5c2c18;">📅 Date</div>
+                          <div style="font-size:20px;margin-top:8px;color:#c84624;font-weight:bold;">11 octobre 2026</div>
+                          <div style="font-size:18px;color:#c84624;">à 20h30</div>
+                        </div>
+                      </td>
+                      <td width="50%" style="padding:8px;vertical-align:top;">
+                        <div style="background:#fff8e8;border:2px solid #d79a42;border-radius:14px;padding:16px;text-align:center;">
+                          <div style="font-size:15px;font-weight:bold;color:#5c2c18;">📍 Lieu</div>
+                          <div style="font-size:20px;margin-top:8px;color:#c84624;font-weight:bold;">Salle ISLEA</div>
+                          <div style="font-size:18px;color:#c84624;">Avermes 03</div>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:24px 30px 30px 30px;">
+                  <div style="background:#2f7b64;color:#ffffff;border-radius:16px;padding:22px 20px;">
+                    <div style="font-size:18px;font-weight:bold;margin-bottom:8px;">Réservation uniquement par téléphone</div>
+                    <div style="font-size:30px;font-weight:bold;letter-spacing:1px;">06 46 32 06 49</div>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 30px 28px 30px;">
+                  <p style="margin:0;font-size:15px;line-height:1.5;color:#6b3b24;">
+                    Nous serions heureux de vous retrouver pour cette nouvelle soirée de théâtre.
+                  </p>
+                  <p style="margin:16px 0 0 0;font-size:16px;font-weight:bold;color:#3a1f12;">
+                    La Troupe Saint-Martin
+                  </p>
+                  <p style="font-size:12px;color:#777;margin:18px 0 0 0;">
+                    Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>`;
 }
 
@@ -3485,14 +3601,14 @@ if (mailingTestBtn) {
     mailingStatus.textContent = `Envoi du test vers ${MAILING_TEST_EMAIL}…`;
 
     try {
-      await sendViaBrevo(
+      const workerReply = await sendViaBrevo(
         MAILING_TEST_EMAIL,
         `[TEST] ${subject}`,
         buildNewPieceEmailHTML("Nelly", body),
         { forceRealSend: true }
       );
       mailingStatus.textContent = `✅ Email test envoyé à ${MAILING_TEST_EMAIL}.`;
-      alert(`✅ Email test envoyé à ${MAILING_TEST_EMAIL}. Vérifie ta boîte mail et tes spams.`);
+      alert(`✅ Email test envoyé à ${MAILING_TEST_EMAIL}.`);
     } catch (err) {
       console.error("❌ Email test échoué", err);
       mailingStatus.textContent = "❌ Erreur pendant l’envoi du test.";
@@ -3734,7 +3850,7 @@ async function sendViaBrevo(to, subject, html, options = {}) {
     console.warn("🚫 [MODE TEST] Envoi Brevo bloqué");
     console.log("📧 Destinataire :", to);
     console.log("📨 Sujet :", subject);
-    return;
+    return "MODE TEST : aucun email réel envoyé";
   }
 
   const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev/", {
@@ -3745,9 +3861,24 @@ async function sendViaBrevo(to, subject, html, options = {}) {
     body: JSON.stringify({ to, subject, html })
   });
 
+  const responseText = await res.text().catch(() => "");
+  console.log("📨 Réponse brevo-mailer", {
+    status: res.status,
+    ok: res.ok,
+    to,
+    subject,
+    responseText
+  });
+
   if (!res.ok) {
-    throw new Error("Erreur Brevo");
+    throw new Error(`Erreur Brevo/Worker ${res.status} : ${responseText || res.statusText}`);
   }
+
+  if (/error|erreur|failed|unauthorized|forbidden|invalid/i.test(responseText)) {
+    throw new Error(`Brevo/Worker a répondu une erreur : ${responseText}`);
+  }
+
+  return responseText || "OK sans détail";
 }
 
 
@@ -3880,25 +4011,16 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
     </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
-    <input id="mailingSubject" type="text" value="Nouvelle pièce au Théâtre Saint-Martin : ISLEA – 24 janvier 2026" style="width:96%;">
+    <input id="mailingSubject" type="text" value="Nouvelle pièce : Je préfère qu’on reste amies – 11 octobre 2026" style="width:96%;">
 
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
-    <textarea id="mailingBody" style="width:96%;min-height:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
+    <textarea id="mailingBody" style="width:96%;min-height:160px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
 
-Nous avons le plaisir de vous annoncer notre nouvelle pièce :
+Nous avons le plaisir de vous annoncer la nouvelle pièce de La Troupe Saint-Martin.
 
-ISLEA
-📅 Samedi 24 janvier 2026
-🕣 20h30
-📍 Théâtre Saint-Martin
+Découvrez l’affiche et toutes les informations ci-dessous.
 
-Les réservations sont ouvertes ici :
-https://orleanne03.github.io/theatre-saint-martin/salle.html
-
-Les places étant limitées, nous vous conseillons de réserver rapidement.
-
-Au plaisir de vous accueillir,
-L’équipe du Théâtre Saint-Martin</textarea>
+Réservation au 06 46 32 06 49.</textarea>
 
     <div style="margin:14px 0 8px;text-align:left;">
       <label style="font-weight:600;">
