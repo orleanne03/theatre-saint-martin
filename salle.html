@@ -1069,6 +1069,9 @@ background: magenta !important;
   style="display:none;background:#1976d2;">
   🔔 Rappel réservation (billet + QR)
 </button>
+  <button id="newPieceMailing" style="display:none;background:#8e24aa;">
+    📢 Mailing nouvelle pièce
+  </button>
 
   
   <!-- === Bouton retour Tableau de bord === -->
@@ -3047,6 +3050,10 @@ function toggleAdminUI() {
   emailTestBtn.style.display = isAdmin ? "inline-block" : "none";
   document.getElementById("bulkReminder").style.display =
     isAdmin ? "inline-block" : "none";
+  const newPieceMailingBtn = document.getElementById("newPieceMailing");
+  if (newPieceMailingBtn) {
+    newPieceMailingBtn.style.display = isAdmin ? "inline-block" : "none";
+  }
 }
 
 
@@ -3272,6 +3279,278 @@ const participantUser = {
 };
 
 
+
+
+// ===================================================
+// 📢 MAILING NOUVELLE PIÈCE
+// ===================================================
+const newPieceMailingBtn = document.getElementById("newPieceMailing");
+const newPieceMailingModal = document.getElementById("newPieceMailingModal");
+const mailingRecipientsList = document.getElementById("mailingRecipientsList");
+const mailingSelectAll = document.getElementById("mailingSelectAll");
+const mailingCancelBtn = document.getElementById("mailingCancel");
+const mailingSendBtn = document.getElementById("mailingSend");
+const mailingTestBtn = document.getElementById("mailingSendTest");
+const MAILING_TEST_EMAIL = "nellylac@gmail.com";
+const mailingSubjectInput = document.getElementById("mailingSubject");
+const mailingBodyInput = document.getElementById("mailingBody");
+const mailingStatus = document.getElementById("mailingStatus");
+
+function isValidMailingEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function addMailingRecipient(map, email, name, source) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (!isValidMailingEmail(cleanEmail)) return;
+
+  if (!map.has(cleanEmail)) {
+    map.set(cleanEmail, {
+      email: cleanEmail,
+      name: String(name || "").trim() || "Invité",
+      sources: new Set()
+    });
+  }
+
+  if (source) map.get(cleanEmail).sources.add(source);
+}
+
+async function addParticipantsForReservation(recipients, reservationId, sourceLabel) {
+  if (!reservationId) return;
+
+  try {
+    const snap = await get(ref(db, `participants/${reservationId}`));
+    const participants = snap.val() || {};
+
+    Object.values(participants).forEach(p => {
+      addMailingRecipient(recipients, p.email, p.name, sourceLabel);
+    });
+  } catch (err) {
+    console.warn("Participants non récupérés pour", reservationId, err);
+  }
+}
+
+async function collectNewPieceRecipients() {
+  const recipients = new Map();
+
+  // 1) ISLEA — réservants principaux depuis la base des sièges
+  let isleaSeats = seats || {};
+
+  try {
+    const isleaSnap = await get(ref(db, "seats"));
+    if (isleaSnap.exists()) {
+      isleaSeats = isleaSnap.val() || {};
+    }
+  } catch (err) {
+    console.warn("Réservations ISLEA non récupérées depuis Firebase, utilisation de la copie locale", err);
+  }
+
+  Object.values(isleaSeats || {}).forEach(s => {
+    addMailingRecipient(recipients, s.email, s.name, "ISLEA réservation");
+  });
+
+  const isleaReservationIds = new Set(
+    Object.values(isleaSeats || {})
+      .map(s => s.reservationId)
+      .filter(Boolean)
+  );
+
+  for (const resId of isleaReservationIds) {
+    await addParticipantsForReservation(recipients, resId, "ISLEA participant");
+  }
+
+  // 2) Bessay — réservants principaux + participants
+  try {
+    const bessaySnap = await get(ref(db, "spectacles/salle_bessay"));
+    const bessayReservations = bessaySnap.val() || {};
+
+    Object.entries(bessayReservations).forEach(([resId, r]) => {
+      addMailingRecipient(recipients, r.email, r.name, "Bessay réservation");
+    });
+
+    for (const [resId] of Object.entries(bessayReservations)) {
+      await addParticipantsForReservation(recipients, resId, "Bessay participant");
+    }
+  } catch (err) {
+    console.warn("Réservations Bessay non récupérées", err);
+  }
+
+  return [...recipients.values()]
+    .map(r => ({ ...r, sources: [...r.sources].join(" + ") }))
+    .sort((a, b) => a.email.localeCompare(b.email));
+}
+
+function renderNewPieceRecipients(recipients) {
+  mailingRecipientsList.innerHTML = "";
+
+  if (!recipients.length) {
+    mailingRecipientsList.innerHTML = `<p style="color:#b71c1c;margin:0;">Aucun email trouvé.</p>`;
+    return;
+  }
+
+  recipients.forEach((r, index) => {
+    const row = document.createElement("label");
+    row.style.display = "block";
+    row.style.marginBottom = "7px";
+    const safeName = escapeMailingHTML(r.name);
+    const safeEmail = escapeMailingHTML(r.email);
+    const safeSources = escapeMailingHTML(r.sources || "contact");
+    row.innerHTML = `
+      <input type="checkbox" class="new-piece-recipient" value="${safeEmail}" data-name="${safeName}" checked>
+      <strong>${safeName}</strong>
+      <span style="font-size:12px;color:#555;">(${safeEmail})</span>
+      <span style="font-size:11px;color:#777;">— ${safeSources}</span>
+    `;
+    mailingRecipientsList.appendChild(row);
+  });
+
+  mailingSelectAll.checked = true;
+}
+
+function escapeMailingHTML(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buildNewPieceEmailHTML(name, bodyText) {
+  const personalized = String(bodyText || "").replaceAll("{nom}", name || "");
+  const safeBody = escapeMailingHTML(personalized)
+    .replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0d47a1;">$1</a>')
+    .replace(/\n/g, "<br>");
+
+  return `
+    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:640px;margin:auto;">
+      <div style="background:#7b0000;color:#fff;padding:16px;border-radius:10px 10px 0 0;text-align:center;">
+        <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
+      </div>
+      <div style="border:1px solid #eee;border-top:0;padding:18px;border-radius:0 0 10px 10px;">
+        ${safeBody}
+        <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
+        <p style="font-size:12px;color:#777;margin:0;">
+          Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
+        </p>
+      </div>
+    </div>`;
+}
+
+function sleepMailing(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+if (newPieceMailingBtn) {
+  newPieceMailingBtn.addEventListener("click", async () => {
+    if (!admin) return alert("❌ Mode admin requis");
+
+    newPieceMailingModal.classList.remove("hidden");
+    mailingStatus.textContent = "Chargement des destinataires…";
+    mailingRecipientsList.innerHTML = "";
+
+    const recipients = await collectNewPieceRecipients();
+    renderNewPieceRecipients(recipients);
+    mailingStatus.textContent = `${recipients.length} destinataire(s) unique(s) trouvé(s).`;
+  });
+}
+
+if (mailingSelectAll) {
+  mailingSelectAll.addEventListener("change", () => {
+    document.querySelectorAll(".new-piece-recipient").forEach(cb => {
+      cb.checked = mailingSelectAll.checked;
+    });
+  });
+}
+
+if (mailingCancelBtn) {
+  mailingCancelBtn.addEventListener("click", () => {
+    newPieceMailingModal.classList.add("hidden");
+  });
+}
+
+if (mailingTestBtn) {
+  mailingTestBtn.addEventListener("click", async () => {
+    if (!admin) return alert("❌ Mode admin requis");
+
+    const subject = mailingSubjectInput.value.trim();
+    const body = mailingBodyInput.value.trim();
+
+    if (!subject) return alert("❌ Sujet manquant");
+    if (!body) return alert("❌ Message manquant");
+
+    if (!confirm(`Envoyer un email TEST réel à ${MAILING_TEST_EMAIL} ?`)) return;
+
+    mailingTestBtn.disabled = true;
+    mailingStatus.textContent = `Envoi du test vers ${MAILING_TEST_EMAIL}…`;
+
+    try {
+      await sendViaBrevo(
+        MAILING_TEST_EMAIL,
+        `[TEST] ${subject}`,
+        buildNewPieceEmailHTML("Nelly", body),
+        { forceRealSend: true }
+      );
+      mailingStatus.textContent = `✅ Email test envoyé à ${MAILING_TEST_EMAIL}.`;
+      alert(`✅ Email test envoyé à ${MAILING_TEST_EMAIL}. Vérifie ta boîte mail et tes spams.`);
+    } catch (err) {
+      console.error("❌ Email test échoué", err);
+      mailingStatus.textContent = "❌ Erreur pendant l’envoi du test.";
+      alert("❌ Impossible d’envoyer l’email test. Regarde la console ou réessaie.");
+    } finally {
+      mailingTestBtn.disabled = false;
+    }
+  });
+}
+
+if (mailingSendBtn) {
+  mailingSendBtn.addEventListener("click", async () => {
+    if (!admin) return alert("❌ Mode admin requis");
+
+    const checked = [...document.querySelectorAll(".new-piece-recipient:checked")];
+    const subject = mailingSubjectInput.value.trim();
+    const body = mailingBodyInput.value.trim();
+
+    if (!subject) return alert("❌ Sujet manquant");
+    if (!body) return alert("❌ Message manquant");
+    if (!checked.length) return alert("⚠️ Aucun destinataire sélectionné");
+
+    const modeLabel = window.EMAIL_TEST_MODE === true ? "SIMULER" : "ENVOYER";
+    if (!confirm(`${modeLabel} le mailing à ${checked.length} destinataire(s) ?`)) return;
+
+    mailingSendBtn.disabled = true;
+    mailingCancelBtn.disabled = true;
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const cb of checked) {
+      const email = cb.value;
+      const name = cb.dataset.name || "";
+
+      try {
+        mailingStatus.textContent = `Envoi ${sent + failed + 1}/${checked.length} → ${email}`;
+        await sendViaBrevo(email, subject, buildNewPieceEmailHTML(name, body));
+        sent++;
+        await sleepMailing(250);
+      } catch (err) {
+        failed++;
+        console.error("❌ Mailing échoué pour", email, err);
+      }
+    }
+
+    mailingSendBtn.disabled = false;
+    mailingCancelBtn.disabled = false;
+    mailingStatus.textContent = `Terminé : ${sent} envoyé(s), ${failed} échec(s).`;
+
+    alert(
+      window.EMAIL_TEST_MODE === true
+        ? `🧪 Mode TEST : ${sent} email(s) simulé(s), ${failed} échec(s).`
+        : `✅ Mailing terminé : ${sent} email(s) envoyé(s), ${failed} échec(s).`
+    );
+  });
+}
+
 // 👥 (SUPPRIMÉ) Ancien affichage global des participants
 
 
@@ -3448,10 +3727,10 @@ document.addEventListener("click", (e) => {
     document.getElementById("emailPreviewModal").classList.add("hidden");
   }
 });
-async function sendViaBrevo(to, subject, html) {
+async function sendViaBrevo(to, subject, html, options = {}) {
 
-  // 🚫 MODE TEST → AUCUN ENVOI
-  if (window.EMAIL_TEST_MODE === true) {
+  // 🚫 MODE TEST → AUCUN ENVOI, sauf email test volontaire
+  if (window.EMAIL_TEST_MODE === true && options.forceRealSend !== true) {
     console.warn("🚫 [MODE TEST] Envoi Brevo bloqué");
     console.log("📧 Destinataire :", to);
     console.log("📨 Sujet :", subject);
@@ -3592,6 +3871,54 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
 ">
   ✉️ Mode email : TEST
 </div>
+<!-- 📢 Modale mailing nouvelle pièce -->
+<div id="newPieceMailingModal" class="modal hidden">
+  <div class="modal-content" style="max-width:720px;width:92%;max-height:90vh;overflow:auto;">
+    <h3>📢 Mailing nouvelle pièce</h3>
+    <p style="font-size:13px;color:#555;text-align:left;margin:0 0 10px;">
+      Les destinataires sont récupérés depuis ISLEA et Bessay, puis dédupliqués par adresse email.
+    </p>
+
+    <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
+    <input id="mailingSubject" type="text" value="Nouvelle pièce au Théâtre Saint-Martin : ISLEA – 24 janvier 2026" style="width:96%;">
+
+    <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
+    <textarea id="mailingBody" style="width:96%;min-height:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
+
+Nous avons le plaisir de vous annoncer notre nouvelle pièce :
+
+ISLEA
+📅 Samedi 24 janvier 2026
+🕣 20h30
+📍 Théâtre Saint-Martin
+
+Les réservations sont ouvertes ici :
+https://orleanne03.github.io/theatre-saint-martin/salle.html
+
+Les places étant limitées, nous vous conseillons de réserver rapidement.
+
+Au plaisir de vous accueillir,
+L’équipe du Théâtre Saint-Martin</textarea>
+
+    <div style="margin:14px 0 8px;text-align:left;">
+      <label style="font-weight:600;">
+        <input type="checkbox" id="mailingSelectAll" checked>
+        ✔️ Tous les destinataires
+      </label>
+    </div>
+
+    <div id="mailingRecipientsList" style="max-height:240px;overflow:auto;border:1px solid #ddd;padding:10px;border-radius:6px;text-align:left;background:#fafafa;"></div>
+
+    <p id="mailingStatus" style="font-size:13px;color:#555;text-align:left;min-height:18px;"></p>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+      <button id="mailingCancel" style="background:#9e9e9e;">Annuler</button>
+      <button id="mailingSendTest" style="background:#0277bd;">📨 Envoyer un test à nellylac@gmail.com</button>
+      <button id="mailingSend" style="background:#8e24aa;">📧 Envoyer le mailing</button>
+    </div>
+  </div>
+</div>
+
 <!-- 📧 Modale choix destinataires rappel -->
 <div id="bulkSelectModal" class="modal hidden">
   <div class="modal-content" style="max-width:520px;">
