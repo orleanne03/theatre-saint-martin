@@ -1859,17 +1859,18 @@ async function notifyClientUpdate(email) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
   const html = `
-    <h2>🎭 Mise à jour de votre réservation — Théâtre Saint Martin</h2>
+    <h2>🎭 Mise à jour de votre réservation — Théâtre Saint Martin - ISLEA 10 Oct 2026 - 20h30</h2>
     <p>Bonjour <strong>${client.name}</strong>,</p>
     <p>Votre réservation a été mise à jour par notre équipe.</p>
 
     ${added.length ? `<p>🟢 <strong>Sièges ajoutés :</strong> ${added.join(", ")}</p>` : ""}
     ${removed.length ? `<p>🔴 <strong>Sièges supprimés :</strong> ${removed.join(", ")}</p>` : ""}
 
-    <p>📍 <strong>Sièges actuels réservés :</strong> ${allSeats}</p>
+    <h2>📍 <strong>Sièges actuels réservés :</strong> ${allSeats}</h2>
        <p>💳 <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}</p>
 
-    <p>Voici votre QR Code mis à jour :</p>
+    <p>Voici votre QR code mis à jour. Il sera à présenter à l’entrée, au format papier ou directement depuis votre téléphone :
+</p>
     <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
 
     <p>Merci et à bientôt au théâtre 🎭<br>— L’équipe Saint Martin</p>
