@@ -1,4 +1,4 @@
-<!-- redeployy -->
+<!-- redeploy -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1359,7 +1359,8 @@ function recalcClientReservation(clientName = "", clientEmail = "", reservationI
 
   const adultCount = matchingEntries.filter(([_, s]) => s.type === "adulte").length;
   const childCount = matchingEntries.filter(([_, s]) => s.type === "enfant").length;
-  const babyCount  = matchingEntries.filter(([_, s]) => s.type === "moins8" || s.type === "gratuit").length;
+  const babyCount  = matchingEntries.filter(([_, s]) => s.type === "moins8").length;
+  const freeCount  = matchingEntries.filter(([_, s]) => s.type === "gratuit").length;
   const amount = adultCount * PRICE_ADULT + childCount * PRICE_CHILD;
 
   for (const [seatId, seatData] of matchingEntries) {
@@ -1368,6 +1369,7 @@ function recalcClientReservation(clientName = "", clientEmail = "", reservationI
       nbAdult: adultCount,
       nbChild: childCount,
       nbBaby: babyCount,
+      nbFree: freeCount,
       amount,
       updatedAt: new Date().toISOString()
     };
@@ -1397,6 +1399,7 @@ async function syncPublicRequestAfterSeatChanges(requestId) {
     const adultCount = remainingEntries.filter(([_, s]) => s.type === "adulte").length;
     const childCount = remainingEntries.filter(([_, s]) => s.type === "enfant").length;
     const babyCount  = remainingEntries.filter(([_, s]) => s.type === "moins8").length;
+    const freeCount  = remainingEntries.filter(([_, s]) => s.type === "gratuit").length;
     const amount = adultCount * PRICE_ADULT + childCount * PRICE_CHILD;
 
     const updatedRequest = {
@@ -1406,6 +1409,7 @@ async function syncPublicRequestAfterSeatChanges(requestId) {
       adultCount,
       childCount,
       babyCount,
+      freeCount,
       amount,
       updatedAt: new Date().toISOString(),
       syncedFromSalleAt: new Date().toISOString()
@@ -1713,6 +1717,7 @@ const user = {
   nbAdult,
   nbChild,
   nbBaby,
+  nbFree,
   amount
 };
 
@@ -1749,7 +1754,7 @@ let freeRemaining  = nbFree;
     }
   });
 
-  save();
+  await save();
 
 // 📇 Sauvegarde automatique du contact pour les futurs mailings, même après réinitialisation
 try {
@@ -1758,9 +1763,22 @@ try {
   console.warn("Contact mailing non sauvegardé", err);
 }
 
-// 📧 Envoi de l’email (autorisé en mode test même en admin)
-if (!EMAIL_TEST_MODE) {
+// 📧 Envoi automatique de l’email de réservation depuis la salle
+let directMailOk = false;
+try {
   await sendEmail(user);
+  directMailOk = true;
+
+  // Si la réservation est déjà cochée payée à la création, on envoie aussi le billet QR.
+  if (user.paid) {
+    await sendViaBrevo(
+      user.email,
+      "🎟️ Votre billet – Théâtre Saint-Martin",
+      generateBilletHTML(user)
+    );
+  }
+} catch (err) {
+  console.error("❌ Email de réservation non envoyé", err);
 }
 
 
@@ -1770,84 +1788,56 @@ document.getElementById("modal").classList.add("hidden");
 updateStatsBar();
 
 
-  alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
+  alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans), ${nbFree} accompagnant(s) — Total ${amount} €. ${directMailOk ? "Email envoyé." : "Email non envoyé."}`);
 };
 
 
 /* === Email + QR === */
 async function sendEmail(user) {
-  alert("📨 sendEmail() appelée");
+  console.log("📨 Envoi confirmation réservation vers", user.email);
 
-  console.log("📨 Envoi EmailJS vers", user.email);
-
-  const reservedSeats = Object.entries(seats)
-    .filter(([_, v]) => v.email === user.email)
+  const reservedSeatsArray = Object.entries(seats)
+    .filter(([_, v]) => v.reservationId === user.reservationId || (v.email || "").toLowerCase() === (user.email || "").toLowerCase())
     .map(([id]) => id)
-    .join(", ");
+    .sort((a, b) => String(a).localeCompare(String(b), "fr", { numeric: true }));
 
-const maxScans = reservedSeats.split(",").length;
+  const html = buildPublicConfirmationEmail({
+    id: user.reservationId || "",
+    name: user.name,
+    email: user.email,
+    phone: user.phone || "",
+    paid: !!user.paid,
+    seats: reservedSeatsArray,
+    adultCount: Number(user.nbAdult || 0),
+    childCount: Number(user.nbChild || 0),
+    babyCount: Number(user.nbBaby || 0),
+    freeCount: Number(user.nbFree || 0),
+    totalPeople: reservedSeatsArray.length,
+    amount: Number(user.amount || 0),
+    date: "10 octobre 2026 à 20h30",
+    lieu: "Salle ISLEA à Avermes (03)"
+  });
 
-const qrData = JSON.stringify({
-  id: user.reservationId,
-  nom: user.name,
-  email: user.email,
-  tel: user.phone,
-  sieges: reservedSeats,
-  max: maxScans
-});
+  if (window.EMAIL_TEST_MODE === true) {
+    const previewModal = document.getElementById("emailPreviewModal");
+    const previewContent = document.getElementById("emailPreviewContent");
+    if (previewModal && previewContent) {
+      previewContent.innerHTML = html;
+      previewModal.classList.remove("hidden");
+      const closeBtn = document.getElementById("closeEmailPreview");
+      if (closeBtn) closeBtn.onclick = () => previewModal.classList.add("hidden");
+    }
+    console.log("🚫 [MODE TEST] Confirmation non envoyée à", user.email);
+    return "MODE TEST";
+  }
 
-
-const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
-
-
-  const html = `
-    <h2>🎭 Confirmation de votre réservation — Théâtre Saint Martin</h2>
-    <p>Bonjour <strong>${user.name}</strong>,</p>
-    <p>Merci pour votre réservation.</p>
-    <p style="margin-top:10px;">
-      📅 <strong>10 octobre 2026 à 20h30</strong><br>
-      📍 Théâtre Saint Martin
-    </p>
-    <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
-    <p><strong>💰 Montant total :</strong> ${user.amount.toFixed(2)} €</p>
-    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
-    <p>Voici votre QR Code de confirmation :</p>
-<img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
-
-    <p>À très bientôt au Théâtre Saint Martin 🎭</p>
-  `;
-
-  try {
-  if (EMAIL_TEST_MODE) {
-  console.log("🚫 [MODE TEST] Email non envoyé — aperçu ci-dessous :");
-  console.log("Destinataire :", user.email);
-
-  // 🧩 Affiche la modale de prévisualisation
-  const previewModal = document.getElementById("emailPreviewModal");
-  const previewContent = document.getElementById("emailPreviewContent");
-  previewContent.innerHTML = html; // injecte le contenu HTML
-  previewModal.classList.remove("hidden");
-
-  // Bouton de fermeture
-  document.getElementById("closeEmailPreview").onclick = () => {
-    previewModal.classList.add("hidden");
-  };
-
-  alert(`📩 Mode test : aucun envoi, mais aperçu disponible`);
-} else {
-  await sendViaBrevo(
+  return sendViaBrevo(
     user.email,
-    "🎭 Confirmation de votre réservation",
+    "✅ Réservation confirmée — Je préfère qu’on reste amies",
     html
   );
-  console.log("✅ Email Brevo envoyé à", user.email);
 }
 
-
-} catch (err) {
-  console.error("❌ Erreur EmailJS :", err);
-}
-}
 // ===================================================
 // 🔔 EMAIL DE RAPPEL (billet + QR)
 // ===================================================
@@ -2325,7 +2315,7 @@ const mainClientName =
   Ce billet vous est transmis suite à la réservation effectuée par
   <strong>${mainClientName}</strong>.
 
-          <p style="font-size:18px;color:#555;">
+          <p style="font-size:14px;color:#555;">
           Merci de présenter ce billet (imprimé ou sur téléphone) à l’entrée.
         </p>
 </p>
@@ -2385,9 +2375,11 @@ function updateTable() {
     const adults = Number(r.adultCount || 0);
     const children = Number(r.childCount || 0);
     const babies = Number(r.babyCount || 0);
+    const freeCount = Number(r.freeCount || 0);
     if (index < adults) return "adulte";
     if (index < adults + children) return "enfant";
     if (index < adults + children + babies) return "moins8";
+    if (index < adults + children + babies + freeCount) return "gratuit";
     return "autre";
   }
 
@@ -2439,6 +2431,7 @@ function updateTable() {
       nbAdult: Number(r.adultCount || 0),
       nbChild: Number(r.childCount || 0),
       nbBaby: Number(r.babyCount || 0),
+      nbFree: Number(r.freeCount || 0),
       seats: seatList.map((seatId, index) => ({
         id: seatId,
         paid: !!r.paid,
@@ -2532,7 +2525,37 @@ function updateTable() {
   <p><strong>Téléphone :</strong> ${escapeHTML(info.phone || "—")}</p>
 
   ${!isPendingPublic ? `
-
+<button
+  class="open-participants-btn"
+  data-resid="${escapeHTML(reservationId)}"
+  style="
+    margin:6px 0;
+    background:#6a1b9a;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  ">
+  👥 Gérer les participants
+</button>
+<button
+  class="send-participants-form-btn"
+  data-resid="${escapeHTML(reservationId)}"
+  data-email="${escapeHTML(info.email || "")}"
+  style="
+    margin:6px 0;
+    background:#1976d2;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+  ">
+  📨 Envoyer le formulaire participants
+</button>
 
 <div id="participants-${escapeHTML(reservationId)}"></div>
 ` : ""}
@@ -2549,9 +2572,15 @@ function updateTable() {
     </span>
   </p>
 
-  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} →
+  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.filter(s => s.type === "moins8").length} →
     <span style="color:#6a1b9a;font-weight:600">
-      ${babies.map(s => escapeHTML(s.id)).join(", ") || "—"}
+      ${babies.filter(s => s.type === "moins8").map(s => escapeHTML(s.id)).join(", ") || "—"}
+    </span>
+  </p>
+
+  <p><strong>🎟️ Accompagnants gratuits :</strong> ${info.seats.filter(s => s.type === "gratuit").length} →
+    <span style="color:#8e24aa;font-weight:600">
+      ${info.seats.filter(s => s.type === "gratuit").map(s => escapeHTML(s.id)).join(", ") || "—"}
     </span>
   </p>
 
@@ -3468,23 +3497,142 @@ function formatPublicRequestDate(iso) {
 }
 
 function renderPublicRequestsPanel() {
-  try {
-    updateTable();
-  } catch (err) {
-    console.warn("Rafraîchissement des demandes publiques impossible", err);
+  const panel = document.getElementById("publicRequestsPanel");
+  const list = document.getElementById("publicRequestsList");
+  const summary = document.getElementById("publicRequestsSummary");
+  if (!panel || !list || !summary) return;
+
+  panel.style.display = "block";
+
+  const items = getPublicRequestArray();
+  const newCount = items.filter(r => (r.status || "nouvelle") === "nouvelle").length;
+  const expiredCount = items.filter(isPublicRequestExpired).length;
+  summary.textContent = `Total : ${items.length} — Nouvelles : ${newCount} — Expirées : ${expiredCount}`;
+
+  if (!items.length) {
+    list.innerHTML = `<p style="margin:0;color:#666;">Aucune demande publique en attente.</p>`;
+    return;
   }
+
+  list.innerHTML = items.map(r => {
+    const status = r.status || "nouvelle";
+    const seatsList = Array.isArray(r.seats) ? r.seats : [];
+    const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== r.id);
+    const missingHold = seatsList.filter(seatId => !publicHolds[seatId] || publicHolds[seatId].requestId !== r.id);
+    const expired = isPublicRequestExpired(r);
+    const adults = Number(r.adultCount || 0);
+    const children = Number(r.childCount || 0);
+    const babies = Number(r.babyCount || 0);
+    const amount = Number(r.amount || 0).toFixed(2);
+    const isPaid = !!r.paid;
+    const headerBg = isPaid ? "#a5d1a7" : "#ffe0b2";
+    const borderColor = isPaid ? "#49a760" : "#ff9800";
+    const paymentLabel = isPaid ? "✅ Tout payé" : "❌ Partiel / Non payé";
+
+    return `
+      <div class="accordion public-request-card" style="
+        background:#fff;
+        border-radius:8px;
+        margin:10px 0;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        overflow:hidden;
+        border-left:6px solid ${borderColor};
+      ">
+        <div class="accordion-header public-request-header" style="
+          background:${headerBg};
+          color:#212121;
+          padding:10px 14px;
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          font-weight:600;
+          cursor:pointer;
+        ">
+          <div>
+            📨 ${escapeHTML(r.name || "Sans nom")}
+            <br><span style="font-weight:700;color:#d84315;">(${Number(r.totalPeople || seatsList.length || 0)} places demandées)</span>
+          </div>
+          <div style="font-weight:700;color:#4a2416;">
+            ${paymentLabel}
+          </div>
+        </div>
+
+        <div class="accordion-content" style="
+          background:#fff;
+          padding:12px 14px;
+          border-top:1px solid #eee;
+          text-align:center;
+        ">
+          <p><strong>Email :</strong> ${escapeHTML(r.email || "—")}</p>
+          <p><strong>Téléphone :</strong> ${escapeHTML(r.phone || "—")}</p>
+
+          <p><strong>🧍 Adultes :</strong> ${adults} × ${PRICE_ADULT} € →
+            <span style="color:#1565c0;font-weight:600">
+              ${seatsList.slice(0, adults).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
+
+          <p><strong>🧒 Enfants :</strong> ${children} × ${PRICE_CHILD} € →
+            <span style="color:#0288d1;font-weight:600">
+              ${seatsList.slice(adults, adults + children).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
+
+          <p><strong>🍼 Moins de 8 ans :</strong> ${babies} →
+            <span style="color:#6a1b9a;font-weight:600">
+              ${seatsList.slice(adults + children, adults + children + babies).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
+
+          <p><strong>Total :</strong> ${amount} €</p>
+
+          <div class="seat-list" style="margin-top:8px;justify-content:center;">
+            ${seatsList.map((seatId, index) => {
+              const icon = index < adults ? "🧍" : index < adults + children ? "🧒" : "🎟️ GRATUIT";
+              return `
+                <span class="badge-seat" style="
+                  background:#ff9800;
+                  color:white;
+                  border-radius:6px;
+                  padding:4px 8px;
+                  font-size:0.85rem;
+                  font-weight:700;
+                ">${icon} ${escapeHTML(seatId)}</span>
+              `;
+            }).join("")}
+          </div>
+
+          ${taken.length ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</p>` : ""}
+          ${missingHold.length && status === "nouvelle" ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">Blocage absent ou expiré : ${missingHold.map(escapeHTML).join(", ")}</p>` : ""}
+          ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:8px;padding:8px;white-space:pre-wrap;text-align:left;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+
+          <div style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:600;margin-right:8px;">
+              💶 Tout payé
+              <input type="checkbox" class="public-paid-toggle" data-id="${escapeHTML(r.id)}" ${isPaid ? "checked" : ""} style="transform:scale(1.2);accent-color:#2e7d32;cursor:pointer;">
+            </label>
+            <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">✅ Valider + envoyer confirmation</button>
+            <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libérer</button>
+            <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
 }
+
 
 function distributePublicRequestSeatTypes(r) {
   let adult = Number(r.adultCount || 0);
   let child = Number(r.childCount || 0);
   let baby = Number(r.babyCount || 0);
+  let free = Number(r.freeCount || 0);
 
   return (Array.isArray(r.seats) ? r.seats : []).map(seatId => {
     let type = "autre";
     if (adult > 0) { type = "adulte"; adult--; }
     else if (child > 0) { type = "enfant"; child--; }
     else if (baby > 0) { type = "moins8"; baby--; }
+    else if (free > 0) { type = "gratuit"; free--; }
     return { seatId, type };
   });
 }
@@ -3495,6 +3643,7 @@ function buildPublicConfirmationEmail(r) {
   const adultCount = Number(r.adultCount || 0);
   const childCount = Number(r.childCount || 0);
   const babyCount = Number(r.babyCount || 0);
+  const freeCount = Number(r.freeCount || 0);
   const totalPeople = Number(r.totalPeople || seatsList.length || 0);
   const isPaid = !!r.paid;
 
@@ -3514,7 +3663,8 @@ function buildPublicConfirmationEmail(r) {
           <strong>Nombre de places :</strong> ${totalPeople}<br>
           <strong>Adultes :</strong> ${adultCount}<br>
           <strong>Enfants :</strong> ${childCount}<br>
-          <strong>BB / -8 ans :</strong> ${babyCount}<br>
+          <strong>Moins de 8 ans :</strong> ${babyCount}<br>
+          <strong>Accompagnants gratuits :</strong> ${freeCount}<br>
           <strong>Montant total à régler :</strong> ${amount} €
         </div>
 
@@ -3622,6 +3772,7 @@ async function confirmPublicRequestFromSalle(id) {
     nbAdult: Number(r.adultCount || 0),
     nbChild: Number(r.childCount || 0),
     nbBaby: Number(r.babyCount || 0),
+    nbFree: Number(r.freeCount || 0),
     amount: Number(r.amount || (Number(r.adultCount || 0) * PRICE_ADULT + Number(r.childCount || 0) * PRICE_CHILD)),
     source: "public_request",
     showId: "amies_2026_10_11",
@@ -3629,7 +3780,11 @@ async function confirmPublicRequestFromSalle(id) {
   };
 
   for (const item of distributePublicRequestSeatTypes(r)) {
-    seats[item.seatId] = { ...base, type: item.type };
+    seats[item.seatId] = {
+      ...base,
+      type: item.type,
+      paid: (item.type === "moins8" || item.type === "gratuit") ? true : base.paid
+    };
   }
 
   await save();
