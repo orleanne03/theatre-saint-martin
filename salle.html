@@ -3065,6 +3065,10 @@ function updatePriceLabels() {
 function openPriceModal() {
   priceAdultInput.value = PRICE_ADULT;
   priceChildInput.value = PRICE_CHILD;
+
+  document.getElementById("savePrices").disabled = false;
+  document.getElementById("cancelPrices").disabled = false;
+
   priceModal.classList.remove("hidden");
 }
 document.getElementById("cancelPrices").onclick = () => priceModal.classList.add("hidden");
@@ -3951,8 +3955,19 @@ if (mailingSendBtn) {
 
 
     <div style="margin-top:12px;">
-      <button id="savePrices">Enregistrer</button>
-      <button id="cancelPrices">Annuler</button>
+<button 
+  type="button" 
+  id="savePrices" 
+  style="background:#2e7d32;color:white;opacity:1;pointer-events:auto;">
+  Enregistrer
+</button>
+
+<button 
+  type="button" 
+  id="cancelPrices" 
+  style="background:#616161;color:white;opacity:1;pointer-events:auto;">
+  Annuler
+</button>
     </div>
   </div>
 </div>
