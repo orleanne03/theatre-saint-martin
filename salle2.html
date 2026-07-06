@@ -90,6 +90,18 @@ h1 {
 .free { background: #e0e0e0; }
 .selected { background: #64b5f6; }
 .reserved { background: #ef5350; }
+/* 🟣 Siège bloqué temporairement par une demande publique */
+.held {
+  background: linear-gradient(145deg, #9575cd, #5e35b1) !important;
+  color: #ffffff !important;
+  cursor: not-allowed;
+  box-shadow: 0 0 0 3px rgba(126,87,194,.22), 0 3px 8px rgba(0,0,0,.22);
+}
+.seat.strapontin.held {
+  background: linear-gradient(145deg, #9575cd, #5e35b1) !important;
+  color: #ffffff !important;
+}
+
 .strapontin { background: #ffd54f; }
 .seat.strapontin.selected { background: #82b1ff !important; }
 
@@ -1137,6 +1149,7 @@ body.portier .accordion-header {
   <div><span class="free"></span>Libre</div>
   <div><span class="selected"></span>Sélectionné</div>
   <div><span class="reserved"></span>Réservé non payé</div>
+  <div><span class="held"></span>En attente public</div>
   <div><span class="strapontin"></span>Strapontin</div>
   <div><span class="paid"></span>Réservé et payé</div> <!-- 💚 ajouté -->
 </div>
@@ -1297,7 +1310,7 @@ const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 const get = window._firebaseGet;
 
-let seats = {}, selected = [], admin = false;
+let seats = {}, publicHolds = {}, selected = [], admin = false;
 let portierMode = false;
 let localEntered = {}; // ✅ OBLIGATOIRE (mode portier)
 window.localEntered = localEntered;
@@ -1352,6 +1365,12 @@ d.onclick = (e) => {
 
 /* === Connexion Firebase === */
 const seatsRef = ref(db, "seats");
+const publicHoldsRef = ref(db, "spectacles/amies_2026_10_11/holds");
+
+function isActivePublicHold(h) {
+  return h && h.expiresAt && new Date(h.expiresAt).getTime() > Date.now() && h.status !== "released";
+}
+
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
 
@@ -1376,6 +1395,12 @@ for (const k in localEntered) {
   updateStatsBar();
   setTimeout(() => loader.classList.add("hidden"), 400);
 }); // ✅ ← CETTE LIGNE MANQUAIT
+
+
+onValue(publicHoldsRef, snapshot => {
+  publicHolds = snapshot.val() || {};
+  render();
+});
 
 function save(){ 
   return set(seatsRef, seats); 
@@ -1436,6 +1461,8 @@ if (seatData) {
   } else {
     el.classList.add("reserved");
   }
+} else if (isActivePublicHold(publicHolds[id])) {
+  el.classList.add("held");
 }
 
 
@@ -1451,6 +1478,14 @@ if (seatData) {
 
 /* === Sélection === */
 async function toggle(id, el) {
+
+// 🟣 Siège bloqué temporairement par une demande publique : on ne le réserve pas ici
+if (!seats[id] && isActivePublicHold(publicHolds[id])) {
+  alert(`⏳ Le siège ${id} est en attente de validation via la page publique.
+
+Valide ou refuse la demande dans demandes-public.html.`);
+  return;
+}
 
 // 🧩 Si on est en mode suppression groupée → on ne fait pas la logique normale
 if (groupMode === "remove" && admin) {
@@ -1558,8 +1593,20 @@ function formatPhone(input) {
   digits = digits.slice(0, 10);
   return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
+function isValidEmail(email) {
+  const value = String(email || "").trim().toLowerCase();
+
+  // Refuse espaces, accents et formats incomplets
+  if (!value) return false;
+  if (/\s/.test(value)) return false;
+  if (/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
+
+  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value);
+}
 document.getElementById("name").addEventListener("input", e => e.target.value = e.target.value.toUpperCase());
-document.getElementById("email").addEventListener("input", e => e.target.value = e.target.value.toLowerCase());
+document.getElementById("email").addEventListener("input", e => {
+  e.target.value = e.target.value.toLowerCase().replace(/\s+/g, "");
+});
 document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
 
 /* === 🧮 Calcul automatique total (adultes/enfants) === */
@@ -1589,7 +1636,7 @@ document.getElementById("freeCount").addEventListener("input", updateTotal);
 /* === Validation + enregistrement === */
 document.getElementById("save").onclick = async () => {
   const name   = document.getElementById("name").value.trim().toUpperCase();
-  const email  = document.getElementById("email").value.trim().toLowerCase();
+  const email  = document.getElementById("email").value.trim().toLowerCase().replace(/\s+/g, "");
   const phone  = formatPhone(document.getElementById("phone").value.trim());
   const paid   = document.getElementById("paid").checked;
 
@@ -1605,6 +1652,11 @@ const totalPeople = nbAdult + nbChild + nbBaby + nbFree;
 
   if (!name || !email || !phone) {
     alert("Tous les champs sont requis.");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    alert("❌ Adresse email invalide. Vérifie qu’il n’y a pas d’espace, d’accent ou de point manquant.");
     return;
   }
   if (totalPeople !== totalSeats) {
