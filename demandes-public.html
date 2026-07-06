@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demandes publiques — Je préfère qu’on reste amies</title>
+  <style>
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;color:#202124;}
+    header{background:#4a2416;color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+    h1{font-size:22px;margin:0;} main{max-width:1180px;margin:0 auto;padding:20px 12px 40px;}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#fff;border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+    button,select,input{font:inherit;} button{border:0;border-radius:10px;padding:9px 12px;color:#fff;background:#2f7b64;font-weight:700;cursor:pointer;}
+    button.orange{background:#cf683d;} button.grey{background:#757575;} button.red{background:#c62828;} button.blue{background:#0277bd;} button:disabled{opacity:.6;cursor:wait;}
+    select,input{padding:9px 10px;border:1px solid #ccc;border-radius:8px;} .stats{font-weight:700;color:#4a2416;}
+    .list{display:grid;gap:12px;} .card{background:#fff;border-radius:14px;padding:14px 16px;border-left:7px solid #ccc;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+    .card.nouvelle{border-left-color:#cf683d;} .card.contactee{border-left-color:#0277bd;} .card.confirmee{border-left-color:#2f7b64;} .card.refusee{border-left-color:#c62828;} .card.expiree{border-left-color:#6a1b9a;opacity:.86;} .card.archivee{border-left-color:#757575;opacity:.75;}
+    .top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;} .name{font-size:18px;font-weight:800;} .meta{font-size:13px;color:#666;margin-top:4px;line-height:1.45;}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px;} .info{background:#f7f2e8;border-radius:10px;padding:10px;font-size:14px;line-height:1.4;}
+    .seats{margin-top:12px;background:#fff8e8;border:1px solid #e0b471;border-radius:10px;padding:10px;font-weight:800;color:#4a2416;}
+    .message{margin-top:12px;background:#f8f8f8;border-radius:10px;padding:10px;white-space:pre-wrap;} .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .hidden{display:none!important;} .login{max-width:420px;margin:60px auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.12);} .login input{width:100%;box-sizing:border-box;margin:10px 0;}
+    .warn{color:#c62828;font-weight:800;} .ok{color:#2e7d32;font-weight:800;}
+    @media(max-width:760px){.grid{grid-template-columns:1fr;} header{align-items:flex-start;}}
+  </style>
+</head>
+<body>
+  <div id="loginBox" class="login">
+    <h2>Accès demandes publiques</h2>
+    <p>Entre le mot de passe admin de la troupe.</p>
+    <input id="password" type="password" placeholder="Mot de passe" />
+    <button id="loginBtn">Entrer</button>
+    <p id="loginError" style="color:#c62828;font-weight:700;"></p>
+  </div>
+
+  <div id="app" class="hidden">
+    <header><h1>📨 Demandes publiques avec places bloquées</h1><div>Je préfère qu’on reste amies — 11 octobre 2026</div></header>
+    <main>
+      <div class="toolbar">
+        <button id="refreshBtn">🔄 Actualiser</button><button id="exportBtn" class="blue">📤 Export CSV</button>
+        <label>Filtre <select id="statusFilter"><option value="">Toutes</option><option value="nouvelle">Nouvelles</option><option value="contactee">Contactées</option><option value="confirmee">Confirmées</option><option value="refusee">Refusées</option><option value="expiree">Expirées</option><option value="archivee">Archivées</option></select></label>
+        <input id="searchInput" placeholder="Rechercher nom/email/tél./siège" /><span id="stats" class="stats"></span>
+      </div>
+      <div id="list" class="list"></div>
+    </main>
+  </div>
+
+<script>
+  const ADMIN_PASSWORD = "admin123";
+  const DB_BASE_URL = "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app";
+  const SHOW_ID = "amies_2026_10_11";
+  const SEATS_PATH = `spectacles/${SHOW_ID}/seats`;
+  const HOLDS_PATH = `spectacles/${SHOW_ID}/holds`;
+  const REQUESTS_PATH = `spectacles/${SHOW_ID}/public_requests`;
+  const PRICE_ADULT = 14;
+  const PRICE_CHILD = 10;
+
+  let requests = [];
+  let confirmedSeats = {};
+  let holds = {};
+  const loginBox = document.getElementById("loginBox"), app = document.getElementById("app"), list = document.getElementById("list"), stats = document.getElementById("stats"), statusFilter = document.getElementById("statusFilter"), searchInput = document.getElementById("searchInput");
+  function dbUrl(path, query=""){ return `${DB_BASE_URL}/${path}.json${query}`; }
+  async function dbGet(path, query=""){ const res = await fetch(dbUrl(path, query)); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
+  async function dbSet(path, data){ const res = await fetch(dbUrl(path), {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
+  async function dbPatch(path, data){ const res = await fetch(dbUrl(path), {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
+  async function dbRemove(path){ const res = await fetch(dbUrl(path), {method:"DELETE"}); if(!res.ok) throw new Error(await res.text()); }
+  function escapeHTML(str=""){ return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+  function fmtDate(iso){ if(!iso) return "—"; try{return new Date(iso).toLocaleString("fr-FR");}catch{return iso;} }
+  function isExpired(r){ return r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now() && !["confirmee","refusee","archivee","expiree"].includes(r.status); }
+
+  async function cleanupExpiredPublicRequests(){
+    const now = Date.now();
+    try{
+      const [requestData, holdData] = await Promise.all([
+        dbGet(REQUESTS_PATH).catch(() => ({})),
+        dbGet(HOLDS_PATH).catch(() => ({}))
+      ]);
+      const tasks = [];
+      for(const [seatId, h] of Object.entries(holdData || {})){
+        if(h && h.expiresAt && new Date(h.expiresAt).getTime() <= now){
+          tasks.push(dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`));
+        }
+      }
+      for(const [requestId, r] of Object.entries(requestData || {})){
+        const status = r.status || "nouvelle";
+        if(r && r.expiresAt && new Date(r.expiresAt).getTime() <= now && ["nouvelle","contactee"].includes(status)){
+          tasks.push(dbPatch(`${REQUESTS_PATH}/${requestId}`, {
+            status:"expiree",
+            expiredAt:new Date().toISOString(),
+            updatedAt:new Date().toISOString()
+          }));
+        }
+      }
+      if(tasks.length) await Promise.allSettled(tasks);
+    }catch(err){
+      console.warn("Nettoyage des demandes expirées impossible", err);
+    }
+  }
+
+  async function sendViaBrevo(to, subject, html){
+    const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev/", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ to, subject, html })
+    });
+    const responseText = await res.text().catch(() => "");
+    if(!res.ok) throw new Error(`Erreur Brevo/Worker ${res.status} : ${responseText || res.statusText}`);
+    if(/error|erreur|failed|unauthorized|forbidden|invalid/i.test(responseText)) {
+      throw new Error(`Brevo/Worker a répondu une erreur : ${responseText}`);
+    }
+    return responseText || "OK";
+  }
+
+  function buildConfirmationEmail(r){
+    const seats = Array.isArray(r.seats) ? r.seats : [];
+    const amount = Number(r.amount || 0).toFixed(2);
+    return `
+      <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
+        <div style="max-width:640px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
+          <h2 style="margin:0 0 12px;color:#2f7b64;">✅ Votre réservation est confirmée</h2>
+          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Bonjour <strong>${escapeHTML(r.name || "")}</strong>,</p>
+          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
+            La Troupe Saint-Martin confirme votre réservation pour <strong>Je préfère qu’on reste amies</strong>.
+          </p>
+          <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
+            <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 à 20h30")}<br>
+            <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes 03")}<br>
+            <strong>Places confirmées :</strong> ${seats.map(escapeHTML).join(", ")}<br>
+            <strong>Nombre de places :</strong> ${r.totalPeople || seats.length}<br>
+            <strong>Montant :</strong> ${amount} €
+          </div>
+          <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
+            Pour toute question : <strong>06 46 32 06 49</strong>.
+          </p>
+          <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">À très bientôt,<br><strong>La Troupe Saint-Martin</strong></p>
+          <p style="margin:18px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(r.id)}</p>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById("loginBtn").onclick = () => { if(document.getElementById("password").value === ADMIN_PASSWORD){ loginBox.classList.add("hidden"); app.classList.remove("hidden"); loadRequests(); } else document.getElementById("loginError").textContent = "Mot de passe incorrect."; };
+  document.getElementById("password").addEventListener("keydown", e => { if(e.key === "Enter") document.getElementById("loginBtn").click(); });
+  document.getElementById("refreshBtn").onclick = loadRequests; statusFilter.onchange = render; searchInput.oninput = render;
+
+  async function loadRequests(){
+    list.innerHTML = "Chargement…";
+    try{
+      await cleanupExpiredPublicRequests();
+      const [requestData, seatData, holdData] = await Promise.all([dbGet(REQUESTS_PATH).catch(()=>({})), dbGet(SEATS_PATH).catch(()=>({})), dbGet(HOLDS_PATH).catch(()=>({}))]);
+      confirmedSeats = seatData || {}; holds = holdData || {};
+      requests = Object.entries(requestData || {}).map(([id,r]) => ({id, ...r})).sort((a,b) => String(b.createdAt||"").localeCompare(String(a.createdAt||"")));
+      render();
+    }catch(err){ console.error(err); list.innerHTML = "❌ Impossible de charger les demandes."; }
+  }
+  function render(){
+    const filter = statusFilter.value; const q = searchInput.value.trim().toLowerCase();
+    let filtered = requests.filter(r => !filter || (r.status || "nouvelle") === filter);
+    if(q) filtered = filtered.filter(r => [r.name,r.email,r.phone,(r.seats||[]).join(" "),r.message].join(" ").toLowerCase().includes(q));
+    const counts = requests.reduce((acc,r)=>{ const s=r.status||"nouvelle"; acc[s]=(acc[s]||0)+1; return acc; },{});
+    stats.textContent = `Total : ${requests.length} — Nouvelles : ${counts.nouvelle||0} — Confirmées : ${counts.confirmee||0} — Refusées : ${counts.refusee||0} — Expirées : ${counts.expiree||0}`;
+    if(!filtered.length){ list.innerHTML = "Aucune demande."; return; }
+    list.innerHTML = filtered.map(r => cardHTML(r)).join("");
+  }
+  function cardHTML(r){
+    const status = r.status || "nouvelle"; const seats = Array.isArray(r.seats) ? r.seats : []; const expired = isExpired(r);
+    const taken = seats.filter(s => confirmedSeats[s] && confirmedSeats[s].reservationId !== r.id);
+    const holdMissing = seats.filter(s => !holds[s] || holds[s].requestId !== r.id);
+    const total = Number(r.totalPeople || seats.length || 0);
+    return `<article class="card ${escapeHTML(status)}">
+      <div class="top"><div><div class="name">${escapeHTML(r.name || "Sans nom")}</div><div class="meta">Référence : ${escapeHTML(r.id)}<br>${fmtDate(r.createdAt)} — Statut : <strong>${escapeHTML(status)}</strong>${expired ? ` — <span class="warn">blocage expiré</span>` : ""}</div></div><div><strong>${total}</strong> place(s)</div></div>
+      <div class="grid"><div class="info">📧 <strong>Email</strong><br>${escapeHTML(r.email||"—")}</div><div class="info">📱 <strong>Téléphone</strong><br>${escapeHTML(r.phone||"—")}</div><div class="info">👥 <strong>Détail</strong><br>Adultes : ${r.adultCount||0}<br>9-14 ans : ${r.childCount||0}<br>-8 ans : ${r.babyCount||0}</div><div class="info">💰 <strong>Montant</strong><br>${Number(r.amount||0).toFixed(2)} €</div></div>
+      <div class="seats">🎟️ Places demandées : ${seats.map(escapeHTML).join(", ") || "—"}${taken.length ? `<br><span class="warn">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</span>` : ""}${holdMissing.length && status === "nouvelle" ? `<br><span class="warn">Blocage absent ou expiré : ${holdMissing.map(escapeHTML).join(", ")}</span>` : ""}</div>
+      ${r.message ? `<div class="message"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+      <div class="actions"><button class="blue" onclick="location.href='mailto:${encodeURIComponent(r.email||"")}'">Écrire</button><button class="orange" onclick="location.href='tel:${String(r.phone||"").replace(/\D/g,"")}'">Appeler</button><button onclick="setStatus('${r.id}','contactee')">Contactée</button><button onclick="confirmRequest('${r.id}')" ${status === "confirmee" ? "disabled" : ""}>✅ Valider + envoyer confirmation</button><button class="red" onclick="refuseRequest('${r.id}')">Refuser + libérer</button><button class="grey" onclick="archiveRequest('${r.id}')">Archiver</button><button class="red" onclick="deleteRequest('${r.id}')">Supprimer</button></div>
+    </article>`;
+  }
+  async function setStatus(id, status){ await dbPatch(`${REQUESTS_PATH}/${id}`, {status, updatedAt:new Date().toISOString()}); await loadRequests(); }
+  window.setStatus = setStatus;
+  function distributeSeatTypes(r){
+    let adult = Number(r.adultCount||0), child = Number(r.childCount||0), baby = Number(r.babyCount||0);
+    return (r.seats || []).map(seatId => { let type = "autre"; if(adult > 0){ type="adulte"; adult--; } else if(child > 0){ type="enfant"; child--; } else if(baby > 0){ type="moins8"; baby--; } return {seatId, type}; });
+  }
+  async function confirmRequest(id){
+    const r = requests.find(x => x.id === id); if(!r) return alert("Demande introuvable.");
+    const seats = Array.isArray(r.seats) ? r.seats : [];
+    const taken = seats.filter(s => confirmedSeats[s] && confirmedSeats[s].reservationId !== id);
+    if(taken.length) return alert(`Impossible de confirmer : ces places sont déjà réservées ailleurs : ${taken.join(", ")}`);
+    const expiredText = (r.status === "expiree" || isExpired(r)) ? "\n\n⚠️ Cette demande est expirée. Si les places sont encore libres, tu peux quand même la valider." : "";
+    if(!confirm(`Valider la demande de ${r.name} et envoyer l’email de confirmation ?\n\nPlaces : ${seats.join(", ")}${expiredText}`)) return;
+    const base = { reservationId:r.id, name:String(r.name||"").toUpperCase(), email:String(r.email||"").toLowerCase(), phone:r.phone||"", paid:false, nbAdult:Number(r.adultCount||0), nbChild:Number(r.childCount||0), nbBaby:Number(r.babyCount||0), amount:Number(r.amount || (Number(r.adultCount||0)*PRICE_ADULT + Number(r.childCount||0)*PRICE_CHILD)), source:"public_request", showId:SHOW_ID, createdAt:r.createdAt||new Date().toISOString() };
+    for(const s of distributeSeatTypes(r)){ await dbSet(`${SEATS_PATH}/${encodeURIComponent(s.seatId)}`, {...base, type:s.type}); }
+    for(const seatId of seats){ const h = holds[seatId]; if(h && h.requestId === id) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`); }
+    await dbPatch(`${REQUESTS_PATH}/${id}`, {status:"confirmee", confirmedAt:new Date().toISOString(), updatedAt:new Date().toISOString()});
+
+    let mailOk = false;
+    try{
+      await sendViaBrevo(
+        r.email,
+        "✅ Réservation confirmée — Je préfère qu’on reste amies",
+        buildConfirmationEmail(r)
+      );
+      mailOk = true;
+      await dbPatch(`${REQUESTS_PATH}/${id}`, {confirmationEmailSentAt:new Date().toISOString()});
+    }catch(err){
+      console.error("Email de confirmation non envoyé", err);
+    }
+
+    alert(mailOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais l’email de confirmation n’a pas pu être envoyé. Regarde la console.");
+    await loadRequests();
+  }
+  window.confirmRequest = confirmRequest;
+  async function refuseRequest(id){
+    const r = requests.find(x => x.id === id); if(!r) return;
+    if(!confirm(`Refuser la demande de ${r.name} et libérer les places ?`)) return;
+    for(const seatId of (r.seats || [])){ const h = holds[seatId]; if(h && h.requestId === id) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`); }
+    await dbPatch(`${REQUESTS_PATH}/${id}`, {status:"refusee", refusedAt:new Date().toISOString(), updatedAt:new Date().toISOString()});
+    await loadRequests();
+  }
+  window.refuseRequest = refuseRequest;
+  async function archiveRequest(id){ await dbPatch(`${REQUESTS_PATH}/${id}`, {status:"archivee", updatedAt:new Date().toISOString()}); await loadRequests(); }
+  window.archiveRequest = archiveRequest;
+  async function deleteRequest(id){
+    const r = requests.find(x => x.id === id); if(!r) return;
+    if(!confirm("Supprimer cette demande ? Les places en attente seront libérées.")) return;
+    for(const seatId of (r.seats || [])){ const h = holds[seatId]; if(h && h.requestId === id) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`); }
+    await dbRemove(`${REQUESTS_PATH}/${id}`); await loadRequests();
+  }
+  window.deleteRequest = deleteRequest;
+  setInterval(() => { if(!app.classList.contains("hidden")) loadRequests(); }, 60000);
+
+  document.getElementById("exportBtn").onclick = () => {
+    const rows = [["DATE","STATUT","NOM","EMAIL","TELEPHONE","SIEGES","ADULTES","ENFANTS_9_14","MOINS_8","TOTAL","MONTANT","MESSAGE"]];
+    for(const r of requests){ rows.push([fmtDate(r.createdAt), r.status||"nouvelle", r.name||"", r.email||"", r.phone||"", (r.seats||[]).join(", "), r.adultCount||0, r.childCount||0, r.babyCount||0, r.totalPeople||0, Number(r.amount||0).toFixed(2), r.message||""]); }
+    const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(";")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `demandes_places_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  };
+</script>
+</body>
+</html>

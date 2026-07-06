@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Réservation — Je préfère qu’on reste amies</title>
+  <style>
+    :root{
+      --fond:#f6ead2;
+      --carte:#fff8e8;
+      --texte:#342014;
+      --accent:#cf683d;
+      --vert:#2f7b64;
+      --bord:#d7a85f;
+      --bleu:#1565c0;
+      --reserve:#8d6e63;
+      --attente:#7e57c2;
+      --libre:#c62828;
+    }
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#f6ead2,#fff8e8);color:var(--texte);}
+    .page{max-width:1180px;margin:0 auto;padding:20px 12px 42px;}
+    .card{background:var(--carte);border:1px solid var(--bord);border-radius:22px;overflow:hidden;box-shadow:0 12px 30px rgba(80,45,20,.14);}
+    .hero{display:grid;grid-template-columns:330px 1fr;gap:0;align-items:stretch;}
+    .poster-wrap{background:#fff2d8;padding:18px;border-right:1px solid var(--bord);display:flex;align-items:center;justify-content:center;}
+    .poster{width:100%;max-width:300px;border-radius:16px;display:block;box-shadow:0 8px 18px rgba(0,0,0,.18);}
+    .intro{padding:30px 34px 24px;display:flex;flex-direction:column;justify-content:center;}
+    .kicker{color:#8b3f1f;text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:13px;margin-bottom:10px;}
+    h1{margin:0 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:38px;line-height:1.05;color:#b94825;}
+    .subtitle{font-size:18px;margin:0 0 16px;line-height:1.45;}
+    .infos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+    .pill{padding:12px 14px;border:1px solid #e0b471;background:#fff1d0;border-radius:14px;font-weight:700;line-height:1.35;}
+    .notice{background:#fff2d8;border-left:5px solid var(--accent);padding:12px 14px;border-radius:10px;line-height:1.45;font-size:14px;margin-top:4px;}
+    .step{padding:24px 34px;border-top:1px solid var(--bord);background:#fffdf5;}
+    h2{margin:0 0 10px;font-size:23px;color:#5c2c18;}
+    .small{font-size:14px;color:#6b4a35;line-height:1.45;margin:0 0 16px;}
+    .legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:12px 0 16px;font-size:14px;}
+    .legend span{width:18px;height:18px;border-radius:5px;display:inline-block;vertical-align:middle;margin-right:5px;}
+    .legend .l-free{background:var(--libre);} .legend .l-selected{background:var(--bleu);} .legend .l-held{background:var(--attente);} .legend .l-reserved{background:var(--reserve);} .legend .l-strap{background:#f9a825;}
+    .scene{background:#212121;color:#fff;width:80%;max-width:760px;margin:6px auto 16px;padding:10px;border-radius:8px;text-align:center;font-weight:800;letter-spacing:1px;}
+    .hall-wrapper{width:100%;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px 0 16px;text-align:center;}
+    #hall{display:inline-flex;flex-direction:column;align-items:center;background:#fff;border-radius:14px;padding:14px;box-shadow:inset 0 0 0 1px #ead3a8, 0 3px 10px rgba(0,0,0,.12);}
+    .row{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;margin:3px 0;}
+    .row-label{font-weight:800;min-width:20px;margin-right:7px;color:#4a2416;}
+    .seat{position:relative;width:34px;height:34px;margin:3px;border-radius:7px 7px 9px 9px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#fff;cursor:pointer;user-select:none;transition:.18s transform,.18s filter,.18s box-shadow;box-shadow:0 1px 3px rgba(0,0,0,.2);font-size:13px;}
+    .seat::before{content:"";position:absolute;top:0;left:0;right:0;height:55%;border-radius:7px 7px 0 0;background:linear-gradient(180deg,rgba(0,0,0,.22),rgba(0,0,0,0));pointer-events:none;}
+    .seat.free{background:linear-gradient(145deg,#d84315,#8e0000);}
+    .seat.strapontin{background:linear-gradient(145deg,#f9a825,#f57f17);}
+    .seat.selected{background:linear-gradient(145deg,#1976d2,#0d47a1);transform:scale(1.08);box-shadow:0 0 0 3px rgba(25,118,210,.22),0 4px 10px rgba(0,0,0,.22);}
+    .seat.held{background:linear-gradient(145deg,#9575cd,#5e35b1);color:#ffffff;cursor:not-allowed;opacity:.95;box-shadow:0 0 0 3px rgba(126,87,194,.22),0 3px 8px rgba(0,0,0,.22);}
+    .seat.reserved{background:linear-gradient(145deg,#8d6e63,#4e342e);cursor:not-allowed;opacity:.9;}
+    .seat:hover:not(.reserved):not(.held){filter:brightness(1.1);transform:scale(1.09);}
+    .seat.selected:hover{transform:scale(1.12);}
+    .selection-box{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding:14px;border:1px solid #e0b471;background:#fff8e8;border-radius:14px;margin-top:8px;}
+    .selected-list{font-weight:800;color:#4a2416;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    label{display:block;font-weight:800;margin-bottom:6px;color:#3f2718;}
+    input,textarea{width:100%;padding:12px 13px;border:1px solid #d4b582;border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:var(--texte);}
+    textarea{min-height:86px;resize:vertical;}
+    .full{grid-column:1/-1;}
+    .counts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .checkbox-line{display:flex;align-items:flex-start;gap:10px;margin-top:16px;font-size:14px;line-height:1.4;}
+    .checkbox-line input{width:auto;margin-top:2px;}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:22px;}
+    button{border:0;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:800;cursor:pointer;color:#fff;background:var(--vert);}
+    button.secondary{background:var(--accent);} button.grey{background:#757575;} button:disabled{opacity:.6;cursor:wait;}
+    .status{margin-top:16px;padding:14px 16px;border-radius:12px;display:none;line-height:1.45;}
+    .status.ok{display:block;background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20;}
+    .status.err{display:block;background:#ffebee;border:1px solid #ef9a9a;color:#b71c1c;}
+    @media(max-width:820px){
+      .hero{grid-template-columns:1fr;}.poster-wrap{border-right:0;border-bottom:1px solid var(--bord);} .poster{max-width:360px;} .intro,.step{padding:22px 16px;} h1{font-size:32px;} .infos,.grid,.counts{grid-template-columns:1fr;} .page{padding:10px 6px 28px;} .hall-wrapper{text-align:left;} #hall{margin-left:4px;} .seat{width:28px;height:28px;margin:2px;font-size:11px}.row-label{font-size:12px;margin-right:4px;}
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <div class="hero">
+        <div class="poster-wrap"><img class="poster" src="affiche-amies.png" alt="Affiche Je préfère qu’on reste amies" /></div>
+        <div class="intro">
+          <div class="kicker">La Troupe Saint-Martin présente</div>
+          <h1>Je préfère qu’on reste amies</h1>
+          <p class="subtitle">Une pièce de <strong>Laurent Ruquier</strong>, dans une version inédite entièrement revisitée, portée par deux femmes.</p>
+          <div class="infos"><div class="pill">📅 11 octobre 2026 à 20h30</div><div class="pill">📍 Salle ISLEA à Avermes 03</div></div>
+          <div class="notice">À noter : le langage de certaines répliques peut heurter la sensibilité des jeunes enfants.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <h2>1. Choisissez vos places</h2>
+        <p class="small">Les places sélectionnées seront bloquées temporairement après l’envoi de votre demande. La troupe validera ensuite la réservation.</p>
+        <div class="legend">
+          <div><span class="l-free"></span>Libre</div><div><span class="l-selected"></span>Sélectionnée</div><div><span class="l-held"></span>En attente</div><div><span class="l-reserved"></span>Réservée</div><div><span class="l-strap"></span>Strapontin</div>
+        </div>
+        <div class="scene">SCÈNE</div>
+        <div class="hall-wrapper"><div id="hall"></div></div>
+        <div class="selection-box"><div class="selected-list" id="selectedList">Aucune place sélectionnée</div><button type="button" class="grey" id="clearSelection">Vider la sélection</button></div>
+      </div>
+
+      <form id="reservationForm" class="step">
+        <h2>2. Vos informations</h2>
+        <p class="small">Votre demande sera confirmée ou refusée par la troupe. Les places restent bloquées temporairement pendant <strong>24 heures</strong>.</p>
+        <div class="grid">
+          <div><label for="name">Nom complet *</label><input id="name" autocomplete="name" required /></div>
+          <div><label for="phone">Téléphone *</label><input id="phone" inputmode="tel" autocomplete="tel" required /></div>
+          <div class="full"><label for="email">Adresse email *</label><input id="email" type="email" autocomplete="email" required /></div>
+          <div class="full counts">
+            <div><label for="adultCount">Adultes</label><input id="adultCount" type="number" min="0" max="12" value="1" /></div>
+            <div><label for="childCount">Enfants 9-14 ans</label><input id="childCount" type="number" min="0" max="12" value="0" /></div>
+            <div><label for="babyCount">Moins de 8 ans</label><input id="babyCount" type="number" min="0" max="12" value="0" /></div>
+          </div>
+          <div class="full"><label for="message">Message facultatif</label><textarea id="message" placeholder="Exemple : arrivée avec une personne à mobilité réduite, besoin de rester côté allée…"></textarea></div>
+        </div>
+        <label class="checkbox-line"><input id="consent" type="checkbox" required /><span>J’accepte d’être contacté(e) par la Troupe Saint-Martin au sujet de cette demande de réservation.</span></label>
+        <div class="actions"><button id="submitBtn" type="submit">Envoyer ma demande et bloquer les places</button><button class="secondary" type="button" onclick="window.location.href='tel:0646320649'">Appeler le 06 46 32 06 49</button></div>
+        <div id="status" class="status"></div>
+      </form>
+    </section>
+  </main>
+
+<script>
+  const DB_BASE_URL = "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app";
+  const SHOW_ID = "amies_2026_10_11";
+  const SEATS_PATH = `spectacles/${SHOW_ID}/seats`;
+  const HOLDS_PATH = `spectacles/${SHOW_ID}/holds`;
+  const REQUESTS_PATH = `spectacles/${SHOW_ID}/public_requests`;
+  const HOLD_MINUTES = 24 * 60;
+  const PRICE_ADULT = 14;
+  const PRICE_CHILD = 10;
+  const ADMIN_NOTIFICATION_EMAIL = "nellylac@gmail.com";
+
+  const rows = [...Array(19)].map((_, i) => String.fromCharCode(65 + i));
+  const seatNums = [15,13,11,9,7,5,3,1,2,4,6,8,10,12,14,16];
+  const hall = document.getElementById("hall");
+  const selectedList = document.getElementById("selectedList");
+  const statusBox = document.getElementById("status");
+  const submitBtn = document.getElementById("submitBtn");
+  let selected = [];
+  let reservedKeys = new Set();
+  let holds = {};
+
+  function dbUrl(path, query=""){ return `${DB_BASE_URL}/${path}.json${query}`; }
+  async function dbGet(path, query=""){
+    const res = await fetch(dbUrl(path, query));
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  }
+  async function dbSet(path, data){
+    const res = await fetch(dbUrl(path), {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  }
+  async function dbPatch(path, data){
+    const res = await fetch(dbUrl(path), {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  }
+  async function dbRemove(path){ await fetch(dbUrl(path), {method:"DELETE"}); }
+
+  function isActiveHold(h){ return h && h.expiresAt && new Date(h.expiresAt).getTime() > Date.now() && h.status !== "released"; }
+  function escapeHTML(str=""){ return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+  function normalizeEmail(email){ return String(email || "").trim().toLowerCase().replace(/\s+/g, ""); }
+  function formatPhone(value){ let digits = String(value || "").replace(/\D/g, ""); if(digits.startsWith("0033")) digits = "0" + digits.slice(4); if(digits.startsWith("33")) digits = "0" + digits.slice(2); digits = digits.slice(0, 10); return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim(); }
+  function showStatus(type, html){ statusBox.className = "status " + type; statusBox.innerHTML = html; }
+
+  function buildHall(){
+    hall.innerHTML = "";
+    for(const r of rows){
+      const row = document.createElement("div"); row.className = "row";
+      const label = document.createElement("div"); label.className = "row-label"; label.textContent = r; row.appendChild(label);
+      row.appendChild(makeSeat(`${r}-S15`, "S", true));
+      for(const n of seatNums) row.appendChild(makeSeat(`${r}-${n}`, String(n), false));
+      row.appendChild(makeSeat(`${r}-S16`, "S", true));
+      hall.appendChild(row);
+    }
+  }
+  function makeSeat(id, label, strap){
+    const el = document.createElement("div");
+    el.className = "seat" + (strap ? " strapontin" : "");
+    el.dataset.id = id;
+    el.textContent = label;
+    el.title = id;
+    el.onclick = () => toggleSeat(id);
+    return el;
+  }
+  function seatState(id){
+    if(reservedKeys.has(id)) return "reserved";
+    if(isActiveHold(holds[id])) return "held";
+    if(selected.includes(id)) return "selected";
+    return "free";
+  }
+  function renderSeats(){
+    document.querySelectorAll(".seat").forEach(el => {
+      const id = el.dataset.id;
+      const strap = el.classList.contains("strapontin");
+      el.className = "seat" + (strap ? " strapontin" : "");
+      el.classList.add(seatState(id));
+      const state = seatState(id);
+      el.title = state === "reserved" ? `${id} — réservée` : state === "held" ? `${id} — en attente de validation` : id;
+    });
+    selectedList.textContent = selected.length ? `${selected.length} place(s) : ${selected.join(", ")}` : "Aucune place sélectionnée";
+  }
+  function toggleSeat(id){
+    const state = seatState(id);
+    if(state === "reserved") return showStatus("err", `La place ${escapeHTML(id)} est déjà réservée.`);
+    if(state === "held") return showStatus("err", `La place ${escapeHTML(id)} est déjà en attente de validation.`);
+    if(selected.includes(id)) selected = selected.filter(x => x !== id); else selected.push(id);
+    renderSeats();
+  }
+  async function loadState(){
+    try{
+      await cleanupExpiredPublicRequests();
+      const seatKeys = await dbGet(SEATS_PATH, "?shallow=true") || {};
+      reservedKeys = new Set(Object.keys(seatKeys));
+      holds = await dbGet(HOLDS_PATH) || {};
+      selected = selected.filter(id => !reservedKeys.has(id) && !isActiveHold(holds[id]));
+      renderSeats();
+    }catch(err){ console.error(err); showStatus("err", "Impossible de charger les disponibilités. Merci de réessayer ou d’appeler le 06 46 32 06 49."); }
+  }
+  async function acquireHoldWithEtag(seatId, holdPayload){
+    const url = dbUrl(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`);
+    const currentRes = await fetch(url, {headers:{"X-Firebase-ETag":"true"}});
+    if(!currentRes.ok) throw new Error(await currentRes.text());
+    const etag = currentRes.headers.get("ETag");
+    const current = await currentRes.json();
+    if(isActiveHold(current) && current.requestId !== holdPayload.requestId) return false;
+    const putRes = await fetch(url, {method:"PUT", headers:{"Content-Type":"application/json", "if-match":etag || "*"}, body:JSON.stringify(holdPayload)});
+    if(putRes.status === 412) return false;
+    if(!putRes.ok) throw new Error(await putRes.text());
+    return true;
+  }
+  async function releaseRequestHolds(requestId, seatIds){
+    await Promise.all(seatIds.map(async seatId => {
+      const current = await dbGet(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`).catch(() => null);
+      if(current && current.requestId === requestId) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`);
+    }));
+  }
+
+  async function cleanupExpiredPublicRequests(){
+    const now = Date.now();
+    try{
+      const [requestData, holdData] = await Promise.all([
+        dbGet(REQUESTS_PATH).catch(() => ({})),
+        dbGet(HOLDS_PATH).catch(() => ({}))
+      ]);
+      const tasks = [];
+      for(const [seatId, h] of Object.entries(holdData || {})){
+        if(h && h.expiresAt && new Date(h.expiresAt).getTime() <= now){
+          tasks.push(dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`));
+        }
+      }
+      for(const [requestId, r] of Object.entries(requestData || {})){
+        const status = r.status || "nouvelle";
+        if(r && r.expiresAt && new Date(r.expiresAt).getTime() <= now && ["nouvelle","contactee"].includes(status)){
+          tasks.push(dbPatch(`${REQUESTS_PATH}/${requestId}`, {
+            status:"expiree",
+            expiredAt:new Date().toISOString(),
+            updatedAt:new Date().toISOString()
+          }));
+        }
+      }
+      if(tasks.length) await Promise.allSettled(tasks);
+    }catch(err){
+      console.warn("Nettoyage des demandes expirées impossible", err);
+    }
+  }
+
+  async function sendViaBrevo(to, subject, html){
+    const res = await fetch("https://brevo-mailer.theatre-sm-03.workers.dev/", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ to, subject, html })
+    });
+    const responseText = await res.text().catch(() => "");
+    if(!res.ok) throw new Error(`Erreur Brevo/Worker ${res.status} : ${responseText || res.statusText}`);
+    if(/error|erreur|failed|unauthorized|forbidden|invalid/i.test(responseText)) {
+      throw new Error(`Brevo/Worker a répondu une erreur : ${responseText}`);
+    }
+    return responseText || "OK";
+  }
+
+  function buildAdminNotificationEmail(request){
+    const safeSeats = (request.seats || []).map(escapeHTML).join(", ");
+    const amount = Number(request.amount || 0).toFixed(2);
+    const message = request.message ? escapeHTML(request.message).replace(/\n/g,"<br>") : "Aucun message";
+    return `
+      <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
+        <div style="max-width:640px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
+          <h2 style="margin:0 0 12px;color:#b94825;">🎭 Nouvelle demande de réservation</h2>
+          <p style="font-size:16px;line-height:1.55;margin:0 0 18px;">
+            Une nouvelle demande vient d’être envoyée depuis la page publique.
+          </p>
+          <div style="background:#fff1d0;border-radius:12px;padding:16px;margin-bottom:16px;line-height:1.7;">
+            <strong>Spectacle :</strong> ${escapeHTML(request.spectacle || "Je préfère qu’on reste amies")}<br>
+            <strong>Date :</strong> ${escapeHTML(request.date || "11 octobre 2026 à 20h30")}<br>
+            <strong>Nom :</strong> ${escapeHTML(request.name)}<br>
+            <strong>Email :</strong> ${escapeHTML(request.email)}<br>
+            <strong>Téléphone :</strong> ${escapeHTML(request.phone)}<br>
+            <strong>Places :</strong> ${safeSeats}<br>
+            <strong>Adultes :</strong> ${request.adultCount || 0} — <strong>Enfants :</strong> ${request.childCount || 0} — <strong>-8 ans :</strong> ${request.babyCount || 0}<br>
+            <strong>Montant estimé :</strong> ${amount} €<br>
+            <strong>Blocage jusqu’au :</strong> ${new Date(request.expiresAt).toLocaleString("fr-FR")}
+          </div>
+          <div style="background:#ffffff;border:1px solid #ead3a8;border-radius:12px;padding:14px;margin-bottom:18px;line-height:1.55;">
+            <strong>Message :</strong><br>${message}
+          </div>
+          <p style="margin:0;font-size:15px;line-height:1.5;">
+            Ouvre <strong>demandes-public.html</strong> pour valider ou refuser cette demande.
+          </p>
+          <p style="margin:16px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(request.id)}</p>
+        </div>
+      </div>`;
+  }
+
+  function buildCustomerRequestEmail(request){
+    const safeName = escapeHTML(request.name || "");
+    const safeSeats = (request.seats || []).map(escapeHTML).join(", ");
+    const amount = Number(request.amount || 0).toFixed(2);
+    return `
+      <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
+        <div style="max-width:640px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
+          <h2 style="margin:0 0 12px;color:#b94825;">🎭 Votre demande de réservation est bien reçue</h2>
+          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Bonjour <strong>${safeName}</strong>,</p>
+          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
+            Merci pour votre demande de réservation pour <strong>Je préfère qu’on reste amies</strong>.
+            Vos places sont <strong>bloquées temporairement</strong>, en attente de validation par la Troupe Saint-Martin.
+          </p>
+          <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
+            <strong>Date :</strong> ${escapeHTML(request.date || "11 octobre 2026 à 20h30")}<br>
+            <strong>Lieu :</strong> ${escapeHTML(request.lieu || "Salle ISLEA à Avermes 03")}<br>
+            <strong>Places demandées :</strong> ${safeSeats}<br>
+            <strong>Nombre de places :</strong> ${request.totalPeople || (request.seats || []).length}<br>
+            <strong>Montant estimé :</strong> ${amount} €<br>
+            <strong>Blocage jusqu’au :</strong> ${new Date(request.expiresAt).toLocaleString("fr-FR")}
+          </div>
+          <p style="font-size:15px;line-height:1.6;margin:0 0 14px;">
+            La réservation sera définitive uniquement après validation par la troupe. Tu recevras ensuite un email de confirmation.
+          </p>
+          <p style="font-size:15px;line-height:1.6;margin:0;">
+            Pour toute question : <strong>06 46 32 06 49</strong>.
+          </p>
+          <p style="margin:18px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(request.id)}</p>
+        </div>
+      </div>`;
+  }
+
+  async function notifyCustomerRequestReceived(request){
+    try{
+      await sendViaBrevo(
+        request.email,
+        `🎭 Demande reçue — Je préfère qu’on reste amies`,
+        buildCustomerRequestEmail(request)
+      );
+      console.log("✅ Email de réception envoyé à", request.email);
+    }catch(err){
+      console.warn("⚠️ Demande enregistrée, mais email spectateur non envoyé", err);
+    }
+  }
+
+  async function notifyAdminNewPublicRequest(request){
+    try{
+      await sendViaBrevo(
+        ADMIN_NOTIFICATION_EMAIL,
+        `🎭 Nouvelle demande de réservation — ${request.name} — ${request.seats.join(", ")}`,
+        buildAdminNotificationEmail(request)
+      );
+      console.log("✅ Notification admin envoyée à", ADMIN_NOTIFICATION_EMAIL);
+    }catch(err){
+      console.warn("⚠️ Demande enregistrée, mais notification admin non envoyée", err);
+    }
+  }
+
+  document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
+  document.getElementById("clearSelection").onclick = () => { selected = []; renderSeats(); };
+
+  document.getElementById("reservationForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    await loadState();
+    const name = document.getElementById("name").value.trim();
+    const email = normalizeEmail(document.getElementById("email").value);
+    const phone = formatPhone(document.getElementById("phone").value);
+    const adultCount = parseInt(document.getElementById("adultCount").value, 10) || 0;
+    const childCount = parseInt(document.getElementById("childCount").value, 10) || 0;
+    const babyCount = parseInt(document.getElementById("babyCount").value, 10) || 0;
+    const message = document.getElementById("message").value.trim();
+    const totalPeople = adultCount + childCount + babyCount;
+    if(!selected.length) return showStatus("err", "Choisissez au moins une place sur le plan.");
+    if(!name || !email || !phone) return showStatus("err", "Merci de compléter le nom, l’email et le téléphone.");
+    if(!/^\S+@\S+\.\S+$/.test(email)) return showStatus("err", "Adresse email incorrecte.");
+    if(phone.replace(/\D/g, "").length !== 10) return showStatus("err", "Téléphone incorrect : il faut 10 chiffres.");
+    if(totalPeople !== selected.length) return showStatus("err", `Vous avez sélectionné ${selected.length} place(s), mais indiqué ${totalPeople} personne(s). Les deux nombres doivent correspondre.`);
+    if(totalPeople > 12) return showStatus("err", "Pour plus de 12 places, merci de réserver directement par téléphone.");
+    if(!document.getElementById("consent").checked) return showStatus("err", "Merci de cocher l’autorisation de contact.");
+
+    const blocked = selected.filter(id => reservedKeys.has(id) || isActiveHold(holds[id]));
+    if(blocked.length) return showStatus("err", `Certaines places ne sont plus disponibles : ${blocked.map(escapeHTML).join(", ")}.`);
+
+    const requestId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+    const createdAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000).toISOString();
+    const seats = [...selected].sort((a,b) => a.localeCompare(b, "fr", {numeric:true}));
+    const amount = adultCount * PRICE_ADULT + childCount * PRICE_CHILD;
+    const holdPayload = { requestId, status:"pending", createdAt, expiresAt, showId:SHOW_ID };
+
+    submitBtn.disabled = true;
+    showStatus("ok", "Blocage temporaire des places en cours…");
+    const acquired = [];
+    try{
+      for(const seatId of seats){
+        const ok = await acquireHoldWithEtag(seatId, holdPayload);
+        if(!ok) throw new Error(`La place ${seatId} vient d’être prise.`);
+        acquired.push(seatId);
+      }
+      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, totalPeople, amount, seats, message };
+      await dbSet(`${REQUESTS_PATH}/${requestId}`, payload);
+      notifyAdminNewPublicRequest(payload);
+      notifyCustomerRequestReceived(payload);
+      showStatus("ok", `✅ Votre demande a bien été envoyée.<br>Places bloquées temporairement : <strong>${seats.map(escapeHTML).join(", ")}</strong><br>Référence : <strong>${requestId}</strong><br>Un email récapitulatif vient d’être envoyé. La troupe vous recontactera pour confirmer.`);
+      document.getElementById("reservationForm").reset();
+      document.getElementById("adultCount").value = 1;
+      selected = [];
+      await loadState();
+    }catch(err){
+      console.error(err);
+      if(acquired.length) await releaseRequestHolds(requestId, acquired);
+      showStatus("err", `❌ ${escapeHTML(err.message || "Impossible d’envoyer la demande")}. Merci de réessayer ou d’appeler le 06 46 32 06 49.`);
+      await loadState();
+    }finally{ submitBtn.disabled = false; }
+  });
+
+  buildHall();
+  loadState();
+  setInterval(loadState, 15000);
+</script>
+</body>
+</html>
