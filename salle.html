@@ -1467,6 +1467,14 @@ document.getElementById("confirm").onclick = () => {
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
 
 /* === Formatage nom/email/téléphone === */
+function isValidEmail(email) {
+  const value = String(email || "").trim().toLowerCase();
+  if (!value) return false;
+  if (/\s/.test(value)) return false;
+  if (/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+}
+
 function formatPhone(input) {
   let digits = input.replace(/\D/g, "");
   if (digits.startsWith("33")) digits = "0" + digits.slice(2);
@@ -1474,19 +1482,9 @@ function formatPhone(input) {
   digits = digits.slice(0, 10);
   return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
 }
-function isValidEmail(email) {
-  const value = String(email || "").trim().toLowerCase();
-
-  // Refuse espaces, accents et formats incomplets
-  if (!value) return false;
-  if (/\s/.test(value)) return false;
-  if (/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
-
-  return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value);
-}
 document.getElementById("name").addEventListener("input", e => e.target.value = e.target.value.toUpperCase());
 document.getElementById("email").addEventListener("input", e => {
-  e.target.value = e.target.value.toLowerCase().replace(/\s+/g, "");
+  e.target.value = e.target.value.toLowerCase().replace(/\s/g, "");
 });
 document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
 
@@ -1517,7 +1515,7 @@ document.getElementById("freeCount").addEventListener("input", updateTotal);
 /* === Validation + enregistrement === */
 document.getElementById("save").onclick = async () => {
   const name   = document.getElementById("name").value.trim().toUpperCase();
-  const email  = document.getElementById("email").value.trim().toLowerCase().replace(/\s+/g, "");
+  const email  = document.getElementById("email").value.trim().toLowerCase();
   const phone  = formatPhone(document.getElementById("phone").value.trim());
   const paid   = document.getElementById("paid").checked;
 
