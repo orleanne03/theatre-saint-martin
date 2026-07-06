@@ -126,27 +126,81 @@
 
   function buildConfirmationEmail(r){
     const seats = Array.isArray(r.seats) ? r.seats : [];
-    const amount = Number(r.amount || 0).toFixed(2);
+    const amount = Number(r.amount || 0).toFixed(2).replace(".", ",");
+    const adultCount = Number(r.adultCount || 0);
+    const childCount = Number(r.childCount || 0);
+    const babyCount = Number(r.babyCount || 0);
+    const totalPeople = Number(r.totalPeople || seats.length || 0);
+
     return `
       <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
-        <div style="max-width:640px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
+        <div style="max-width:680px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
           <h2 style="margin:0 0 12px;color:#2f7b64;">✅ Votre réservation est confirmée</h2>
-          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Bonjour <strong>${escapeHTML(r.name || "")}</strong>,</p>
+
           <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
-            La Troupe Saint-Martin confirme votre réservation pour <strong>Je préfère qu’on reste amies</strong>.
+            Bonjour <strong>${escapeHTML(r.name || "")}</strong>,
           </p>
+
+          <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
+            La Troupe Saint-Martin confirme votre réservation pour
+            <strong>« Je préfère qu’on reste amies »</strong>.
+          </p>
+
           <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
             <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 à 20h30")}<br>
-            <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes 03")}<br>
+            <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes (03)")}<br>
             <strong>Places confirmées :</strong> ${seats.map(escapeHTML).join(", ")}<br>
-            <strong>Nombre de places :</strong> ${r.totalPeople || seats.length}<br>
-            <strong>Montant :</strong> ${amount} €
+            <strong>Nombre de places :</strong> ${totalPeople}<br>
+            <strong>Adultes :</strong> ${adultCount}<br>
+            <strong>Enfants :</strong> ${childCount}<br>
+            <strong>BB / -8 ans :</strong> ${babyCount}<br>
+            <strong>Montant total à régler :</strong> ${amount} €
           </div>
-          <p style="font-size:15px;line-height:1.6;margin:0 0 12px;">
-            Pour toute question : <strong>06 46 32 06 49</strong>.
+
+          <div style="background:#ffffff;border:1px solid #e3c99c;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
+            <h3 style="margin:0 0 10px;color:#4a2416;">💳 Règlement</h3>
+
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+              Afin de finaliser votre réservation, merci d’effectuer votre règlement dans un délai de
+              <strong>7 jours après réception de cet email</strong>.
+            </p>
+
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+              Sans règlement passé ce délai, la réservation pourra être annulée afin de libérer les places.
+            </p>
+
+            <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
+              <strong>Par virement bancaire :</strong><br>
+              IBAN : <strong>[à compléter]</strong><br>
+              BIC : <strong>[à compléter]</strong><br>
+              Titulaire du compte : <strong>[à compléter]</strong>
+            </div>
+
+            <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
+              <strong>Ou par chèque :</strong><br>
+              Chèque à l’ordre de : <strong>[à compléter]</strong><br>
+              Adresse d’envoi du chèque :<br>
+              <strong>[à compléter]</strong>
+            </div>
+
+            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;">
+              <strong>Important :</strong> si le chèque n’est pas au même nom que la réservation,
+              merci d’indiquer au dos du chèque le nom utilisé pour la réservation.
+              Vous pouvez aussi imprimer cet email et le joindre au chèque.
+            </p>
+          </div>
+
+          <p style="font-size:15px;line-height:1.6;margin:16px 0 0;">
+            Pour toute question : <strong>06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</strong>.
           </p>
-          <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">À très bientôt,<br><strong>La Troupe Saint-Martin</strong></p>
-          <p style="margin:18px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(r.id)}</p>
+
+          <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">
+            À très bientôt,<br><strong>La Troupe Saint-Martin</strong>
+          </p>
+
+          <p style="margin:18px 0 0;color:#777;font-size:12px;">
+            Référence : ${escapeHTML(r.id)}
+          </p>
         </div>
       </div>`;
   }
