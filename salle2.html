@@ -1310,6 +1310,48 @@ const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 const get = window._firebaseGet;
 
+// === TARIFS PARTAGÉS AVEC LA PAGE PUBLIQUE ===
+// Les tarifs sont sauvegardés dans Firebase pour que reservation-public.html les affiche aussi.
+const PRICE_CONFIG_PATH = "spectacles/amies_2026_10_11/prices";
+const pricesRef = ref(db, PRICE_CONFIG_PATH);
+
+function applySharedPrices(data) {
+  if (!data) return;
+  const adult = parseFloat(data.adult);
+  const child = parseFloat(data.child);
+  let changed = false;
+
+  if (Number.isFinite(adult) && adult >= 0 && adult !== PRICE_ADULT) {
+    PRICE_ADULT = adult;
+    changed = true;
+  }
+  if (Number.isFinite(child) && child >= 0 && child !== PRICE_CHILD) {
+    PRICE_CHILD = child;
+    changed = true;
+  }
+
+  localStorage.setItem("PRICE_ADULT", PRICE_ADULT);
+  localStorage.setItem("PRICE_CHILD", PRICE_CHILD);
+
+  if (changed) {
+    try { updatePriceLabels(); } catch(e) {}
+    try { updateStatsBar(); } catch(e) {}
+    try { updateTable(); } catch(e) {}
+  }
+}
+
+onValue(pricesRef, snapshot => {
+  if (snapshot.exists()) {
+    applySharedPrices(snapshot.val());
+  } else {
+    set(pricesRef, {
+      adult: PRICE_ADULT,
+      child: PRICE_CHILD,
+      updatedAt: new Date().toISOString()
+    }).catch(err => console.warn("⚠️ Tarifs partagés non initialisés", err));
+  }
+});
+
 let seats = {}, publicHolds = {}, selected = [], admin = false;
 let portierMode = false;
 let localEntered = {}; // ✅ OBLIGATOIRE (mode portier)
@@ -3216,7 +3258,7 @@ function openPriceModal() {
 document.getElementById("cancelPrices").onclick = () => priceModal.classList.add("hidden");
 
 /* === Enregistrer les nouveaux tarifs === */
-document.getElementById("savePrices").onclick = () => {
+document.getElementById("savePrices").onclick = async () => {
   const newAdult = parseFloat(priceAdultInput.value);
   const newChild = parseFloat(priceChildInput.value);
   if (isNaN(newAdult) || isNaN(newChild)) {
@@ -3232,6 +3274,17 @@ document.getElementById("savePrices").onclick = () => {
 
   localStorage.setItem("PRICE_ADULT", PRICE_ADULT);
   localStorage.setItem("PRICE_CHILD", PRICE_CHILD);
+
+  try {
+    await set(pricesRef, {
+      adult: PRICE_ADULT,
+      child: PRICE_CHILD,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("❌ Impossible de sauvegarder les tarifs partagés", err);
+    alert("❌ Les tarifs ont été changés ici, mais pas sauvegardés pour la page publique. Vérifie les règles Firebase.");
+  }
 
   updatePriceLabels();
   render();
