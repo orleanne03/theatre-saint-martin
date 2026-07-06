@@ -121,7 +121,7 @@
 <script>
   const DB_BASE_URL = "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app";
   const SHOW_ID = "amies_2026_10_11";
-  const SEATS_PATH = `spectacles/${SHOW_ID}/seats`;
+  const SEATS_PATH = "seats"; // ✅ synchronisé avec salle.html
   const HOLDS_PATH = `spectacles/${SHOW_ID}/holds`;
   const REQUESTS_PATH = `spectacles/${SHOW_ID}/public_requests`;
   const HOLD_MINUTES = 24 * 60;
@@ -160,6 +160,13 @@
   function isActiveHold(h){ return h && h.expiresAt && new Date(h.expiresAt).getTime() > Date.now() && h.status !== "released"; }
   function escapeHTML(str=""){ return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
   function normalizeEmail(email){ return String(email || "").trim().toLowerCase().replace(/\s+/g, ""); }
+  function isValidEmail(email){
+    const value = String(email || "").trim().toLowerCase();
+    if(!value) return false;
+    if(/\s/.test(value)) return false;
+    if(/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
+    return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value);
+  }
   function formatPhone(value){ let digits = String(value || "").replace(/\D/g, ""); if(digits.startsWith("0033")) digits = "0" + digits.slice(4); if(digits.startsWith("33")) digits = "0" + digits.slice(2); digits = digits.slice(0, 10); return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim(); }
   function showStatus(type, html){ statusBox.className = "status " + type; statusBox.innerHTML = html; }
 
@@ -370,6 +377,9 @@
     }
   }
 
+  document.getElementById("email").addEventListener("input", e => {
+    e.target.value = normalizeEmail(e.target.value);
+  });
   document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
   document.getElementById("clearSelection").onclick = () => { selected = []; renderSeats(); };
 
@@ -386,7 +396,7 @@
     const totalPeople = adultCount + childCount + babyCount;
     if(!selected.length) return showStatus("err", "Choisissez au moins une place sur le plan.");
     if(!name || !email || !phone) return showStatus("err", "Merci de compléter le nom, l’email et le téléphone.");
-    if(!/^\S+@\S+\.\S+$/.test(email)) return showStatus("err", "Adresse email incorrecte.");
+    if(!isValidEmail(email)) return showStatus("err", "Adresse email invalide. Vérifiez qu’il n’y a pas d’espace, d’accent ou de point manquant.");
     if(phone.replace(/\D/g, "").length !== 10) return showStatus("err", "Téléphone incorrect : il faut 10 chiffres.");
     if(totalPeople !== selected.length) return showStatus("err", `Vous avez sélectionné ${selected.length} place(s), mais indiqué ${totalPeople} personne(s). Les deux nombres doivent correspondre.`);
     if(totalPeople > 12) return showStatus("err", "Pour plus de 12 places, merci de réserver directement par téléphone.");
