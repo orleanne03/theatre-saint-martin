@@ -1172,6 +1172,9 @@ body.portier .accordion-header {
   style="display:none;background:#1976d2;">
   🔔 Rappel réservation (billet + QR)
 </button>
+  <button id="printBackupList" style="display:none;background:#5d4037;">
+    🖨️ Liste papier secours
+  </button>
   <button id="newPieceMailing" style="display:none;background:#8e24aa;">
     📢 Mailing nouvelle pièce
   </button>
@@ -3253,6 +3256,12 @@ function updatePriceLabels() {
 function openPriceModal() {
   priceAdultInput.value = PRICE_ADULT;
   priceChildInput.value = PRICE_CHILD;
+
+  const savePricesBtn = document.getElementById("savePrices");
+  const cancelPricesBtn = document.getElementById("cancelPrices");
+  if (savePricesBtn) savePricesBtn.disabled = false;
+  if (cancelPricesBtn) cancelPricesBtn.disabled = false;
+
   priceModal.classList.remove("hidden");
 }
 document.getElementById("cancelPrices").onclick = () => priceModal.classList.add("hidden");
@@ -3363,6 +3372,10 @@ function toggleAdminUI() {
   emailTestBtn.style.display = isAdmin ? "inline-block" : "none";
   document.getElementById("bulkReminder").style.display =
     isAdmin ? "inline-block" : "none";
+  const printBackupListBtn = document.getElementById("printBackupList");
+  if (printBackupListBtn) {
+    printBackupListBtn.style.display = isAdmin ? "inline-block" : "none";
+  }
   const newPieceMailingBtn = document.getElementById("newPieceMailing");
   if (newPieceMailingBtn) {
     newPieceMailingBtn.style.display = isAdmin ? "inline-block" : "none";
@@ -3377,6 +3390,418 @@ function toggleAdminUI() {
 // 🔹 Initialisation de l’interface
 editPricesBtn.onclick = openPriceModal;
 updatePriceLabels();
+
+// ===================================================
+// 🖨️ LISTE PAPIER DE SECOURS
+// ===================================================
+function seatSortValue(id) {
+  const [row, rawSeat = ""] = String(id || "").split("-");
+  const isStrap = rawSeat.startsWith("S");
+  const num = parseInt(rawSeat.replace(/\D/g, ""), 10) || 0;
+  return `${row || ""}-${isStrap ? 999 : num.toString().padStart(3, "0")}-${rawSeat}`;
+}
+
+function formatTicketType(type) {
+  const map = {
+    adulte: "Adulte",
+    enfant: "Enfant",
+    moins8: "- de 8 ans",
+    gratuit: "Gratuit",
+    autre: "Autre"
+  };
+  return map[type] || "—";
+}
+
+function buildBackupPrintData() {
+  const groups = new Map();
+
+  for (const [seatId, seatData] of Object.entries(seats || {})) {
+    if (!seatData) continue;
+
+    const key = seatData.reservationId || `${seatData.name || ""}|${seatData.email || ""}|${seatData.phone || ""}`;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        name: seatData.name || "—",
+        email: seatData.email || "—",
+        phone: seatData.phone || "—",
+        amount: Number(seatData.amount || 0),
+        seats: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.name = group.name !== "—" ? group.name : (seatData.name || "—");
+    group.email = group.email !== "—" ? group.email : (seatData.email || "—");
+    group.phone = group.phone !== "—" ? group.phone : (seatData.phone || "—");
+    group.amount = Math.max(group.amount, Number(seatData.amount || 0));
+
+    group.seats.push({
+      id: seatId,
+      type: seatData.type || "",
+      paid: !!seatData.paid
+    });
+  }
+
+  const reservations = Array.from(groups.values()).map(group => {
+    group.seats.sort((a, b) => seatSortValue(a.id).localeCompare(seatSortValue(b.id), "fr", { numeric: true }));
+    group.paid = group.seats.length ? group.seats.every(s => s.paid) : false;
+    group.nbAdult = group.seats.filter(s => s.type === "adulte").length;
+    group.nbChild = group.seats.filter(s => s.type === "enfant").length;
+    group.nbBaby = group.seats.filter(s => s.type === "moins8").length;
+    group.nbFree = group.seats.filter(s => s.type === "gratuit").length;
+    return group;
+  });
+
+  reservations.sort((a, b) => {
+    const byName = String(a.name).localeCompare(String(b.name), "fr", { sensitivity: "base" });
+    if (byName) return byName;
+    return String(a.email).localeCompare(String(b.email), "fr", { sensitivity: "base" });
+  });
+
+  const seatRows = reservations.flatMap(group =>
+    group.seats.map(seat => ({
+      seat: seat.id,
+      name: group.name,
+      phone: group.phone,
+      email: group.email,
+      type: seat.type,
+      paid: seat.paid
+    }))
+  ).sort((a, b) => seatSortValue(a.seat).localeCompare(seatSortValue(b.seat), "fr", { numeric: true }));
+
+  return { reservations, seatRows };
+}
+
+function openPrintableBackupList() {
+  if (!admin) return alert("❌ Mode admin requis");
+
+  const { reservations, seatRows } = buildBackupPrintData();
+  if (!reservations.length) return alert("Aucune réservation à imprimer.");
+
+  const now = new Date().toLocaleString("fr-FR");
+  const totalSeats = seatRows.length;
+  const paidSeats = seatRows.filter(s => s.paid).length;
+  const unpaidSeats = totalSeats - paidSeats;
+  const totalAdult = reservations.reduce((sum, r) => sum + (r.nbAdult || 0), 0);
+  const totalChild = reservations.reduce((sum, r) => sum + (r.nbChild || 0), 0);
+  const totalBaby = reservations.reduce((sum, r) => sum + (r.nbBaby || 0), 0);
+
+  const makeArrivalChecks = (count) =>
+    Array.from({ length: Math.max(1, count) }, () => '<span class="box"></span>').join("");
+
+  const reservationRows = reservations.map((r, idx) => {
+    const seatsText = r.seats.map(s => s.id).join(", ");
+    return `
+        <tr>
+          <td class="c-num">${idx + 1}</td>
+          <td class="c-checks">${makeArrivalChecks(r.seats.length)}</td>
+          <td class="c-contact">
+            <div class="name">${escapeHTML(r.name)}</div>
+            <div class="phone">☎ ${escapeHTML(r.phone || "—")}</div>
+            <div class="email">${escapeHTML(r.email || "—")}</div>
+          </td>
+          <td class="c-seats seats">${escapeHTML(seatsText)}</td>
+          <td class="c-total">${r.seats.length}</td>
+          <td class="c-ad">${r.nbAdult || 0}</td>
+          <td class="c-enf">${r.nbChild || 0}</td>
+          <td class="c-bb">${r.nbBaby || 0}</td>
+          <td class="c-amount">${r.amount.toFixed(2).replace(".", ",")} €</td>
+          <td class="c-pay"><span class="badge ${r.paid ? "ok" : "warn"}">${r.paid ? "Payé" : "À vérifier"}</span></td>
+        </tr>`;
+  }).join("");
+
+  const html = `<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Liste papier de secours</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 7mm;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4efe6;
+    color: #2d221d;
+  }
+
+  .toolbar {
+    padding: 12px;
+  }
+
+  .print-btn {
+    background: #3e7b69;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .sheet {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 20px auto;
+    background: #fffdf9;
+    box-shadow: 0 6px 24px rgba(0,0,0,.12);
+    padding: 7mm;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #d6c2a5;
+  }
+
+  .title h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.15;
+    color: #5a2f1c;
+  }
+
+  .title .sub {
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: #75675b;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(74px, 1fr));
+    gap: 5px;
+    min-width: 285px;
+  }
+
+  .card {
+    border: 1px solid #d8c5ab;
+    background: linear-gradient(180deg, #fffdf9, #f6efe4);
+    border-radius: 8px;
+    padding: 5px 6px;
+    text-align: center;
+  }
+
+  .card .k {
+    display: block;
+    font-size: 8.5px;
+    text-transform: uppercase;
+    color: #7b6a5a;
+    letter-spacing: .3px;
+  }
+
+  .card .v {
+    display: block;
+    margin-top: 1px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #3a2b21;
+  }
+
+  .note {
+    margin: 7px 0 8px;
+    padding: 6px 8px;
+    border: 1px solid #ddc8ad;
+    border-left: 4px solid #b97d4c;
+    border-radius: 7px;
+    background: #fdf8f1;
+    font-size: 10.5px;
+    color: #4c4037;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 10px;
+  }
+
+  thead th {
+    background: #efe3d2;
+    color: #3b291e;
+    border: 1px solid #bba893;
+    padding: 5px 3px;
+    font-size: 8.4px;
+    text-transform: uppercase;
+    letter-spacing: .25px;
+  }
+
+  tbody td {
+    border: 1px solid #c9bbad;
+    padding: 5px 4px;
+    vertical-align: middle;
+    line-height: 1.15;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: #fffaf4;
+  }
+
+  .c-num { width: 3.5%; text-align: center; font-weight: 700; }
+  .c-checks { width: 20%; }
+  .c-contact { width: 23%; }
+  .c-seats { width: 18%; }
+  .c-total { width: 5%; text-align: center; font-weight: 700; }
+  .c-ad { width: 5%; text-align: center; font-weight: 700; }
+  .c-enf { width: 5%; text-align: center; font-weight: 700; }
+  .c-bb { width: 5%; text-align: center; font-weight: 700; }
+  .c-amount { width: 8%; text-align: right; font-weight: 700; white-space: nowrap; }
+  .c-pay { width: 7.5%; text-align: center; }
+
+  .box {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    margin: 1px 4px 1px 0;
+    border: 2px solid #3e342d;
+    border-radius: 4px;
+    background: #fff;
+    vertical-align: middle;
+  }
+
+  .name {
+    font-size: 10.4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #2d241f;
+  }
+
+  .phone {
+    margin-top: 2px;
+    font-size: 9.5px;
+    color: #3f342d;
+  }
+
+  .email {
+    margin-top: 2px;
+    font-size: 8.4px;
+    color: #7b6c60;
+    overflow-wrap: anywhere;
+  }
+
+  .seats {
+    font-weight: 700;
+    color: #43352d;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-size: 8.8px;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+
+  .ok {
+    background: #eef8ef;
+    border-color: #bcd8c0;
+    color: #2d6a39;
+  }
+
+  .warn {
+    background: #fff5ea;
+    border-color: #e2c7a7;
+    color: #8c5a1f;
+  }
+
+  .footer {
+    margin-top: 6px;
+    font-size: 9px;
+    color: #7a6d63;
+  }
+
+  @media print {
+    body {
+      background: #fff;
+    }
+    .toolbar { display: none; }
+    .sheet {
+      width: auto;
+      min-height: auto;
+      margin: 0;
+      box-shadow: none;
+      padding: 0;
+      background: #fff;
+    }
+    table { page-break-inside: auto; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimer</button>
+  </div>
+
+  <div class="sheet">
+    <div class="header">
+      <div class="title">
+        <h1>🎭 Liste papier de secours — Théâtre Saint-Martin</h1>
+        <div class="sub">Générée le ${escapeHTML(now)} — à utiliser si le scan QR ne fonctionne pas.</div>
+      </div>
+      <div class="summary">
+        <div class="card"><span class="k">Réservations</span><span class="v">${reservations.length}</span></div>
+        <div class="card"><span class="k">Places</span><span class="v">${totalSeats}</span></div>
+        <div class="card"><span class="k">Adultes</span><span class="v">${totalAdult}</span></div>
+        <div class="card"><span class="k">Enfants</span><span class="v">${totalChild}</span></div>
+        <div class="card"><span class="k">BB / -8 ans</span><span class="v">${totalBaby}</span></div>
+        <div class="card"><span class="k">À vérifier</span><span class="v">${unpaidSeats}</span></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Principe :</strong> une case = une personne / une place. Si un groupe arrive séparément, il suffit de cocher une case à chaque arrivée.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="c-num">#</th>
+          <th class="c-checks">Arrivées</th>
+          <th class="c-contact">Nom / contact</th>
+          <th class="c-seats">Sièges</th>
+          <th class="c-total">Total</th>
+          <th class="c-ad">Adultes</th>
+          <th class="c-enf">Enfants</th>
+          <th class="c-bb">BB / -8</th>
+          <th class="c-amount">Montant</th>
+          <th class="c-pay">Paiement</th>
+        </tr>
+      </thead>
+      <tbody>${reservationRows}</tbody>
+    </table>
+
+    <div class="footer">Caisse organisée pour un pointage rapide à l’entrée. Mise en page pensée pour rester lisible même avec un grand nombre de réservations.</div>
+  </div>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) return alert("❌ La fenêtre d’impression a été bloquée par le navigateur.");
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+}
+
+const printBackupListBtn = document.getElementById("printBackupList");
+if (printBackupListBtn) {
+  printBackupListBtn.addEventListener("click", openPrintableBackupList);
+}
+
 toggleAdminUI();
 
 // 🧩 Met à jour le texte du bouton au démarrage
@@ -4080,8 +4505,8 @@ if (mailingSendBtn) {
 
 
     <div style="margin-top:12px;">
-      <button id="savePrices">Enregistrer</button>
-      <button id="cancelPrices">Annuler</button>
+      <button type="button" id="savePrices" style="background:#2e7d32;color:white;opacity:1;pointer-events:auto;">Enregistrer</button>
+      <button type="button" id="cancelPrices" style="background:#616161;color:white;opacity:1;pointer-events:auto;">Annuler</button>
     </div>
   </div>
 </div>
