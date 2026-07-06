@@ -162,10 +162,10 @@
   function normalizeEmail(email){ return String(email || "").trim().toLowerCase().replace(/\s+/g, ""); }
   function isValidEmail(email){
     const value = String(email || "").trim().toLowerCase();
-    if(!value) return false;
-    if(/\s/.test(value)) return false;
-    if(/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
-    return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value);
+    if (!value) return false;
+    if (/\s/.test(value)) return false;
+    if (/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
   }
   function formatPhone(value){ let digits = String(value || "").replace(/\D/g, ""); if(digits.startsWith("0033")) digits = "0" + digits.slice(4); if(digits.startsWith("33")) digits = "0" + digits.slice(2); digits = digits.slice(0, 10); return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim(); }
   function showStatus(type, html){ statusBox.className = "status " + type; statusBox.innerHTML = html; }
@@ -377,10 +377,10 @@
     }
   }
 
+  document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
   document.getElementById("email").addEventListener("input", e => {
     e.target.value = normalizeEmail(e.target.value);
   });
-  document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
   document.getElementById("clearSelection").onclick = () => { selected = []; renderSeats(); };
 
   document.getElementById("reservationForm").addEventListener("submit", async e => {
@@ -396,7 +396,7 @@
     const totalPeople = adultCount + childCount + babyCount;
     if(!selected.length) return showStatus("err", "Choisissez au moins une place sur le plan.");
     if(!name || !email || !phone) return showStatus("err", "Merci de compléter le nom, l’email et le téléphone.");
-    if(!isValidEmail(email)) return showStatus("err", "Adresse email invalide. Vérifiez qu’il n’y a pas d’espace, d’accent ou de point manquant.");
+    if(!isValidEmail(email)) return showStatus("err", "❌ Adresse email invalide. Vérifiez qu’il n’y a pas d’espace, d’accent ou de point manquant.");
     if(phone.replace(/\D/g, "").length !== 10) return showStatus("err", "Téléphone incorrect : il faut 10 chiffres.");
     if(totalPeople !== selected.length) return showStatus("err", `Vous avez sélectionné ${selected.length} place(s), mais indiqué ${totalPeople} personne(s). Les deux nombres doivent correspondre.`);
     if(totalPeople > 12) return showStatus("err", "Pour plus de 12 places, merci de réserver directement par téléphone.");
