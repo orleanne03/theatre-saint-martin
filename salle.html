@@ -1,4 +1,4 @@
-<!-- redeploys -->
+<!-- redeploy -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1150,6 +1150,28 @@ background: magenta !important;
 </div>
 
 
+<div id="publicRequestsPanel" style="
+  display:block;
+  margin:20px auto;
+  width:90%;
+  max-width:900px;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+  padding:14px;
+  text-align:left;
+">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <h3 style="margin:6px 0;">📨 Demandes publiques en attente</h3>
+    <button id="refreshPublicRequests" type="button" style="background:#0277bd;">🔄 Actualiser</button>
+  </div>
+  <div id="publicRequestsSummary" style="font-weight:700;color:#4a2416;margin:6px 0 10px;"></div>
+  <div id="publicRequestsList" style="display:flex;flex-direction:column;gap:10px;">
+    <p>Aucune demande publique en attente.</p>
+  </div>
+</div>
+
+
 <!-- 🧾 Fenêtre modale de réservation -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
@@ -1266,7 +1288,7 @@ onValue(pricesRef, snapshot => {
   }
 });
 
-let seats = {}, publicHolds = {}, selected = [], admin = false;
+let seats = {}, publicHolds = {}, publicRequests = {}, selected = [], admin = false;
 window.seats = seats;
 
 const hall = document.getElementById("hall");
@@ -1316,6 +1338,68 @@ d.onclick = (e) => {
 const seatsRef = ref(db, "seats");
 const publicHoldsRef = ref(db, "spectacles/amies_2026_10_11/holds");
 
+const PUBLIC_REQUESTS_PATH = "spectacles/amies_2026_10_11/public_requests";
+
+function getPublicRequestIdFromSeatData(data) {
+  return data && data.source === "public_request" && data.reservationId
+    ? data.reservationId
+    : null;
+}
+
+function sortSeatIdsForPublicRequest(a, b) {
+  return String(a).localeCompare(String(b), "fr", { numeric: true });
+}
+
+// 🔄 Synchronise demandes-public.html quand une place est ajoutée/supprimée depuis salle.html/salle2.html
+async function syncPublicRequestAfterSeatChanges(requestId) {
+  if (!requestId) return;
+
+  try {
+    const requestRef = ref(db, `${PUBLIC_REQUESTS_PATH}/${requestId}`);
+    const snap = await get(requestRef);
+    if (!snap.exists()) return;
+
+    const currentRequest = snap.val() || {};
+    const remainingEntries = Object.entries(seats || {})
+      .filter(([_, seatData]) => seatData && seatData.reservationId === requestId);
+
+    const remainingSeatIds = remainingEntries
+      .map(([seatId]) => seatId)
+      .sort(sortSeatIdsForPublicRequest);
+
+    const adultCount = remainingEntries.filter(([_, s]) => s.type === "adulte").length;
+    const childCount = remainingEntries.filter(([_, s]) => s.type === "enfant").length;
+    const babyCount  = remainingEntries.filter(([_, s]) => s.type === "moins8").length;
+    const amount = adultCount * PRICE_ADULT + childCount * PRICE_CHILD;
+
+    const updatedRequest = {
+      ...currentRequest,
+      seats: remainingSeatIds,
+      totalPeople: remainingSeatIds.length,
+      adultCount,
+      childCount,
+      babyCount,
+      amount,
+      updatedAt: new Date().toISOString(),
+      syncedFromSalleAt: new Date().toISOString()
+    };
+
+    if (!remainingSeatIds.length) {
+      updatedRequest.status = "archivee";
+      updatedRequest.archivedAt = new Date().toISOString();
+      updatedRequest.noteAdmin = "Réservation supprimée depuis la salle.";
+    }
+
+    await set(requestRef, updatedRequest);
+  } catch (err) {
+    console.warn("⚠️ Synchronisation demande publique impossible", requestId, err);
+  }
+}
+
+
+
+const publicRequestsRef = ref(db, PUBLIC_REQUESTS_PATH);
+
 function isActivePublicHold(h) {
   return h && h.expiresAt && new Date(h.expiresAt).getTime() > Date.now() && h.status !== "released";
 }
@@ -1325,6 +1409,7 @@ onValue(seatsRef, snapshot => {
   render();
   updateTable();
   updateStatsBar(); // ✅ AJOUT ICI — met à jour les compteurs au chargement
+  renderPublicRequestsPanel();
   setTimeout(() => loader.classList.add("hidden"), 400);
 });
 
@@ -1332,6 +1417,12 @@ onValue(seatsRef, snapshot => {
 onValue(publicHoldsRef, snapshot => {
   publicHolds = snapshot.val() || {};
   render();
+  renderPublicRequestsPanel();
+});
+
+onValue(publicRequestsRef, snapshot => {
+  publicRequests = snapshot.val() || {};
+  renderPublicRequestsPanel();
 });
 
 function save(){ set(seatsRef, seats); }
@@ -1453,29 +1544,15 @@ if (groupMode === "add" && admin) {
 if (admin && seats[id] && groupMode !== "remove") {
 
   if (confirm(`🔓 Libérer le siège ${id} ?`)) {
-    const clientName = seats[id].name;
-    const clientEmail = seats[id].email;
+    const seatDataBeforeDelete = seats[id];
+    const publicRequestId = getPublicRequestIdFromSeatData(seatDataBeforeDelete);
+    const clientName = seatDataBeforeDelete.name;
+    const clientEmail = seatDataBeforeDelete.email;
+
     delete seats[id];
 
-    // recalcul totaux
-    let totalA = 0, totalC = 0, totalB = 0;
-    for (const data of Object.values(seats)) {
-      if (data.name === clientName) {
-        totalA += (data.type === "adulte") ? 1 : 0;
-        totalC += (data.type === "enfant") ? 1 : 0;
-        totalB += (data.type === "moins8") ? 1 : 0;
-      }
-    }
-    const totalAmount = totalA * PRICE_ADULT + totalC * PRICE_CHILD;
-
-    for (const [sid, data] of Object.entries(seats)) {
-      if (data.name === clientName) {
-        data.nbAdult = totalA;
-        data.nbChild = totalC;
-        data.nbBaby = totalB;
-        data.amount = totalAmount;
-      }
-    }
+    recalcClientReservation(clientName, clientEmail);
+    await syncPublicRequestAfterSeatChanges(publicRequestId);
 
     save();
     render();
@@ -1483,7 +1560,7 @@ if (admin && seats[id] && groupMode !== "remove") {
     updateStatsBar();
 
     if (clientEmail) await notifyClientUpdate(clientEmail);
-    alert(`✅ Siège ${id} libéré. Totaux mis à jour pour ${clientName}.`);
+    alert(`✅ Siège ${id} libéré. Tout est synchronisé.`);
   }
   return;
 }
@@ -2013,36 +2090,6 @@ function escapeHTML(str="") {
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
-
-function seatBelongsToClient(data, clientName, clientEmail) {
-  if (!data) return false;
-  const sameEmail = clientEmail && data.email &&
-    String(data.email).toLowerCase() === String(clientEmail).toLowerCase();
-  const sameName = clientName && data.name === clientName;
-  return sameEmail || sameName;
-}
-
-function recalcClientReservation(clientName, clientEmail) {
-  const clientSeats = Object.values(seats || {})
-    .filter(data => seatBelongsToClient(data, clientName, clientEmail));
-
-  const nbAdult = clientSeats.filter(s => s.type === "adulte").length;
-  const nbChild = clientSeats.filter(s => s.type === "enfant").length;
-  const nbBaby  = clientSeats.filter(s => s.type === "moins8").length;
-  const amount = nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
-
-  for (const data of clientSeats) {
-    data.nbAdult = nbAdult;
-    data.nbChild = nbChild;
-    data.nbBaby = nbBaby;
-    data.amount = amount;
-    data.free = amount === 0;
-    if (amount === 0) data.paid = true;
-  }
-
-  return clientSeats.length;
-}
-
 
 async function loadParticipants(reservationId) {
   if (!reservationId) return;
@@ -2584,6 +2631,7 @@ s.type === "enfant" ? "🧒" : "🎟️";
 }); // ← ferme cb.addEventListener
 };   // ← ferme updateTable()
 
+
 // ===================================================
 // 🗑️ Suppression directe d’une place depuis la liste
 // ===================================================
@@ -2607,6 +2655,7 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
+  const publicRequestId = getPublicRequestIdFromSeatData(data);
   const clientName = data.name || btn.dataset.client || "";
   const clientEmail = data.email || "";
 
@@ -2615,6 +2664,7 @@ document.addEventListener("click", async (e) => {
   delete seats[seatId];
 
   const remaining = recalcClientReservation(clientName, clientEmail);
+  await syncPublicRequestAfterSeatChanges(publicRequestId);
 
   save();
   render();
@@ -2626,7 +2676,7 @@ document.addEventListener("click", async (e) => {
     if (sendMail) await notifyClientUpdate(clientEmail);
   }
 
-  alert(`✅ Place ${seatId} supprimée. ${remaining ? "Réservation mise à jour." : "La réservation est maintenant vide."}`);
+  alert(`✅ Place ${seatId} supprimée. Tout est synchronisé.`);
 });
 
 // ===================================================
@@ -2946,13 +2996,23 @@ if (groupMode === "remove") {
   const removedSeatData = groupChanges
     .map(id => seats[id])
     .filter(Boolean);
+
   const clientEmail = removedSeatData.find(s => s.email)?.email || "";
+  const publicRequestIds = [...new Set(
+    removedSeatData
+      .map(getPublicRequestIdFromSeatData)
+      .filter(Boolean)
+  )];
 
   for (const id of groupChanges) {
     if (seats[id]) delete seats[id];
   }
 
   recalcClientReservation(groupClient, clientEmail);
+
+  for (const requestId of publicRequestIds) {
+    await syncPublicRequestAfterSeatChanges(requestId);
+  }
 
   // ✅ Enregistre les changements et rafraîchit l’affichage
   save();
@@ -2994,7 +3054,11 @@ else if (seatType === "moins8" || seatType === "gratuit") addBaby++;
             nbChild: baseData.nbChild || 0,
             nbBaby: baseData.nbBaby || 0,
             amount: baseData.amount || 0,
-            type: seatType
+            type: seatType,
+            ...(baseData.reservationId ? { reservationId: baseData.reservationId } : {}),
+            ...(baseData.source ? { source: baseData.source } : {}),
+            ...(baseData.showId ? { showId: baseData.showId } : {}),
+            ...(baseData.createdAt ? { createdAt: baseData.createdAt } : {})
           };
         }
 
@@ -3010,6 +3074,9 @@ else if (seatType === "moins8" || seatType === "gratuit") addBaby++;
           seats[refId].nbBaby  = newBaby;
           seats[refId].amount  = newAmount;
         }
+
+        recalcClientReservation(groupClient, baseData.email);
+        await syncPublicRequestAfterSeatChanges(getPublicRequestIdFromSeatData(baseData));
 
         save();
         render();
@@ -3290,12 +3357,375 @@ function toggleAdminUI() {
   if (archiveMailingContactsBtn) {
     archiveMailingContactsBtn.style.display = isAdmin ? "inline-block" : "none";
   }
+  const publicRequestsPanel = document.getElementById("publicRequestsPanel");
+  if (publicRequestsPanel) {
+    publicRequestsPanel.style.display = "block";
+    renderPublicRequestsPanel();
+  }
 }
 
 
 // 🔹 Initialisation de l’interface
 editPricesBtn.onclick = openPriceModal;
 updatePriceLabels();
+
+
+// ===================================================
+// 📨 DEMANDES PUBLIQUES DIRECTEMENT DANS LA SALLE
+// ===================================================
+function getPublicRequestArray() {
+  return Object.entries(publicRequests || {})
+    .map(([id, r]) => ({ id, ...r }))
+    .filter(r => {
+      const status = r.status || "nouvelle";
+      return !["confirmee", "refusee", "archivee"].includes(status);
+    })
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function isPublicRequestExpired(r) {
+  return r && r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now();
+}
+
+function formatPublicRequestDate(iso) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString("fr-FR"); }
+  catch { return iso; }
+}
+
+function renderPublicRequestsPanel() {
+  const panel = document.getElementById("publicRequestsPanel");
+  const list = document.getElementById("publicRequestsList");
+  const summary = document.getElementById("publicRequestsSummary");
+  if (!panel || !list || !summary) return;
+
+  panel.style.display = "block";
+
+  const items = getPublicRequestArray();
+  const newCount = items.filter(r => (r.status || "nouvelle") === "nouvelle").length;
+  const expiredCount = items.filter(isPublicRequestExpired).length;
+  summary.textContent = `Total : ${items.length} — Nouvelles : ${newCount} — Expirées : ${expiredCount}`;
+
+  if (!items.length) {
+    list.innerHTML = `<p style="margin:0;color:#666;">Aucune demande publique en attente.</p>`;
+    return;
+  }
+
+  list.innerHTML = items.map(r => {
+    const status = r.status || "nouvelle";
+    const seatsList = Array.isArray(r.seats) ? r.seats : [];
+    const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== r.id);
+    const missingHold = seatsList.filter(seatId => !publicHolds[seatId] || publicHolds[seatId].requestId !== r.id);
+    const expired = isPublicRequestExpired(r);
+
+    return `
+      <div class="public-request-card" style="
+        border-left:7px solid ${expired ? "#6a1b9a" : "#cf683d"};
+        background:#fffaf4;
+        border-radius:12px;
+        padding:12px;
+        box-shadow:0 1px 4px rgba(0,0,0,.08);
+      ">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div>
+            <strong style="font-size:17px;">👤 ${escapeHTML(r.name || "Sans nom")}</strong>
+            <div style="font-size:13px;color:#666;margin-top:3px;">
+              Référence : ${escapeHTML(r.id)}<br>
+              ${formatPublicRequestDate(r.createdAt)} — Statut : <strong>${escapeHTML(status)}</strong>
+              ${expired ? ` — <span style="color:#c62828;font-weight:800;">blocage expiré</span>` : ""}
+            </div>
+          </div>
+          <div style="font-weight:800;">${Number(r.totalPeople || seatsList.length || 0)} place(s)</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">
+          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📧 <strong>Email</strong><br>${escapeHTML(r.email || "—")}</div>
+          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📱 <strong>Téléphone</strong><br>${escapeHTML(r.phone || "—")}</div>
+          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">👥 <strong>Détail</strong><br>Adultes : ${r.adultCount || 0}<br>9-14 ans : ${r.childCount || 0}<br>-8 ans : ${r.babyCount || 0}</div>
+          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">💰 <strong>Montant</strong><br>${Number(r.amount || 0).toFixed(2)} €</div>
+        </div>
+
+        <div style="margin-top:10px;background:#fff1d0;border:1px solid #e0b471;border-radius:10px;padding:9px;font-weight:800;color:#4a2416;">
+          🎟️ Places demandées : ${seatsList.map(escapeHTML).join(", ") || "—"}
+          ${taken.length ? `<br><span style="color:#c62828;">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</span>` : ""}
+          ${missingHold.length && status === "nouvelle" ? `<br><span style="color:#c62828;">Blocage absent ou expiré : ${missingHold.map(escapeHTML).join(", ")}</span>` : ""}
+        </div>
+
+        ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:10px;padding:9px;white-space:pre-wrap;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button type="button" class="public-mail-btn" data-email="${escapeHTML(r.email || "")}" style="background:#0277bd;">Écrire</button>
+          <button type="button" class="public-call-btn" data-phone="${escapeHTML(String(r.phone || "").replace(/\D/g, ""))}" style="background:#cf683d;">Appeler</button>
+          <button type="button" class="public-contact-btn" data-id="${escapeHTML(r.id)}" style="background:#607d8b;">Contactée</button>
+          <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">✅ Valider + envoyer confirmation</button>
+          <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libérer</button>
+          <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function distributePublicRequestSeatTypes(r) {
+  let adult = Number(r.adultCount || 0);
+  let child = Number(r.childCount || 0);
+  let baby = Number(r.babyCount || 0);
+
+  return (Array.isArray(r.seats) ? r.seats : []).map(seatId => {
+    let type = "autre";
+    if (adult > 0) { type = "adulte"; adult--; }
+    else if (child > 0) { type = "enfant"; child--; }
+    else if (baby > 0) { type = "moins8"; baby--; }
+    return { seatId, type };
+  });
+}
+
+function buildPublicConfirmationEmail(r) {
+  const seatsList = Array.isArray(r.seats) ? r.seats : [];
+  const amount = Number(r.amount || 0).toFixed(2).replace(".", ",");
+  const adultCount = Number(r.adultCount || 0);
+  const childCount = Number(r.childCount || 0);
+  const babyCount = Number(r.babyCount || 0);
+  const totalPeople = Number(r.totalPeople || seatsList.length || 0);
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
+      <div style="max-width:680px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
+        <h2 style="margin:0 0 12px;color:#2f7b64;">✅ Votre réservation est confirmée</h2>
+        <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Bonjour <strong>${escapeHTML(r.name || "")}</strong>,</p>
+        <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
+          La Troupe Saint-Martin confirme votre réservation pour <strong>« Je préfère qu’on reste amies »</strong>.
+        </p>
+
+        <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
+          <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 à 20h30")}<br>
+          <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes (03)")}<br>
+          <strong>Places confirmées :</strong> ${seatsList.map(escapeHTML).join(", ")}<br>
+          <strong>Nombre de places :</strong> ${totalPeople}<br>
+          <strong>Adultes :</strong> ${adultCount}<br>
+          <strong>Enfants :</strong> ${childCount}<br>
+          <strong>BB / -8 ans :</strong> ${babyCount}<br>
+          <strong>Montant total à régler :</strong> ${amount} €
+        </div>
+
+        <div style="background:#ffffff;border:1px solid #e3c99c;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
+          <h3 style="margin:0 0 10px;color:#4a2416;">💳 Règlement</h3>
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+            Afin de finaliser votre réservation, merci d’effectuer votre règlement dans un délai de
+            <strong>7 jours après réception de cet email</strong>.
+          </p>
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+            Sans règlement passé ce délai, la réservation pourra être annulée afin de libérer les places.
+          </p>
+          <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
+            <strong>Par virement bancaire :</strong><br>
+            IBAN : <strong>[à compléter]</strong><br>
+            BIC : <strong>[à compléter]</strong><br>
+            Titulaire du compte : <strong>[à compléter]</strong>
+          </div>
+          <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
+            <strong>Ou par chèque :</strong><br>
+            Chèque à l’ordre de : <strong>[à compléter]</strong><br>
+            Adresse d’envoi du chèque :<br>
+            <strong>[à compléter]</strong>
+          </div>
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.6;">
+            <strong>Important :</strong> si le chèque n’est pas au même nom que la réservation,
+            merci d’indiquer au dos du chèque le nom utilisé pour la réservation.
+            Vous pouvez aussi imprimer cet email et le joindre au chèque.
+          </p>
+        </div>
+
+        <p style="font-size:15px;line-height:1.6;margin:16px 0 0;">Pour toute question : <strong>06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</strong>.</p>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">À très bientôt,<br><strong>La Troupe Saint-Martin</strong></p>
+        <p style="margin:18px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(r.id)}</p>
+      </div>
+    </div>`;
+}
+
+async function setPublicRequestFull(id, data) {
+  await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${id}`), data);
+}
+
+async function removePublicHoldSeat(seatId, requestId) {
+  const h = publicHolds[seatId];
+  if (h && (!requestId || h.requestId === requestId)) {
+    await set(ref(db, `spectacles/amies_2026_10_11/holds/${seatId}`), null);
+  }
+}
+
+async function contactPublicRequest(id) {
+  if (!admin) return alert("❌ Active le mode admin pour modifier une demande.");
+  const r = publicRequests[id];
+  if (!r) return alert("Demande introuvable.");
+  await setPublicRequestFull(id, {
+    ...r,
+    status: "contactee",
+    updatedAt: new Date().toISOString()
+  });
+}
+
+async function confirmPublicRequestFromSalle(id) {
+  if (!admin) return alert("❌ Active le mode admin pour valider une demande.");
+  const r = publicRequests[id];
+  if (!r) return alert("Demande introuvable.");
+
+  const seatsList = Array.isArray(r.seats) ? r.seats : [];
+  const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== id);
+  if (taken.length) {
+    return alert(`Impossible de confirmer : ces places sont déjà réservées ailleurs : ${taken.join(", ")}`);
+  }
+
+  const expiredText = isPublicRequestExpired(r) ? "\n\n⚠️ Cette demande est expirée. Si les places sont encore libres, tu peux quand même la valider." : "";
+  if (!confirm(`Valider la demande de ${r.name || "ce client"} et envoyer l’email de confirmation ?\n\nPlaces : ${seatsList.join(", ")}${expiredText}`)) return;
+
+  const base = {
+    reservationId: id,
+    name: String(r.name || "").toUpperCase(),
+    email: String(r.email || "").toLowerCase(),
+    phone: r.phone || "",
+    paid: false,
+    nbAdult: Number(r.adultCount || 0),
+    nbChild: Number(r.childCount || 0),
+    nbBaby: Number(r.babyCount || 0),
+    amount: Number(r.amount || (Number(r.adultCount || 0) * PRICE_ADULT + Number(r.childCount || 0) * PRICE_CHILD)),
+    source: "public_request",
+    showId: "amies_2026_10_11",
+    createdAt: r.createdAt || new Date().toISOString()
+  };
+
+  for (const item of distributePublicRequestSeatTypes(r)) {
+    seats[item.seatId] = { ...base, type: item.type };
+  }
+
+  save();
+
+  for (const seatId of seatsList) {
+    await removePublicHoldSeat(seatId, id);
+  }
+
+  await setPublicRequestFull(id, {
+    ...r,
+    status: "confirmee",
+    confirmedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  try {
+    await saveMailingContact(base.email, base.name, "Demande publique validée", { phone: base.phone });
+  } catch (err) {
+    console.warn("Contact mailing non sauvegardé depuis demande publique", err);
+  }
+
+  let mailOk = false;
+  try {
+    await sendViaBrevo(
+      base.email,
+      "✅ Réservation confirmée — Je préfère qu’on reste amies",
+      buildPublicConfirmationEmail({ id, ...r })
+    );
+    mailOk = true;
+    await setPublicRequestFull(id, {
+      ...r,
+      status: "confirmee",
+      confirmedAt: new Date().toISOString(),
+      confirmationEmailSentAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("Email de confirmation non envoyé", err);
+  }
+
+  render();
+  updateTable();
+  updateStatsBar();
+  renderPublicRequestsPanel();
+
+  alert(mailOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.");
+}
+
+async function refusePublicRequestFromSalle(id) {
+  if (!admin) return alert("❌ Active le mode admin pour refuser une demande.");
+  const r = publicRequests[id];
+  if (!r) return alert("Demande introuvable.");
+  if (!confirm(`Refuser la demande de ${r.name || "ce client"} et libérer les places ?`)) return;
+
+  for (const seatId of (Array.isArray(r.seats) ? r.seats : [])) {
+    await removePublicHoldSeat(seatId, id);
+
+    if (seats[seatId] && seats[seatId].reservationId === id) {
+      delete seats[seatId];
+    }
+  }
+
+  await setPublicRequestFull(id, {
+    ...r,
+    status: "refusee",
+    refusedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  save();
+  render();
+  updateTable();
+  updateStatsBar();
+  renderPublicRequestsPanel();
+}
+
+async function deletePublicRequestFromSalle(id) {
+  if (!admin) return alert("❌ Active le mode admin pour supprimer une demande.");
+  const r = publicRequests[id];
+  if (!r) return alert("Demande introuvable.");
+  if (!confirm("Supprimer cette demande ? Les places liées à cette demande seront libérées.")) return;
+
+  for (const seatId of (Array.isArray(r.seats) ? r.seats : [])) {
+    await removePublicHoldSeat(seatId, id);
+
+    if (seats[seatId] && seats[seatId].reservationId === id) {
+      delete seats[seatId];
+    }
+  }
+
+  await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${id}`), null);
+
+  save();
+  render();
+  updateTable();
+  updateStatsBar();
+  renderPublicRequestsPanel();
+}
+
+document.addEventListener("click", async (e) => {
+  const mailBtn = e.target.closest(".public-mail-btn");
+  const callBtn = e.target.closest(".public-call-btn");
+  const contactBtn = e.target.closest(".public-contact-btn");
+  const confirmBtn = e.target.closest(".public-confirm-btn");
+  const refuseBtn = e.target.closest(".public-refuse-btn");
+  const deleteBtn = e.target.closest(".public-delete-btn");
+  const refreshBtn = e.target.closest("#refreshPublicRequests");
+
+  if (mailBtn) {
+    const email = mailBtn.dataset.email || "";
+    if (email) location.href = `mailto:${encodeURIComponent(email)}`;
+    return;
+  }
+
+  if (callBtn) {
+    const phone = callBtn.dataset.phone || "";
+    if (phone) location.href = `tel:${phone}`;
+    return;
+  }
+
+  if (refreshBtn) {
+    renderPublicRequestsPanel();
+    return;
+  }
+
+  if (contactBtn) return contactPublicRequest(contactBtn.dataset.id);
+  if (confirmBtn) return confirmPublicRequestFromSalle(confirmBtn.dataset.id);
+  if (refuseBtn) return refusePublicRequestFromSalle(refuseBtn.dataset.id);
+  if (deleteBtn) return deletePublicRequestFromSalle(deleteBtn.dataset.id);
+});
+
 
 // ===================================================
 // 🖨️ LISTE PAPIER DE SECOURS
