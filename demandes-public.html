@@ -279,7 +279,21 @@
   async function refuseRequest(id){
     const r = requests.find(x => x.id === id); if(!r) return;
     if(!confirm(`Refuser la demande de ${r.name} et libérer les places ?`)) return;
-    for(const seatId of (r.seats || [])){ const h = holds[seatId]; if(h && h.requestId === id) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`); }
+
+    for(const seatId of (r.seats || [])){
+      const h = holds[seatId];
+      if(h && h.requestId === id) {
+        await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`);
+      }
+
+      // ✅ Si la demande avait déjà été validée, la place existe dans "seats".
+      // On la supprime seulement si elle appartient bien à cette demande publique.
+      const confirmed = confirmedSeats[seatId];
+      if(confirmed && confirmed.reservationId === id) {
+        await dbRemove(`${SEATS_PATH}/${encodeURIComponent(seatId)}`);
+      }
+    }
+
     await dbPatch(`${REQUESTS_PATH}/${id}`, {status:"refusee", refusedAt:new Date().toISOString(), updatedAt:new Date().toISOString()});
     await loadRequests();
   }
@@ -288,9 +302,24 @@
   window.archiveRequest = archiveRequest;
   async function deleteRequest(id){
     const r = requests.find(x => x.id === id); if(!r) return;
-    if(!confirm("Supprimer cette demande ? Les places en attente seront libérées.")) return;
-    for(const seatId of (r.seats || [])){ const h = holds[seatId]; if(h && h.requestId === id) await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`); }
-    await dbRemove(`${REQUESTS_PATH}/${id}`); await loadRequests();
+    if(!confirm("Supprimer cette demande ? Les places liées à cette demande seront libérées dans la salle.")) return;
+
+    for(const seatId of (r.seats || [])){
+      const h = holds[seatId];
+      if(h && h.requestId === id) {
+        await dbRemove(`${HOLDS_PATH}/${encodeURIComponent(seatId)}`);
+      }
+
+      // ✅ Cas important : si la demande a été validée, le siège est maintenant dans "seats".
+      // On le libère uniquement si la réservation correspond bien à cette demande.
+      const confirmed = confirmedSeats[seatId];
+      if(confirmed && confirmed.reservationId === id) {
+        await dbRemove(`${SEATS_PATH}/${encodeURIComponent(seatId)}`);
+      }
+    }
+
+    await dbRemove(`${REQUESTS_PATH}/${id}`);
+    await loadRequests();
   }
   window.deleteRequest = deleteRequest;
   setInterval(() => { if(!app.classList.contains("hidden")) loadRequests(); }, 60000);
