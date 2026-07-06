@@ -699,6 +699,16 @@ button:active {
 .accordion-header.unpaid:hover {
   background: #f48fb1;
 }
+.accordion-header.public-request-line {
+  background: #ffe0b2 !important;
+  color: #212121;
+  border-left: 6px solid #fb8c00;
+  text-align: left;
+}
+
+.accordion-header.public-request-line:hover {
+  background: #ffcc80 !important;
+}
 .accordion-header.paid {
   border-left: 6px solid #49a760;
 	text-align: left;
@@ -1149,27 +1159,6 @@ background: magenta !important;
 
 </div>
 
-
-<div id="publicRequestsPanel" style="
-  display:block;
-  margin:20px auto;
-  width:90%;
-  max-width:900px;
-  background:#fff;
-  border-radius:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.15);
-  padding:14px;
-  text-align:left;
-">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-    <h3 style="margin:6px 0;">📨 Demandes publiques en attente</h3>
-    <button id="refreshPublicRequests" type="button" style="background:#0277bd;">🔄 Actualiser</button>
-  </div>
-  <div id="publicRequestsSummary" style="font-weight:700;color:#4a2416;margin:6px 0 10px;"></div>
-  <div id="publicRequestsList" style="display:flex;flex-direction:column;gap:10px;">
-    <p>Aucune demande publique en attente.</p>
-  </div>
-</div>
 
 
 <!-- 🧾 Fenêtre modale de réservation -->
@@ -2337,129 +2326,176 @@ updateTable(); // 🔄 rafraîchit le badge
 function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
+
   const entries = Object.entries(seats || {});
-  if (!entries.length) return container.innerHTML = '<p>Aucune réservation.</p>';
+  const pendingPublicRequests = (typeof getPublicRequestArray === "function" ? getPublicRequestArray() : [])
+    .filter(r => !["confirmee", "refusee", "archivee"].includes(r.status || "nouvelle"))
+    .filter(r => {
+      const requestSeats = Array.isArray(r.seats) ? r.seats : [];
+      return !requestSeats.some(seatId => seats[seatId] && seats[seatId].reservationId === r.id);
+    });
 
-  // === Regroupement des réservations par client ===
-const grouped = {};
+  if (!entries.length && !pendingPublicRequests.length) {
+    container.innerHTML = '<p>Aucune réservation.</p>';
+    return;
+  }
 
-for (const [id, data] of entries) {
-  const key = data.name || "Inconnu";
+  const grouped = {};
 
-  if (!grouped[key]) {
+  function typeFromPublicRequestIndex(r, index) {
+    const adults = Number(r.adultCount || 0);
+    const children = Number(r.childCount || 0);
+    const babies = Number(r.babyCount || 0);
+    if (index < adults) return "adulte";
+    if (index < adults + children) return "enfant";
+    if (index < adults + children + babies) return "moins8";
+    return "autre";
+  }
+
+  for (const [id, data] of entries) {
+    const key = data.reservationId
+      ? `reservation-${data.reservationId}`
+      : `legacy-${data.name || "Inconnu"}`;
+
+    if (!grouped[key]) {
+      const publicRequest = data.reservationId ? (publicRequests?.[data.reservationId] || null) : null;
+      grouped[key] = {
+        ...data,
+        name: data.name || "Inconnu",
+        email: data.email || "",
+        phone: data.phone || "",
+        reservationId: data.reservationId || null,
+        publicRequest,
+        isPublicRequest: data.source === "public_request",
+        isPublicRequestPending: false,
+        seats: [],
+        emails: new Set(),
+        allPaid: true
+      };
+    }
+
+    grouped[key].seats.push({
+      id,
+      paid: !!data.paid,
+      type: data.type || null
+    });
+
+    grouped[key].emails.add(data.email || "N/A");
+    if (!data.paid) grouped[key].allPaid = false;
+  }
+
+  for (const r of pendingPublicRequests) {
+    const seatList = Array.isArray(r.seats) ? r.seats : [];
+    const key = `public-pending-${r.id}`;
     grouped[key] = {
-      ...data,
-      seats: [],
-      emails: new Set(),
-      allPaid: true,
+      name: String(r.name || "Sans nom").toUpperCase(),
+      email: String(r.email || "").toLowerCase(),
+      phone: r.phone || "",
+      reservationId: r.id,
+      publicRequest: r,
+      isPublicRequest: true,
+      isPublicRequestPending: true,
+      source: "public_request",
+      amount: Number(r.amount || 0),
+      nbAdult: Number(r.adultCount || 0),
+      nbChild: Number(r.childCount || 0),
+      nbBaby: Number(r.babyCount || 0),
+      seats: seatList.map((seatId, index) => ({
+        id: seatId,
+        paid: !!r.paid,
+        type: typeFromPublicRequestIndex(r, index)
+      })),
+      emails: new Set([String(r.email || "").toLowerCase()]),
+      allPaid: !!r.paid
     };
   }
 
-  grouped[key].seats.push({
-  id,
-  paid: !!data.paid,
-  type: data.type || null,   // 👈 essentiel
-});
+  const sorted = Object.entries(grouped).sort(([, a], [, b]) => {
+    if (a.isPublicRequestPending && !b.isPublicRequestPending) return -1;
+    if (!a.isPublicRequestPending && b.isPublicRequestPending) return 1;
+    return (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" });
+  });
 
-
-  grouped[key].emails.add(data.email || "N/A");
-
-  // ✅ Si au moins un siège n’est pas payé → la ligne sera rose
-  if (!data.paid) grouped[key].allPaid = false;
-}
-
-
-
-  const sorted = Object.entries(grouped).sort(([, a], [, b]) =>
-    (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
-  );
-
-  for (const [name, info] of sorted) {
+  for (const [nameKey, info] of sorted) {
+    const name = info.name || nameKey || "Inconnu";
     let reservationId = info.reservationId || info.resId || info.reservationID || info.reservation_id || null;
     if (!reservationId) {
-      // ⚠️ anciennes réservations : pas de reservationId stocké
-      reservationId = `legacy-${btoa(unescape(encodeURIComponent((info.email||name||"").toString()))).replace(/=+$/,"")}`;
+      reservationId = `legacy-${btoa(unescape(encodeURIComponent((info.email || name || "").toString()))).replace(/=+$/,"")}`;
     }
-  const div = document.createElement("div");
-  div.className = "accordion";
-  const header = document.createElement("div");
-header.className = `accordion-header ${
-  info.free ? "free-line" : (info.allPaid ? "paid" : "unpaid")
-}`;
-// 🧹 Supprime un éventuel ancien badge participant (évite doublons)
-const oldBadge = header.querySelector(".participant-badge");
-if (oldBadge) oldBadge.remove();
 
-const hasFreeSeat = info.seats.some(
-  s => s.type === "gratuit"
-);
+    const isPublic = !!info.isPublicRequest;
+    const isPendingPublic = !!info.isPublicRequestPending;
+    const publicRequest = info.publicRequest || (reservationId ? publicRequests?.[reservationId] : null);
+    const confirmationSent = !!(publicRequest && (publicRequest.confirmationEmailSentAt || publicRequest.status === "confirmee"));
 
+    const div = document.createElement("div");
+    div.className = "accordion";
 
+    const header = document.createElement("div");
+    header.className = `accordion-header ${
+      info.free ? "free-line" : (info.allPaid ? "paid" : (isPublic ? "public-request-line" : "unpaid"))
+    }`;
 
-const freeBadge = hasFreeSeat
-  ? '<span style="width:22px;height:22px;border-radius:50%;background:#8e24aa;color:white;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-size:13px;">G</span>'
-  : '';
+    const hasFreeSeat = info.seats.some(s => s.type === "gratuit");
+    const freeBadge = hasFreeSeat
+      ? '<span style="width:22px;height:22px;border-radius:50%;background:#8e24aa;color:white;font-weight:700;display:inline-flex;align-items:center;justify-content:center;font-size:13px;">G</span>'
+      : '';
 
+    const statusLabel = info.allPaid
+      ? "💰"
+      : (isPendingPublic ? "⏳ Demande à valider" : (isPublic ? "✅ Confirmée / ❌ Non payé" : "❌ Partiel / Non payé"));
 
-header.innerHTML = `
+    header.innerHTML = `
 <div>
-  👤 ${name}
+  ${isPublic ? "📨" : "👤"} ${escapeHTML(name)}
   ${
     info.free
       ? ""
-      : `<br><span style="font-weight:600;color: red;">
-        (${info.seats.length} places)
-
+      : `<br><span style="font-weight:600;color:${isPublic && !info.allPaid ? "#d84315" : "red"};">
+        (${info.seats.length} ${isPendingPublic ? "places demandées" : "places"})
          </span>`
   }
 </div>
 
-
-
   <div class="badge-container" style="display:flex;align-items:center;gap:8px;">
-    <span>${info.allPaid ? "💰" : "❌ Partiel / Non payé"}</span>
+    <span>${statusLabel}</span>
     ${freeBadge}
   </div>
 `;
 
-// 🔔 BADGE PARTICIPANTS NON ENVOYÉS (hors admin)
-if (reservationId && !admin) {
-  get(ref(db, `participants/${reservationId}`)).then(snap => {
-    const participants = snap.val() || {};
-    const notSent = Object.values(participants)
-      .filter(p => !p.ticketSent)
-      .length;
+    if (reservationId && !admin && !isPendingPublic) {
+      get(ref(db, `participants/${reservationId}`)).then(snap => {
+        const participants = snap.val() || {};
+        const notSent = Object.values(participants).filter(p => !p.ticketSent).length;
 
-    if (notSent > 0) {
-      const badge = document.createElement("span");
-      badge.className = "participant-badge";
-      badge.textContent = notSent;
+        if (notSent > 0) {
+          const badge = document.createElement("span");
+          badge.className = "participant-badge";
+          badge.textContent = notSent;
 
-      const container = header.querySelector(".badge-container");
-      if (container) container.appendChild(badge);
+          const containerBadge = header.querySelector(".badge-container");
+          if (containerBadge) containerBadge.appendChild(badge);
+        }
+      });
     }
-  });
-}
 
+    header.onclick = () => div.classList.toggle("open");
 
+    const content = document.createElement("div");
+    content.className = "accordion-content";
 
+    const adults = info.seats.filter(s => s.type === "adulte");
+    const children = info.seats.filter(s => s.type === "enfant");
+    const babies = info.seats.filter(s => s.type === "moins8");
 
-  header.onclick = () => div.classList.toggle("open");
+    content.innerHTML = `
+  <p><strong>Email :</strong> ${escapeHTML(info.email || "—")}</p>
+  <p><strong>Téléphone :</strong> ${escapeHTML(info.phone || "—")}</p>
 
-  const content = document.createElement("div");
-  content.className = "accordion-content";
-  // --- Ajout à faire juste avant content.innerHTML = ...
-  const adults = info.seats.filter(s => s.type === "adulte");
-const children = info.seats.filter(s => s.type === "enfant");
-const babies = info.seats.filter(s => s.type === "moins8");
-
-content.innerHTML = `
-  <p><strong>Email :</strong> ${info.email || "—"}</p>
-  <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
-
+  ${!isPendingPublic ? `
 <button
   class="open-participants-btn"
-  data-resid="${reservationId}"
+  data-resid="${escapeHTML(reservationId)}"
   style="
     margin:6px 0;
     background:#6a1b9a;
@@ -2474,8 +2510,8 @@ content.innerHTML = `
 </button>
 <button
   class="send-participants-form-btn"
-  data-resid="${reservationId}"
-  data-email="${info.email}"
+  data-resid="${escapeHTML(reservationId)}"
+  data-email="${escapeHTML(info.email || "")}"
   style="
     margin:6px 0;
     background:#1976d2;
@@ -2489,56 +2525,54 @@ content.innerHTML = `
   📨 Envoyer le formulaire participants
 </button>
 
-<div id="participants-${reservationId}"></div>
-
+<div id="participants-${escapeHTML(reservationId)}"></div>
+` : ""}
 
   <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
     <span style="color:#1565c0;font-weight:600">
-      ${adults.map(s => s.id).join(", ") || "—"}
+      ${adults.map(s => escapeHTML(s.id)).join(", ") || "—"}
     </span>
   </p>
 
   <p><strong>🧒 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € →
     <span style="color:#0288d1;font-weight:600">
-      ${children.map(s => s.id).join(", ") || "—"}
+      ${children.map(s => escapeHTML(s.id)).join(", ") || "—"}
     </span>
   </p>
 
   <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} →
     <span style="color:#6a1b9a;font-weight:600">
-      ${babies.map(s => s.id).join(", ") || "—"}
+      ${babies.map(s => escapeHTML(s.id)).join(", ") || "—"}
     </span>
   </p>
 
   <p><strong>Total :</strong> ${(
-  (info.seats.filter(s => s.type === "adulte").length * PRICE_ADULT) +
-  (info.seats.filter(s => s.type === "enfant").length * PRICE_CHILD)
-).toFixed(2)} €</p>
-
+    (info.seats.filter(s => s.type === "adulte").length * PRICE_ADULT) +
+    (info.seats.filter(s => s.type === "enfant").length * PRICE_CHILD)
+  ).toFixed(2)} €</p>
 `;
 
-content.innerHTML += `
+    content.innerHTML += `
   <div class="seat-list" style="margin-top:8px;">
     ${info.seats.map(s => {
       const icon =
-s.type === "moins8" || s.type === "gratuit" ? "🎟️ GRATUIT" :
-s.type === "adulte" ? "🧍" :
-s.type === "enfant" ? "🧒" : "🎟️";
-
+        s.type === "moins8" || s.type === "gratuit" ? "🎟️ GRATUIT" :
+        s.type === "adulte" ? "🧍" :
+        s.type === "enfant" ? "🧒" : "🎟️";
 
       const paidIcon = s.paid ? "💰" : "❌";
 
       return `
         <span class="badge-seat" style="
-          background:${s.paid ? "#43a047" : "#ef5350"};
+          background:${s.paid ? "#43a047" : (isPublic ? "#ff9800" : "#ef5350")};
           color:white;border-radius:6px;padding:4px 8px;font-size:0.85rem;
           display:inline-flex;align-items:center;gap:6px;
         ">
-          <span>${icon} ${s.id} ${paidIcon}</span>
-          ${admin ? `<button type="button"
+          <span>${icon} ${escapeHTML(s.id)} ${paidIcon}</span>
+          ${admin && !isPendingPublic ? `<button type="button"
             class="delete-seat-badge-btn"
-            data-seat="${s.id}"
-            data-client="${name}"
+            data-seat="${escapeHTML(s.id)}"
+            data-client="${escapeHTML(name)}"
             title="Supprimer cette place"
             style="background:rgba(255,255,255,.25);color:white;border:1px solid rgba(255,255,255,.7);
                    border-radius:50%;width:20px;height:20px;line-height:16px;padding:0;
@@ -2548,89 +2582,116 @@ s.type === "enfant" ? "🧒" : "🎟️";
     }).join("")}
   </div>
 
-
-
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;">
   <label>💶 Tout payé 
-    <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}>
+    <input
+      type="checkbox"
+      class="paid-toggle-client"
+      data-name="${escapeHTML(name)}"
+      data-reservation-id="${escapeHTML(reservationId || "")}"
+      data-public-pending="${isPendingPublic ? "true" : "false"}"
+      ${info.allPaid ? "checked" : ""}>
   </label>
 
   ${admin ? `
-  <div class="group-actions" data-client="${name}" style="display:flex;gap:6px;flex-wrap:wrap;">
-    <button class="group-add-btn" data-name="${name}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajout groupé</button>
-    <button class="group-remove-btn" data-name="${name}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️ Suppression groupée</button>
-    <button class="group-validate-btn" data-name="${name}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider</button>
+  <div class="group-actions" data-client="${escapeHTML(name)}" style="display:flex;gap:6px;flex-wrap:wrap;">
+    ${isPendingPublic ? `
+      <button class="public-confirm-btn" data-id="${escapeHTML(reservationId)}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider + envoyer confirmation</button>
+      <button class="public-refuse-btn" data-id="${escapeHTML(reservationId)}" style="background:#c62828;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">Refuser + libérer</button>
+      <button class="public-delete-btn" data-id="${escapeHTML(reservationId)}" style="background:#8e0000;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">Supprimer</button>
+    ` : `
+      ${isPublic ? `<button disabled style="background:#9e9e9e;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:not-allowed;">✅ Confirmation envoyée</button>` : ""}
+      <button class="group-add-btn" data-name="${escapeHTML(name)}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajout groupé</button>
+      <button class="group-remove-btn" data-name="${escapeHTML(name)}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️ Suppression groupée</button>
+      <button class="group-validate-btn" data-name="${escapeHTML(name)}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider</button>
 
-    <!-- 📧 NOUVEAU BOUTON -->
-    <button
-      class="resend-ticket-btn"
-      data-name="${name}"
-      data-email="${info.email}"
-      style="background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
-      📧 Renvoyer le billet
-    </button>
+      <button
+        class="resend-ticket-btn"
+        data-name="${escapeHTML(name)}"
+        data-email="${escapeHTML(info.email || "")}"
+        style="background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
+        📧 Renvoyer le billet
+      </button>
+    `}
   </div>
   ` : ""}
 </div>
+`;
 
+    div.append(header, content);
+    container.append(div);
+  }
 
-  `;
+  document.querySelectorAll(".paid-toggle-client").forEach(cb => {
+    cb.addEventListener("change", async e => {
+      if (!admin) {
+        alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+        e.target.checked = !e.target.checked;
+        return;
+      }
 
-  div.append(header, content);
-  container.append(div);
-  // 👥 charge la liste des participants si disponible
+      const clientName = e.target.dataset.name;
+      const reservationId = e.target.dataset.reservationId || "";
+      const isPendingPublic = e.target.dataset.publicPending === "true";
+      const isPaid = e.target.checked;
 
-}
+      if (isPendingPublic && reservationId && publicRequests[reservationId]) {
+        await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
+          ...publicRequests[reservationId],
+          paid: isPaid,
+          updatedAt: new Date().toISOString()
+        });
+        return;
+      }
 
+      const matchingSeats = Object.entries(seats).filter(([_, data]) => {
+        if (reservationId && data.reservationId === reservationId) return true;
+        return data.name === clientName;
+      });
 
-
-  // === Gestion stable de la case "Tout payé" (sans cumul) ===
-    // === Gestion stable de la case "Tout payé" (sans cumul) ===
-    document.querySelectorAll(".paid-toggle-client").forEach(cb => {
-      cb.addEventListener("change", async e => {
-    if (!admin) {
-      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
-      e.target.checked = !e.target.checked;
-      return;
-    }
-
-    const clientName = e.target.dataset.name;
-    const isPaid = e.target.checked;
-
-    console.log(`💶 Mise à jour du paiement pour ${clientName} → ${isPaid}`);
-
-    // ✅ Met à jour tous les sièges de ce client dans Firebase
-    for (const [id, data] of Object.entries(seats)) {
-      if (data.name === clientName) {
+      for (const [id, data] of matchingSeats) {
         data.paid = isPaid;
         await set(ref(db, `seats/${id}`), data);
       }
-    }
 
-    // 🔄 Rafraîchit les affichages
-    render();
-    updateTable();
-    updateStatsBar();
-
-    // 📧 (Optionnel) Notifie le client
-    const clientSeat = Object.values(seats).find(s => s.name === clientName);
-    if (clientSeat?.email) {
-      try {
-        await notifyClientUpdate(clientSeat.email);
-        console.log(`📨 Email envoyé à ${clientSeat.email}`);
-      } catch (err) {
-        console.error("Erreur d’envoi d’e-mail :", err);
+      if (reservationId && publicRequests[reservationId]) {
+        await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
+          ...publicRequests[reservationId],
+          paid: isPaid,
+          updatedAt: new Date().toISOString()
+        });
       }
-    }
+
+      render();
+      updateTable();
+      updateStatsBar();
+
+      const clientSeat = matchingSeats.map(([_, s]) => s).find(Boolean);
+      if (isPaid && clientSeat?.email) {
+        try {
+          const html = generateBilletHTML({
+            name: clientSeat.name,
+            email: clientSeat.email,
+            phone: clientSeat.phone || "",
+            paid: true,
+            amount: clientSeat.amount || 0
+          });
+
+          await sendViaBrevo(
+            clientSeat.email,
+            "🎟️ Votre billet – Théâtre Saint-Martin",
+            html
+          );
+
+          alert(`✅ Paiement validé. Billet envoyé à ${clientSeat.email}.`);
+        } catch (err) {
+          console.error("Erreur d’envoi du billet :", err);
+          alert("✅ Paiement validé, mais le billet n’a pas pu être envoyé. Regarde la console.");
+        }
+      }
+    });
   });
-
-
-
-
-
-}); // ← ferme cb.addEventListener
-};   // ← ferme updateTable()
-
+};
 
 // ===================================================
 // 🗑️ Suppression directe d’une place depuis la liste
@@ -3695,30 +3756,45 @@ async function confirmPublicRequestFromSalle(id) {
   }
 
   let mailOk = false;
+  let ticketOk = !base.paid;
+
   try {
     await sendViaBrevo(
       base.email,
       "✅ Réservation confirmée — Je préfère qu’on reste amies",
-      buildPublicConfirmationEmail({ id, ...r })
+      buildPublicConfirmationEmail({ id, ...r, paid: base.paid })
     );
     mailOk = true;
+
+    if (base.paid) {
+      await sendViaBrevo(
+        base.email,
+        "🎟️ Votre billet – Théâtre Saint-Martin",
+        generateBilletHTML(base)
+      );
+      ticketOk = true;
+    }
+
     await setPublicRequestFull(id, {
       ...r,
+      paid: base.paid,
       status: "confirmee",
       confirmedAt: new Date().toISOString(),
       confirmationEmailSentAt: new Date().toISOString(),
+      ticketEmailSentAt: base.paid ? new Date().toISOString() : (r.ticketEmailSentAt || null),
       updatedAt: new Date().toISOString()
     });
   } catch (err) {
-    console.error("Email de confirmation non envoyé", err);
+    console.error("Email de confirmation ou billet non envoyé", err);
   }
 
   render();
   updateTable();
   updateStatsBar();
-  renderPublicRequestsPanel();
 
-  alert(mailOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.");
+  alert(mailOk
+    ? (ticketOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais le billet n’a pas pu être envoyé.")
+    : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.");
 }
 
 async function refusePublicRequestFromSalle(id) {
