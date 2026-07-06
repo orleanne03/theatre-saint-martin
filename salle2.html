@@ -4251,23 +4251,60 @@ function escapeMailingHTML(value) {
 }
 
 function buildNewPieceEmailHTML(name, bodyText) {
-  const personalized = String(bodyText || "").replaceAll("{nom}", name || "");
-  const safeBody = escapeMailingHTML(personalized)
-    .replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0d47a1;">$1</a>')
+  const personalizedIntro = String(bodyText || "").replaceAll("{nom}", name || "");
+  const safeIntro = escapeMailingHTML(personalizedIntro)
     .replace(/\n/g, "<br>");
 
+  const afficheUrl = "https://orleanne03.github.io/theatre-saint-martin/affiche-amies.png";
+  const reservationUrl = "https://orleanne03.github.io/theatre-saint-martin/reservation-public.html";
+
   return `
-    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:640px;margin:auto;">
-      <div style="background:#7b0000;color:#fff;padding:16px;border-radius:10px 10px 0 0;text-align:center;">
-        <h2 style="margin:0;">🎭 Théâtre Saint-Martin</h2>
-      </div>
-      <div style="border:1px solid #eee;border-top:0;padding:18px;border-radius:0 0 10px 10px;">
-        ${safeBody}
-        <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
-        <p style="font-size:12px;color:#777;margin:0;">
-          Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
-        </p>
-      </div>
+    <div style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#3a1f12;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;padding:26px 0;">
+        <tr>
+          <td align="center">
+            <table width="900" cellpadding="0" cellspacing="0" role="presentation" style="max-width:900px;width:100%;background:#fffffe;border-radius:0px;overflow:hidden;border:1px solid #d7a85f;">
+
+              <tr>
+                <td style="padding:46px 58px 28px 58px;text-align:left;font-size:18px;line-height:1.95;color:#3a1f12;">
+                  ${safeIntro}
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 40px 30px 40px;">
+                  <img src="${afficheUrl}" alt="Affiche de la pièce" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 58px 22px 58px;">
+                  <a href="${reservationUrl}"
+                     target="_blank"
+                     style="display:inline-block;background:#8e24aa;color:#ffffff;text-decoration:none;
+                            padding:15px 26px;border-radius:12px;font-weight:bold;font-size:18px;
+                            box-shadow:0 3px 8px rgba(0,0,0,0.18);">
+                    🎟️ Réserver mes places
+                  </a>
+                </td>
+              </tr>
+
+              <tr>
+                <td align="center" style="padding:0 58px 44px 58px;">
+                  <div style="background:#cf683d;color:#ffffff;border-radius:18px;padding:20px 16px;">
+                    <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Ou réservation par téléphone</div>
+                    <div style="font-size:20px;font-weight:bold;letter-spacing:1px;white-space:nowrap;">06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</div>
+                  </div>
+                  <p style="font-size:12px;color:#777;margin:16px 0 0 0;line-height:1.4;">
+                    Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>`;
 }
 
@@ -4824,20 +4861,26 @@ syncPortier(resid);
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
     <textarea id="mailingBody" style="width:96%;min-height:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
 
-Nous avons le plaisir de vous annoncer notre nouvelle pièce :
+La Troupe Saint-Martin vous donne rendez-vous pour sa nouvelle comédie :
 
-ISLEA
-📅 Samedi 24 janvier 2026
-🕣 20h30
-📍 Théâtre Saint-Martin
+« Je préfère qu’on reste amies »
+une pièce de Laurent Ruquier.
 
-Les réservations sont ouvertes ici :
-https://orleanne03.github.io/theatre-saint-martin/salle.html
+Pour cette représentation, nous vous proposons une version inédite, entièrement revisitée, portée par deux femmes, avec une lecture nouvelle, drôle et touchante de cette histoire.
 
-Les places étant limitées, nous vous conseillons de réserver rapidement.
+Claudine s’apprête à faire une déclaration à Valentine, sa meilleure amie…
+Mais rien ne va se passer comme prévu.
 
-Au plaisir de vous accueillir,
-L’équipe du Théâtre Saint-Martin</textarea>
+Une soirée pleine de tendresse, de surprises et de vérités qui éclatent.
+
+À noter : le langage de certaines répliques peut heurter la sensibilité des jeunes enfants.
+
+Réservez vos places directement en cliquant sur le bouton ci-dessous.
+
+Ou par téléphone au 06 46 32 06 49.
+
+À très bientôt,
+La Troupe Saint-Martin</textarea>
 
     <div style="margin:14px 0 8px;text-align:left;">
       <label style="font-weight:600;">
