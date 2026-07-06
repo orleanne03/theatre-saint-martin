@@ -1054,7 +1054,7 @@ background: magenta !important;
 </div>
 
 <h1>🎭 Théâtre Saint Martin</h1>
-	<h3>LE 24 JANVIER 2026 à 20H30</h3>
+	<h3>LE 10 OCTOBRE 2026 à 20H30</h3>
   <br> Adulte : 14€ / Enfant 9-14 ans : 10e / Gratuit - de 8 ans</br>
 <div class="scene">SCÈNE</div>
 
@@ -1156,7 +1156,7 @@ background: magenta !important;
   width:90%;
   max-width:900px;
   background:#fff;
-  border-radius:12px;
+  border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,.15);
   padding:14px;
   text-align:left;
@@ -3417,53 +3417,99 @@ function renderPublicRequestsPanel() {
     const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== r.id);
     const missingHold = seatsList.filter(seatId => !publicHolds[seatId] || publicHolds[seatId].requestId !== r.id);
     const expired = isPublicRequestExpired(r);
+    const adults = Number(r.adultCount || 0);
+    const children = Number(r.childCount || 0);
+    const babies = Number(r.babyCount || 0);
+    const amount = Number(r.amount || 0).toFixed(2);
 
     return `
-      <div class="public-request-card" style="
-        border-left:7px solid ${expired ? "#6a1b9a" : "#cf683d"};
-        background:#fffaf4;
-        border-radius:12px;
-        padding:12px;
-        box-shadow:0 1px 4px rgba(0,0,0,.08);
+      <div class="accordion open public-request-card" style="
+        background:#fff;
+        border-radius:8px;
+        margin:10px 0;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        overflow:hidden;
+        border-left:6px solid #ff9800;
       ">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div class="accordion-header" style="
+          background:#ffe0b2;
+          color:#212121;
+          padding:10px 14px;
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          font-weight:600;
+          cursor:default;
+        ">
           <div>
-            <strong style="font-size:17px;">👤 ${escapeHTML(r.name || "Sans nom")}</strong>
-            <div style="font-size:13px;color:#666;margin-top:3px;">
-              Référence : ${escapeHTML(r.id)}<br>
-              ${formatPublicRequestDate(r.createdAt)} — Statut : <strong>${escapeHTML(status)}</strong>
-              ${expired ? ` — <span style="color:#c62828;font-weight:800;">blocage expiré</span>` : ""}
-            </div>
+            📨 ${escapeHTML(r.name || "Sans nom")}
+            <br><span style="font-weight:700;color:#d84315;">(${Number(r.totalPeople || seatsList.length || 0)} places demandées)</span>
           </div>
-          <div style="font-weight:800;">${Number(r.totalPeople || seatsList.length || 0)} place(s)</div>
+          <div style="font-weight:700;color:#4a2416;">
+            ⏳ Demande publique ${expired ? "— expirée" : ""}
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📧 <strong>Email</strong><br>${escapeHTML(r.email || "—")}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📱 <strong>Téléphone</strong><br>${escapeHTML(r.phone || "—")}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">👥 <strong>Détail</strong><br>Adultes : ${r.adultCount || 0}<br>9-14 ans : ${r.childCount || 0}<br>-8 ans : ${r.babyCount || 0}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">💰 <strong>Montant</strong><br>${Number(r.amount || 0).toFixed(2)} €</div>
-        </div>
+        <div class="accordion-content" style="
+          display:block;
+          background:#fff;
+          padding:12px 14px;
+          border-top:1px solid #eee;
+          text-align:center;
+        ">
+          <p><strong>Email :</strong> ${escapeHTML(r.email || "—")}</p>
+          <p><strong>Téléphone :</strong> ${escapeHTML(r.phone || "—")}</p>
 
-        <div style="margin-top:10px;background:#fff1d0;border:1px solid #e0b471;border-radius:10px;padding:9px;font-weight:800;color:#4a2416;">
-          🎟️ Places demandées : ${seatsList.map(escapeHTML).join(", ") || "—"}
-          ${taken.length ? `<br><span style="color:#c62828;">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</span>` : ""}
-          ${missingHold.length && status === "nouvelle" ? `<br><span style="color:#c62828;">Blocage absent ou expiré : ${missingHold.map(escapeHTML).join(", ")}</span>` : ""}
-        </div>
+          <p><strong>🧍 Adultes :</strong> ${adults} × ${PRICE_ADULT} € →
+            <span style="color:#1565c0;font-weight:600">
+              ${seatsList.slice(0, adults).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
 
-        ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:10px;padding:9px;white-space:pre-wrap;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+          <p><strong>🧒 Enfants :</strong> ${children} × ${PRICE_CHILD} € →
+            <span style="color:#0288d1;font-weight:600">
+              ${seatsList.slice(adults, adults + children).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button type="button" class="public-mail-btn" data-email="${escapeHTML(r.email || "")}" style="background:#0277bd;">Écrire</button>
-          <button type="button" class="public-call-btn" data-phone="${escapeHTML(String(r.phone || "").replace(/\D/g, ""))}" style="background:#cf683d;">Appeler</button>
-          <button type="button" class="public-contact-btn" data-id="${escapeHTML(r.id)}" style="background:#607d8b;">Contactée</button>
-          <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">✅ Valider + envoyer confirmation</button>
-          <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libérer</button>
-          <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+          <p><strong>🍼 Moins de 8 ans :</strong> ${babies} →
+            <span style="color:#6a1b9a;font-weight:600">
+              ${seatsList.slice(adults + children, adults + children + babies).map(escapeHTML).join(", ") || "—"}
+            </span>
+          </p>
+
+          <p><strong>Total :</strong> ${amount} €</p>
+
+          <div class="seat-list" style="margin-top:8px;justify-content:center;">
+            ${seatsList.map((seatId, index) => {
+              const icon = index < adults ? "🧍" : index < adults + children ? "🧒" : "🎟️ GRATUIT";
+              return `
+                <span class="badge-seat" style="
+                  background:#ff9800;
+                  color:white;
+                  border-radius:6px;
+                  padding:4px 8px;
+                  font-size:0.85rem;
+                  font-weight:700;
+                ">${icon} ${escapeHTML(seatId)}</span>
+              `;
+            }).join("")}
+          </div>
+
+          ${taken.length ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</p>` : ""}
+          ${missingHold.length && status === "nouvelle" ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">Blocage absent ou expiré : ${missingHold.map(escapeHTML).join(", ")}</p>` : ""}
+          ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:8px;padding:8px;white-space:pre-wrap;text-align:left;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">✅ Valider + envoyer confirmation</button>
+            <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libérer</button>
+            <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+          </div>
         </div>
       </div>`;
   }).join("");
 }
+
 
 function distributePublicRequestSeatTypes(r) {
   let adult = Number(r.adultCount || 0);
@@ -3497,7 +3543,7 @@ function buildPublicConfirmationEmail(r) {
         </p>
 
         <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
-          <strong>Date :</strong> ${escapeHTML(r.date || "10 octobre 2026 à 20h30")}<br>
+          <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 à 20h30")}<br>
           <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes (03)")}<br>
           <strong>Places confirmées :</strong> ${seatsList.map(escapeHTML).join(", ")}<br>
           <strong>Nombre de places :</strong> ${totalPeople}<br>
@@ -5158,7 +5204,7 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
     </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
-    <input id="mailingSubject" type="text" value="🎭 Je préfère qu’on reste amies — 10 octobre 2026" style="width:100%;box-sizing:border-box;">
+    <input id="mailingSubject" type="text" value="🎭 Je préfère qu’on reste amies — 11 octobre 2026" style="width:100%;box-sizing:border-box;">
 
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
     <textarea id="mailingBody" style="width:100%;min-height:330px;padding:16px;border:1px solid #ccc;border-radius:8px;font-family:Arial,sans-serif;font-size:15px;line-height:1.55;box-sizing:border-box;resize:vertical;">Bonjour {nom},
