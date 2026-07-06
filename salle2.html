@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🎭 Théâtre Saint Martin – Réservations</title>
+<title>ðŸŽ­ ThÃ©Ã¢tre Saint Martin â€“ RÃ©servations</title>
 	
 
 <!-- Librairies externes -->
@@ -14,7 +14,7 @@
 
 
 
-<!-- ✅ Firebase -->
+<!-- âœ… Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
   import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
@@ -38,7 +38,7 @@
   window._firebaseOnValue = onValue;
   window._firebaseGet = get;
 
-  console.log("🔥 Firebase initialisé :", db);
+  console.log("ðŸ”¥ Firebase initialisÃ© :", db);
 </script>
 
 <style>
@@ -90,7 +90,7 @@ h1 {
 .free { background: #e0e0e0; }
 .selected { background: #64b5f6; }
 .reserved { background: #ef5350; }
-/* 🟣 Siège bloqué temporairement par une demande publique */
+/* ðŸŸ£ SiÃ¨ge bloquÃ© temporairement par une demande publique */
 .held {
   background: linear-gradient(145deg, #9575cd, #5e35b1) !important;
   color: #ffffff !important;
@@ -116,12 +116,12 @@ h1 {
   padding: 10px 0;
   box-sizing: border-box;
   background: transparent;
-  text-align: center;  /* ✅ centre par défaut */
+  text-align: center;  /* âœ… centre par dÃ©faut */
 }
 
-/* === Bloc des sièges === */
+/* === Bloc des siÃ¨ges === */
 #hall {
-  display: inline-flex;             /* ✅ permet le centrage avec text-align: center */
+  display: inline-flex;             /* âœ… permet le centrage avec text-align: center */
   flex-direction: column;
   align-items: center;
   background: #fff;
@@ -131,14 +131,14 @@ h1 {
   transition: transform 0.2s ease;
 }
 
-/* === 🌐 Correction responsive : sur mobile, on désactive le centrage pour garder le scroll complet === */
+/* === ðŸŒ Correction responsive : sur mobile, on dÃ©sactive le centrage pour garder le scroll complet === */
 @media (max-width: 768px) {
   .hall-wrapper {
-    text-align: left;              /* ✅ permet le scroll total (gauche et droite) */
+    text-align: left;              /* âœ… permet le scroll total (gauche et droite) */
     padding-left: 10px;
   }
   #hall {
-    display: flex;                 /* ✅ comportement normal sans centrage forcé */
+    display: flex;                 /* âœ… comportement normal sans centrage forcÃ© */
     width: max-content;
   }
 }
@@ -158,7 +158,7 @@ h1 {
   margin-right: 8px;
   min-width: 18px;
 }
-/* === STYLE DES SIÈGES (RÉALISTES + CENTRÉS) === */
+/* === STYLE DES SIÃˆGES (RÃ‰ALISTES + CENTRÃ‰S) === */
 .seat {
   position: relative;
   width: 34px;
@@ -175,7 +175,7 @@ h1 {
   color: #fff;
 }
 
-/* ✅ Texte centré parfaitement au milieu du siège */
+/* âœ… Texte centrÃ© parfaitement au milieu du siÃ¨ge */
 .seat span {
   position: absolute;
   top: 50%;
@@ -188,7 +188,7 @@ h1 {
   pointer-events: none;
 }
 
-/* === Effets du dossier et de l’assise === */
+/* === Effets du dossier et de lâ€™assise === */
 .seat::before {
   content: "";
   position: absolute;
@@ -214,9 +214,9 @@ h1 {
   pointer-events: none;
 }
 
-/* === ÉTATS DES SIÈGES === */
+/* === Ã‰TATS DES SIÃˆGES === */
 
-/* 🔴 Libre */
+/* ðŸ”´ Libre */
 .free {
   background: linear-gradient(145deg, #c62828, #8e0000);
   box-shadow: 0 2px 5px rgba(0,0,0,0.25);
@@ -226,15 +226,15 @@ h1 {
   box-shadow: 0 6px 10px rgba(0,0,0,0.35);
 }
 
-/* 🔵 Sélectionné */
+/* ðŸ”µ SÃ©lectionnÃ© */
 .selected {
   background: linear-gradient(145deg, #1565c0, #0d47a1);
   box-shadow: 0 4px 10px rgba(13,71,161,0.4);
   transform: scale(1.1);
 }
 
-/* ⚫ Réservé */
-/* ⚫ Réservé non payé — rose clair */
+/* âš« RÃ©servÃ© */
+/* âš« RÃ©servÃ© non payÃ© â€” rose clair */
 .reserved {
   background: #f8bbd0 !important;
   color: #212121;
@@ -242,15 +242,15 @@ h1 {
   box-shadow: 0 0 6px rgba(233,30,99,0.3);
   opacity: 1;
 }
-/* 🟡 Strapontin réservé (même rose) */
+/* ðŸŸ¡ Strapontin rÃ©servÃ© (mÃªme rose) */
 .seat.strapontin.reserved {
   background: #f8bbd0 !important;
   color: #212121;
   box-shadow: 0 0 6px rgba(233,30,99,0.3);
 }
 
-/* 💚 Siège réservé et payé */
-/* 💚 Légende Payé */
+/* ðŸ’š SiÃ¨ge rÃ©servÃ© et payÃ© */
+/* ðŸ’š LÃ©gende PayÃ© */
 .paid {
   background: linear-gradient(145deg, #43a047, #2e7d32);
   box-shadow: 0 0 4px rgba(67,160,71,0.6);
@@ -258,7 +258,7 @@ h1 {
 
 
 
-/* 🟡 Strapontin */
+/* ðŸŸ¡ Strapontin */
 .strapontin {
   background: linear-gradient(145deg, #f9a825, #f57f17);
   box-shadow: 0 3px 6px rgba(0,0,0,0.25);
@@ -366,7 +366,7 @@ button {
   animation: spin 1s linear infinite;
   margin: 0 auto 10px;
 }
-  /* === STYLE FAUTEUILS RÉALISTES === */
+  /* === STYLE FAUTEUILS RÃ‰ALISTES === */
 .seat {
   position: relative;
   width: 34px;
@@ -406,7 +406,7 @@ button {
   pointer-events: none;
 }
 
-/* 🔴 Siège libre */
+/* ðŸ”´ SiÃ¨ge libre */
 .free {
   background: linear-gradient(145deg, #c62828, #8e0000);
   box-shadow: 0 2px 5px rgba(0,0,0,0.25);
@@ -417,7 +417,7 @@ button {
   box-shadow: 0 6px 10px rgba(0,0,0,0.35);
 }
 
-/* 🔵 Sélectionné */
+/* ðŸ”µ SÃ©lectionnÃ© */
 .selected {
   background: linear-gradient(145deg, #1565c0, #0d47a1);
   box-shadow: 0 4px 10px rgba(13,71,161,0.4);
@@ -425,7 +425,7 @@ button {
   color: #fff; /* texte blanc */
 }
 
-/* ⚫ Réservé */
+/* âš« RÃ©servÃ© */
 .reserved {
   background: linear-gradient(145deg, #7c787773, #3e272300);
   opacity: 0.8;
@@ -433,7 +433,7 @@ button {
   box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
 }
 
-/* 🟡 Strapontin */
+/* ðŸŸ¡ Strapontin */
 .strapontin {
   background: linear-gradient(145deg, #f9a825, #f57f17);
   box-shadow: 0 3px 6px rgba(0,0,0,0.25);
@@ -448,35 +448,35 @@ button {
   .seat { width: 26px; height: 26px; font-size: 9px; margin: 2px; }
   .row-label { font-size: 12px; margin-right: 4px; }
   h1 { font-size: 1.5rem; }
-  /* === 🌟 VISUEL AMÉLIORÉ POUR LE MODE ADMIN === */
+  /* === ðŸŒŸ VISUEL AMÃ‰LIORÃ‰ POUR LE MODE ADMIN === */
 
-/* Fond légèrement doré pour signaler le mode admin */
+/* Fond lÃ©gÃ¨rement dorÃ© pour signaler le mode admin */
 body.admin {
   background: radial-gradient(circle at center, #fff8e1, #ffe082);
   transition: background 0.5s ease;
 }
 
-/* Aura dorée autour de tous les sièges réservés */
+/* Aura dorÃ©e autour de tous les siÃ¨ges rÃ©servÃ©s */
 .admin .seat.reserved {
   box-shadow: 0 0 10px 3px rgba(255,215,0,0.7),
               inset 0 2px 4px rgba(0,0,0,0.3);
   animation: pulseGold 1.5s infinite alternate;
 }
 
-/* Animation douce (pulsation dorée) */
+/* Animation douce (pulsation dorÃ©e) */
 @keyframes pulseGold {
   from { box-shadow: 0 0 10px 3px rgba(255,215,0,0.6); }
   to   { box-shadow: 0 0 14px 5px rgba(255,215,0,0.9); }
 }
 
-/* Curseur et effet au survol des sièges réservés */
+/* Curseur et effet au survol des siÃ¨ges rÃ©servÃ©s */
 .admin .seat.reserved:hover {
   cursor: pointer;
   transform: scale(1.12);
   filter: brightness(1.15);
 }
 
-/* Petite étiquette visuelle "Mode Admin" fixe */
+/* Petite Ã©tiquette visuelle "Mode Admin" fixe */
 #adminBanner {
   position: fixed;
   top: 10px;
@@ -499,7 +499,7 @@ body.admin #adminBanner {
   /* === Ajustement de l'espacement sur mobile === */
 @media (max-width: 768px) {
   .hall-wrapper {
-    margin-bottom: 10px !important;   /* Réduit l'espace sous le plan */
+    margin-bottom: 10px !important;   /* RÃ©duit l'espace sous le plan */
   }
 
   #hall {
@@ -523,7 +523,7 @@ body.admin #adminBanner {
 #info:hover {
   background: #0d47a1;
 }
-/* === Strapontin réservé : même style que les sièges réservés === */
+/* === Strapontin rÃ©servÃ© : mÃªme style que les siÃ¨ges rÃ©servÃ©s === */
 .seat.strapontin.reserved {
   background: linear-gradient(145deg, #7c787773, #3e272300);
   opacity: 0.8;
@@ -541,7 +541,7 @@ input.paid-toggle {
 .seat.strapontin.paid {
   background: linear-gradient(145deg, #7cb342, #558b2f);
 }
-/* === Ligne "Paiement reçu" === */
+/* === Ligne "Paiement reÃ§u" === */
 .paid-line {
   
   align-items: center;
@@ -553,9 +553,9 @@ input.paid-toggle {
 .paid-line input[type="checkbox"] {
   transform: scale(1.3);
   cursor: pointer;
-  margin-right: 8px; /* espace léger avec le bord droit */
+  margin-right: 8px; /* espace lÃ©ger avec le bord droit */
 }
-/* ✨ Animation d'apparition des sièges */
+/* âœ¨ Animation d'apparition des siÃ¨ges */
 @keyframes seatPop {
   from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -565,7 +565,7 @@ input.paid-toggle {
   animation: seatPop 0.4s ease-out;
 }
 
-/* 💡 Petit rebond au clic */
+/* ðŸ’¡ Petit rebond au clic */
 .seat:active {
   transform: scale(0.9);
   transition: transform 0.1s;
@@ -622,7 +622,7 @@ button:active {
   from { transform: translateY(0); }
   to { transform: translateY(-4px); }
 }
-/* === Accordéons de réservation par client (version douce) === */
+/* === AccordÃ©ons de rÃ©servation par client (version douce) === */
 .accordion {
   background: #f9f9f9;
   border-radius: 8px;
@@ -633,7 +633,7 @@ button:active {
 }
 
 .accordion-header {
-  background: #6fb572; /* 💙 bleu plus doux */
+  background: #6fb572; /* ðŸ’™ bleu plus doux */
   color: #000000;
   padding: 10px 14px;
   cursor: pointer;
@@ -675,7 +675,7 @@ button:active {
 }
 
 .badge-seat {
-  background: #64b5f6; /* même bleu doux */
+  background: #64b5f6; /* mÃªme bleu doux */
   color: #fff;
   padding: 3px 8px;
   border-radius: 6px;
@@ -685,13 +685,13 @@ button:active {
 .accordion-content p {
   margin: 4px 0;
 }
-/* === Couleur différente si non payé === */
+/* === Couleur diffÃ©rente si non payÃ© === */
 .accordion-header.paid {
-  background: #a5d1a7; /* 💙 bleu doux */
+  background: #a5d1a7; /* ðŸ’™ bleu doux */
 }
 
 .accordion-header.unpaid {
-  background: #f8bbd0; /* 🌸 rose clair */
+  background: #f8bbd0; /* ðŸŒ¸ rose clair */
   color: #212121;
 }
 
@@ -743,7 +743,7 @@ button:active {
 
 .paid-line input[type="checkbox"] {
   transform: scale(1.3);
-  accent-color: #2e7d32; /* ✅ vert doux */
+  accent-color: #2e7d32; /* âœ… vert doux */
   cursor: pointer;
 }
 .payment-group {
@@ -819,7 +819,7 @@ input#paid {
 .mini-seat:hover {
   box-shadow: 0 0 6px rgba(33,150,243,0.6);
 }
-/* 🎭 Mini-plan compact pour l’ajout manuel */
+/* ðŸŽ­ Mini-plan compact pour lâ€™ajout manuel */
 #miniSeatMap {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
@@ -835,7 +835,7 @@ input#paid {
   box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
 }
 
-/* Siège visuel dans le mini-plan */
+/* SiÃ¨ge visuel dans le mini-plan */
 .mini-seat {
   width: 34px;
   height: 34px;
@@ -856,7 +856,7 @@ input#paid {
   box-shadow: 0 3px 8px rgba(0,0,0,0.3);
 }
 
-/* Siège sélectionné */
+/* SiÃ¨ge sÃ©lectionnÃ© */
 .mini-seat.selected {
   background: linear-gradient(145deg, #1565c0, #0d47a1);
   color: #fff;
@@ -872,7 +872,7 @@ input#paid {
   background: linear-gradient(145deg, #ffca28, #fbc02d);
 }
 
-/* Indication de rangée à gauche */
+/* Indication de rangÃ©e Ã  gauche */
 .mini-row-label {
   grid-column: 1 / -1;
   text-align: left;
@@ -882,7 +882,7 @@ input#paid {
   color: #424242;
 }
 
-/* Scrollbar discrète */
+/* Scrollbar discrÃ¨te */
 #miniSeatMap::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -919,7 +919,7 @@ button#editPrices {
   transform: translateY(-2px);
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-/* Mode groupé : mise en évidence */
+/* Mode groupÃ© : mise en Ã©vidence */
 .seat.selected {
   box-shadow: 0 0 12px 3px rgba(33,150,243,0.7) !important;
 }
@@ -968,14 +968,14 @@ button#retour-dashboard {
   filter: brightness(1.1);
   transform: scale(1.05);
 }
-/* 🟧 Réservation GRATUITE */
+/* ðŸŸ§ RÃ©servation GRATUITE */
 .accordion-header.free-line {
     background: #ed00ed !important;
     color: #ffffff;
     border-left: 6px solid #fb8c00;
 }
 
-/* 🔵 Badge G = place gratuite dans la réservation */
+/* ðŸ”µ Badge G = place gratuite dans la rÃ©servation */
 .free-badge {
   display:inline-flex;
   align-items:center;
@@ -989,18 +989,18 @@ button#retour-dashboard {
   font-size:12px;
   line-height:1;
 }
-/* 🟣 SIÈGE GRATUIT */
+/* ðŸŸ£ SIÃˆGE GRATUIT */
 .seat.free-ticket {
   background: magenta !important;
   box-shadow: 0 0 8px rgba(142,36,170,0.7);
   color: #fff;
 }
 
-/* badge texte du siège */
+/* badge texte du siÃ¨ge */
 .seat.free-ticket span {
   color: #fff;
 }
-/* 🟣 SIÈGE GRATUIT */
+/* ðŸŸ£ SIÃˆGE GRATUIT */
 .seat.free-ticket {
 background: magenta !important;
   color: #fff !important;
@@ -1036,7 +1036,7 @@ background: magenta !important;
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: #eaf4fb; /* même fond que la page */
+  background: #eaf4fb; /* mÃªme fond que la page */
   padding: 10px;
   border-radius: 0 0 12px 12px;
 }
@@ -1062,7 +1062,7 @@ body.portier .accordion-header {
 /* =========================
    MODE PORTIER (BESSAY)
 ========================= */
-/* MODE PORTIER : on garde la liste, on cache seulement le détail */
+/* MODE PORTIER : on garde la liste, on cache seulement le dÃ©tail */
 body.portier .accordion-content p,
 body.portier .open-participants-btn,
 body.portier .send-participants-form-btn,
@@ -1090,7 +1090,7 @@ body.portier .accordion-header {
   justify-content: space-between;
   align-items: center;
 }
-/* Boutons portier visibles seulement si accordéon ouvert */
+/* Boutons portier visibles seulement si accordÃ©on ouvert */
 .accordion .portier-controls {
   display: none;
 }
@@ -1136,22 +1136,22 @@ body.portier .accordion-header {
 <div id="loader">
   <div class="loader-content">
     <div class="spinner"></div>
-    <p>Chargement de la salle…</p>
+    <p>Chargement de la salleâ€¦</p>
   </div>
 </div>
 
-<h1>🎭 Théâtre Saint Martin</h1>
-	<h3>LE 24 JANVIER 2026 à 20H30</h3>
-  <br> Adulte : 14€ / Enfant 9-14 ans : 10e / Gratuit - de 8 ans</br>
-<div class="scene">SCÈNE</div>
+<h1>ðŸŽ­ ThÃ©Ã¢tre Saint Martin</h1>
+	<h3>LE 24 JANVIER 2026 Ã  20H30</h3>
+  <br> Adulte : 14â‚¬ / Enfant 9-14 ans : 10e / Gratuit - de 8 ans</br>
+<div class="scene">SCÃˆNE</div>
 
 <div class="legend">
   <div><span class="free"></span>Libre</div>
-  <div><span class="selected"></span>Sélectionné</div>
-  <div><span class="reserved"></span>Réservé non payé</div>
+  <div><span class="selected"></span>SÃ©lectionnÃ©</div>
+  <div><span class="reserved"></span>RÃ©servÃ© non payÃ©</div>
   <div><span class="held"></span>En attente public</div>
   <div><span class="strapontin"></span>Strapontin</div>
-  <div><span class="paid"></span>Réservé et payé</div> <!-- 💚 ajouté -->
+  <div><span class="paid"></span>RÃ©servÃ© et payÃ©</div> <!-- ðŸ’š ajoutÃ© -->
 </div>
 
 <div class="hall-wrapper">
@@ -1159,40 +1159,40 @@ body.portier .accordion-header {
 </div>
 
 <div class="buttons">
-  <button id="confirm">✅ Confirmer</button>
-  <button id="admin">🔐 Admin</button>
-  <button id="portierBtn" style="background:#37474f;">🚪 Portier</button>
+  <button id="confirm">âœ… Confirmer</button>
+  <button id="admin">ðŸ” Admin</button>
+  <button id="portierBtn" style="background:#37474f;">ðŸšª Portier</button>
 
-  <button id="reset">♻️ Réinitialiser</button>
-  <button id="export" style="display:none;">📤 Export CSV</button>
-  <button id="scanTicket">🎟️ Scanner un billet</button>
-  <button id="editPrices" style="display:none;">💶 Modifier les tarifs</button>
-  <button id="toggleEmailTest" style="display:none;">✉️ Mode email : TEST</button>
+  <button id="reset">â™»ï¸ RÃ©initialiser</button>
+  <button id="export" style="display:none;">ðŸ“¤ Export CSV</button>
+  <button id="scanTicket">ðŸŽŸï¸ Scanner un billet</button>
+  <button id="editPrices" style="display:none;">ðŸ’¶ Modifier les tarifs</button>
+  <button id="toggleEmailTest" style="display:none;">âœ‰ï¸ Mode email : TEST</button>
   <button id="bulkReminder"
   style="display:none;background:#1976d2;">
-  🔔 Rappel réservation (billet + QR)
+  ðŸ”” Rappel rÃ©servation (billet + QR)
 </button>
   <button id="printBackupList" style="display:none;background:#5d4037;">
-    🖨️ Liste papier secours
+    ðŸ–¨ï¸ Liste papier secours
   </button>
   <button id="newPieceMailing" style="display:none;background:#8e24aa;">
-    📢 Mailing nouvelle pièce
+    ðŸ“¢ Mailing nouvelle piÃ¨ce
   </button>
 
   <button id="archiveMailingContacts" style="display:none;background:#00695c;">
-    💾 Sauvegarder contacts mailing
+    ðŸ’¾ Sauvegarder contacts mailing
   </button>
 
   
   <!-- === Bouton retour Tableau de bord === -->
-<button id="retour-dashboard" class="back-btn">🏠 Retour au tableau de bord</button>
+<button id="retour-dashboard" class="back-btn">ðŸ  Retour au tableau de bord</button>
 
 
-    <button id="info">ℹ️ AIDE</button>
+    <button id="info">â„¹ï¸ AIDE</button>
 
 </div>
-<!-- 💰 Résumé des statistiques -->
-<!-- 💰 Résumé des statistiques globales -->
+<!-- ðŸ’° RÃ©sumÃ© des statistiques -->
+<!-- ðŸ’° RÃ©sumÃ© des statistiques globales -->
 <div id="stats-bar" style="
   display:flex;
   justify-content:center;
@@ -1208,17 +1208,17 @@ body.portier .accordion-header {
   color:#2e7d32;
   flex-wrap:wrap;
 ">
-  <span id="stat-total">💰 Total encaissé : 0 €</span>
-  <span id="stat-adult">🧍 Adultes : 0</span>
-  <span id="stat-child">👶 Enfants : 0</span>
-  <span id="stat-baby">🍼 Moins de 8 ans : 0</span>
-  <span id="stat-sold">🎟️ Places réservées : 0</span>
+  <span id="stat-total">ðŸ’° Total encaissÃ© : 0 â‚¬</span>
+  <span id="stat-adult">ðŸ§ Adultes : 0</span>
+  <span id="stat-child">ðŸ‘¶ Enfants : 0</span>
+  <span id="stat-baby">ðŸ¼ Moins de 8 ans : 0</span>
+  <span id="stat-sold">ðŸŽŸï¸ Places rÃ©servÃ©es : 0</span>
 </div>
 
 
 <div id="reservations">
 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-    <h3>📋 Liste des réservations</h3>
+    <h3>ðŸ“‹ Liste des rÃ©servations</h3>
 	<h4 id="total-amount" style="
   text-align:right;
   color:#2e7d32;
@@ -1233,7 +1233,7 @@ body.portier .accordion-header {
     </div>
   </div>
 
-  <div id="resBody"><p>Aucune réservation.</p></div>
+  <div id="resBody"><p>Aucune rÃ©servation.</p></div>
 
 
 </div>
@@ -1245,14 +1245,14 @@ body.portier .accordion-header {
   width:90%;
   max-width:900px;
   background:#fff;
-  border-radius:12px;
+  border-radius:8px;
   box-shadow:0 2px 8px rgba(0,0,0,.15);
   padding:14px;
   text-align:left;
 ">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-    <h3 style="margin:6px 0;">📨 Demandes publiques en attente</h3>
-    <button id="refreshPublicRequests" type="button" style="background:#0277bd;">🔄 Actualiser</button>
+    <h3 style="margin:6px 0;">ðŸ“¨ Demandes publiques en attente</h3>
+    <button id="refreshPublicRequests" type="button" style="background:#0277bd;">ðŸ”„ Actualiser</button>
   </div>
   <div id="publicRequestsSummary" style="font-weight:700;color:#4a2416;margin:6px 0 10px;"></div>
   <div id="publicRequestsList" style="display:flex;flex-direction:column;gap:10px;">
@@ -1261,18 +1261,18 @@ body.portier .accordion-header {
 </div>
 
 
-<!-- 🧾 Fenêtre modale de réservation -->
+<!-- ðŸ§¾ FenÃªtre modale de rÃ©servation -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
-    <h3>Informations de réservation</h3>
+    <h3>Informations de rÃ©servation</h3>
 
     <input id="name" placeholder="Nom complet">
     <input id="email" placeholder="Adresse email">
-    <input id="phone" placeholder="Téléphone">
+    <input id="phone" placeholder="TÃ©lÃ©phone">
 
     <div class="payment-group">
       <div class="payment-line">
-        <span>Si paiement reçu, coche la case</span>
+        <span>Si paiement reÃ§u, coche la case</span>
         <input type="checkbox" id="paid">
       </div>
 	<div class="payment-line">
@@ -1301,7 +1301,7 @@ body.portier .accordion-header {
         text-align:right;
         color:#2e7d32;
       ">
-        Total : 0 €
+        Total : 0 â‚¬
       </p>
     </div>
 
@@ -1315,7 +1315,7 @@ body.portier .accordion-header {
 
 
 <script type="module">
-/* === Attente que Firebase soit prêt === */
+/* === Attente que Firebase soit prÃªt === */
 await new Promise(resolve => {
   const check = () => window._firebaseRef ? resolve() : setTimeout(check, 100);
   check();
@@ -1335,8 +1335,8 @@ const set = window._firebaseSet;
 const onValue = window._firebaseOnValue;
 const get = window._firebaseGet;
 
-// === TARIFS PARTAGÉS AVEC LA PAGE PUBLIQUE ===
-// Les tarifs sont sauvegardés dans Firebase pour que reservation-public.html les affiche aussi.
+// === TARIFS PARTAGÃ‰S AVEC LA PAGE PUBLIQUE ===
+// Les tarifs sont sauvegardÃ©s dans Firebase pour que reservation-public.html les affiche aussi.
 const PRICE_CONFIG_PATH = "spectacles/amies_2026_10_11/prices";
 const pricesRef = ref(db, PRICE_CONFIG_PATH);
 
@@ -1373,17 +1373,17 @@ onValue(pricesRef, snapshot => {
       adult: PRICE_ADULT,
       child: PRICE_CHILD,
       updatedAt: new Date().toISOString()
-    }).catch(err => console.warn("⚠️ Tarifs partagés non initialisés", err));
+    }).catch(err => console.warn("âš ï¸ Tarifs partagÃ©s non initialisÃ©s", err));
   }
 });
 
 let seats = {}, publicHolds = {}, publicRequests = {}, selected = [], admin = false;
 let portierMode = false;
-let localEntered = {}; // ✅ OBLIGATOIRE (mode portier)
+let localEntered = {}; // âœ… OBLIGATOIRE (mode portier)
 window.localEntered = localEntered;
 
 window.seats = seats;
-// ⚡ Compteur local pour le mode portier (instantané)
+// âš¡ Compteur local pour le mode portier (instantanÃ©)
 
 
 const hall = document.getElementById("hall");
@@ -1416,7 +1416,7 @@ function makeSeat(id, label, extra){
   const d = document.createElement("div");
   d.className = "seat " + (extra || "free");
   d.dataset.id = id;
-  d.setAttribute("aria-label", `Siège ${id}`);
+  d.setAttribute("aria-label", `SiÃ¨ge ${id}`);
 
   const labelSpan = document.createElement("span");
   labelSpan.textContent = label;
@@ -1446,7 +1446,7 @@ function sortSeatIdsForPublicRequest(a, b) {
   return String(a).localeCompare(String(b), "fr", { numeric: true });
 }
 
-// 🔄 Synchronise demandes-public.html quand une place est ajoutée/supprimée depuis salle.html/salle2.html
+// ðŸ”„ Synchronise demandes-public.html quand une place est ajoutÃ©e/supprimÃ©e depuis salle.html/salle2.html
 async function syncPublicRequestAfterSeatChanges(requestId) {
   if (!requestId) return;
 
@@ -1483,12 +1483,12 @@ async function syncPublicRequestAfterSeatChanges(requestId) {
     if (!remainingSeatIds.length) {
       updatedRequest.status = "archivee";
       updatedRequest.archivedAt = new Date().toISOString();
-      updatedRequest.noteAdmin = "Réservation supprimée depuis la salle.";
+      updatedRequest.noteAdmin = "RÃ©servation supprimÃ©e depuis la salle.";
     }
 
     await set(requestRef, updatedRequest);
   } catch (err) {
-    console.warn("⚠️ Synchronisation demande publique impossible", requestId, err);
+    console.warn("âš ï¸ Synchronisation demande publique impossible", requestId, err);
   }
 }
 
@@ -1503,7 +1503,7 @@ function isActivePublicHold(h) {
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
 
-  // 🔄 Initialise le compteur local PAR reservationId (mode portier)
+  // ðŸ”„ Initialise le compteur local PAR reservationId (mode portier)
 for (const k in localEntered) {
   delete localEntered[k];
 }
@@ -1523,7 +1523,7 @@ for (const k in localEntered) {
   updateTable();
   updateStatsBar();
   setTimeout(() => loader.classList.add("hidden"), 400);
-}); // ✅ ← CETTE LIGNE MANQUAIT
+}); // âœ… â† CETTE LIGNE MANQUAIT
 
 
 onValue(publicHoldsRef, snapshot => {
@@ -1544,12 +1544,12 @@ function save(){
 window.save = save;
 
 
-// 🎨 Nouvelle modale de choix du type de billet (accessible partout)
+// ðŸŽ¨ Nouvelle modale de choix du type de billet (accessible partout)
 async function askSeatType(id) {
   return new Promise(resolve => {
     const modal = document.getElementById("ticketTypeModal");
     const seatLabel = document.getElementById("ticketTypeSeat");
-    seatLabel.textContent = `🪑 Siège ${id}`;
+    seatLabel.textContent = `ðŸª‘ SiÃ¨ge ${id}`;
     modal.classList.remove("hidden");
 
     function cleanup() {
@@ -1590,7 +1590,7 @@ function render() {
     const seatData = seats[id];
 if (seatData) {
   if (seatData.type === "gratuit") {
-    el.classList.add("free-ticket"); // 🟣 GRATUIT uniquement
+    el.classList.add("free-ticket"); // ðŸŸ£ GRATUIT uniquement
   } else if (seatData.paid) {
     el.classList.add("paid");
   } else {
@@ -1611,18 +1611,18 @@ if (seatData) {
   });
 }
 
-/* === Sélection === */
+/* === SÃ©lection === */
 async function toggle(id, el) {
 
-// 🟣 Siège bloqué temporairement par une demande publique : on ne le réserve pas ici
+// ðŸŸ£ SiÃ¨ge bloquÃ© temporairement par une demande publique : on ne le rÃ©serve pas ici
 if (!seats[id] && isActivePublicHold(publicHolds[id])) {
-  alert(`⏳ Le siège ${id} est en attente de validation via la page publique.
+  alert(`â³ Le siÃ¨ge ${id} est en attente de validation via la page publique.
 
 Valide ou refuse la demande dans demandes-public.html.`);
   return;
 }
 
-// 🧩 Si on est en mode suppression groupée → on ne fait pas la logique normale
+// ðŸ§© Si on est en mode suppression groupÃ©e â†’ on ne fait pas la logique normale
 if (groupMode === "remove" && admin) {
   if (
     el.classList.contains("reserved") ||
@@ -1632,7 +1632,7 @@ if (groupMode === "remove" && admin) {
 
 
 
-    // Sélectionne ou désélectionne le siège pour suppression
+    // SÃ©lectionne ou dÃ©sÃ©lectionne le siÃ¨ge pour suppression
     el.classList.toggle("selected");
 
     if (el.classList.contains("selected")) {
@@ -1641,10 +1641,10 @@ if (groupMode === "remove" && admin) {
       groupChanges = groupChanges.filter(x => x !== id);
     }
   }
-  return; // 🔁 On bloque ici : ne pas exécuter le reste de toggle()
+  return; // ðŸ” On bloque ici : ne pas exÃ©cuter le reste de toggle()
 }
 
-// 🧩 Si on est en mode ajout groupé → même logique (pas de réservation immédiate)
+// ðŸ§© Si on est en mode ajout groupÃ© â†’ mÃªme logique (pas de rÃ©servation immÃ©diate)
 if (groupMode === "add" && admin) {
   if (el.classList.contains("free")) {
     el.classList.toggle("selected");
@@ -1655,13 +1655,13 @@ if (groupMode === "add" && admin) {
       groupChanges = groupChanges.filter(s => s.id !== id);
     }
   }
-  return; // 🟢 On bloque ici aussi
+  return; // ðŸŸ¢ On bloque ici aussi
 }
 
-// 🧩 Sinon comportement normal
+// ðŸ§© Sinon comportement normal
 if (admin && seats[id] && groupMode !== "remove") {
 
-  if (confirm(`🔓 Libérer le siège ${id} ?`)) {
+  if (confirm(`ðŸ”“ LibÃ©rer le siÃ¨ge ${id} ?`)) {
     const seatDataBeforeDelete = seats[id];
     const publicRequestId = getPublicRequestIdFromSeatData(seatDataBeforeDelete);
     const clientName = seatDataBeforeDelete.name;
@@ -1678,12 +1678,12 @@ if (admin && seats[id] && groupMode !== "remove") {
     updateStatsBar();
 
     if (clientEmail) await notifyClientUpdate(clientEmail);
-    alert(`✅ Siège ${id} libéré. Tout est synchronisé.`);
+    alert(`âœ… SiÃ¨ge ${id} libÃ©rÃ©. Tout est synchronisÃ©.`);
   }
   return;
 }
 
-// 🎟️ comportement normal utilisateur
+// ðŸŽŸï¸ comportement normal utilisateur
 if (!seats[id]) {
   if (selected.includes(id)) {
     selected = selected.filter(x => x !== id);
@@ -1701,17 +1701,17 @@ if (!seats[id]) {
 
 /* === Ouvre/ferme la modale === */
 document.getElementById("confirm").onclick = () => {
-  if (!selected.length) return alert("Aucun siège sélectionné !");
+  if (!selected.length) return alert("Aucun siÃ¨ge sÃ©lectionnÃ© !");
   document.getElementById("modal").classList.remove("hidden");
 };
 document.getElementById("close").onclick = () => document.getElementById("modal").classList.add("hidden");
 
-/* === Formatage nom/email/téléphone === */
+/* === Formatage nom/email/tÃ©lÃ©phone === */
 function isValidEmail(email) {
   const value = String(email || "").trim().toLowerCase();
   if (!value) return false;
   if (/\s/.test(value)) return false;
-  if (/[éèêëàâäîïôöùûüç]/i.test(value)) return false;
+  if (/[Ã©Ã¨ÃªÃ«Ã Ã¢Ã¤Ã®Ã¯Ã´Ã¶Ã¹Ã»Ã¼Ã§]/i.test(value)) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 }
 
@@ -1728,7 +1728,7 @@ document.getElementById("email").addEventListener("input", e => {
 });
 document.getElementById("phone").addEventListener("input", e => e.target.value = formatPhone(e.target.value));
 
-/* === 🧮 Calcul automatique total (adultes/enfants) === */
+/* === ðŸ§® Calcul automatique total (adultes/enfants) === */
 window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("reset").style.display = "none";
 
@@ -1739,11 +1739,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const nbA = parseInt(adultInput.value) || 0;
 const nbE = parseInt(childInput.value) || 0;
 const nbB = parseInt(document.getElementById("babyCount").value) || 0;
-const nbG = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // 🎟️ Gratuit
-const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // gratuit ne compte pas en €
+const nbG = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // ðŸŽŸï¸ Gratuit
+const total = nbA * PRICE_ADULT + nbE * PRICE_CHILD; // gratuit ne compte pas en â‚¬
 
 
-    totalDisplay.textContent = `Total : ${total.toFixed(2)} €`;
+    totalDisplay.textContent = `Total : ${total.toFixed(2)} â‚¬`;
   }
 adultInput.addEventListener("input", updateTotal);
 childInput.addEventListener("input", updateTotal);
@@ -1762,10 +1762,10 @@ document.getElementById("save").onclick = async () => {
 const nbAdult = parseInt(document.getElementById("adultCount").value) || 0;
 const nbChild = parseInt(document.getElementById("childCount").value) || 0;
 const nbBaby  = parseInt(document.getElementById("babyCount")?.value || "0") || 0;
-const nbFree  = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // 🎟️ Gratuit
+const nbFree  = parseInt(document.getElementById("freeCount")?.value || "0") || 0; // ðŸŽŸï¸ Gratuit
 
 
-  const totalSeats  = selected.length;                  // ✅ manquait
+  const totalSeats  = selected.length;                  // âœ… manquait
 const totalPeople = nbAdult + nbChild + nbBaby + nbFree;
 
 
@@ -1775,22 +1775,22 @@ const totalPeople = nbAdult + nbChild + nbBaby + nbFree;
   }
 
   if (!isValidEmail(email)) {
-    alert("❌ Adresse email invalide. Vérifie qu’il n’y a pas d’espace, d’accent ou de point manquant.");
+    alert("âŒ Adresse email invalide. VÃ©rifie quâ€™il nâ€™y a pas dâ€™espace, dâ€™accent ou de point manquant.");
     return;
   }
   if (totalPeople !== totalSeats) {
-    alert(`⚠️ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de sièges sélectionnés (${totalSeats}).`);
+    alert(`âš ï¸ Le nombre total de personnes (${totalPeople}) doit correspondre au nombre de siÃ¨ges sÃ©lectionnÃ©s (${totalSeats}).`);
     return;
   }
 
-  // 💶 Moins de 8 ans = gratuit. Utilise les tarifs configurables si présents.
+  // ðŸ’¶ Moins de 8 ans = gratuit. Utilise les tarifs configurables si prÃ©sents.
   const amount = nbAdult * (typeof PRICE_ADULT === "number" ? PRICE_ADULT : 14)
                + nbChild * (typeof PRICE_CHILD === "number" ? PRICE_CHILD : 10);
 
 const isFree = amount === 0;
 
 const reservationId = crypto.randomUUID();
-// 🔗 Lien réservation ↔ participants
+// ðŸ”— Lien rÃ©servation â†” participants
 window.lastReservationId = reservationId;
 
 const user = { 
@@ -1798,8 +1798,8 @@ const user = {
   name,
   email,
   phone,
-  paid: isFree ? true : paid, // ✅ gratuit = payé
-  free: isFree,               // 🆕 flag gratuit
+  paid: isFree ? true : paid, // âœ… gratuit = payÃ©
+  free: isFree,               // ðŸ†• flag gratuit
   nbAdult,
   nbChild,
   nbBaby,
@@ -1808,7 +1808,7 @@ const user = {
 
 
 
-  // Répartition des types par siège
+  // RÃ©partition des types par siÃ¨ge
 let adultRemaining = nbAdult;
 let childRemaining = nbChild;
 let babyRemaining  = nbBaby;
@@ -1829,7 +1829,7 @@ let freeRemaining  = nbFree;
   babyRemaining--;
 } else if (freeRemaining > 0) {
   seatData.type = "gratuit";
-  seatData.paid = true; // ✅ gratuit = considéré payé
+  seatData.paid = true; // âœ… gratuit = considÃ©rÃ© payÃ©
   freeRemaining--;
 } else {
   seatData.type = "autre";
@@ -1841,14 +1841,14 @@ let freeRemaining  = nbFree;
 
   save();
 
-// 📇 Sauvegarde automatique du contact pour les futurs mailings, même après réinitialisation
+// ðŸ“‡ Sauvegarde automatique du contact pour les futurs mailings, mÃªme aprÃ¨s rÃ©initialisation
 try {
-  await saveMailingContact(user.email, user.name, "ISLEA réservation", { phone: user.phone });
+  await saveMailingContact(user.email, user.name, "ISLEA rÃ©servation", { phone: user.phone });
 } catch (err) {
-  console.warn("Contact mailing non sauvegardé", err);
+  console.warn("Contact mailing non sauvegardÃ©", err);
 }
 
-// 📧 Envoi de l’email (autorisé en mode test même en admin)
+// ðŸ“§ Envoi de lâ€™email (autorisÃ© en mode test mÃªme en admin)
 if (!EMAIL_TEST_MODE) {
   await sendEmail(user);
 }
@@ -1860,15 +1860,15 @@ document.getElementById("modal").classList.add("hidden");
 updateStatsBar();
 
 
-  alert(`✅ Réservation confirmée : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) — Total ${amount} €.`);
+  alert(`âœ… RÃ©servation confirmÃ©e : ${nbAdult} adulte(s), ${nbChild} enfant(s), ${nbBaby} (-8 ans) â€” Total ${amount} â‚¬.`);
 };
 
 
 /* === Email + QR === */
 async function sendEmail(user) {
-  alert("📨 sendEmail() appelée");
+  alert("ðŸ“¨ sendEmail() appelÃ©e");
 
-  console.log("📨 Envoi EmailJS vers", user.email);
+  console.log("ðŸ“¨ Envoi EmailJS vers", user.email);
 
   const reservedSeats = Object.entries(seats)
     .filter(([_, v]) => v.email === user.email)
@@ -1891,28 +1891,28 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
 
 
   const html = `
-    <h2>🎭 Confirmation de votre réservation — Théâtre Saint Martin</h2>
+    <h2>ðŸŽ­ Confirmation de votre rÃ©servation â€” ThÃ©Ã¢tre Saint Martin</h2>
     <p>Bonjour <strong>${user.name}</strong>,</p>
-    <p>Merci pour votre réservation.</p>
+    <p>Merci pour votre rÃ©servation.</p>
     <p style="margin-top:10px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
-      📍 Théâtre Saint Martin
+      ðŸ“… <strong>24 janvier 2026 â€“ 20h30</strong><br>
+      ðŸ“ ThÃ©Ã¢tre Saint Martin
     </p>
-    <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
-    <p><strong>💰 Montant total :</strong> ${user.amount.toFixed(2)} €</p>
-    <p><strong>💳 Statut :</strong> ${user.paid ? "✅ Payé" : "❌ Non payé"}</p>
+    <p><strong>ðŸ“ SiÃ¨ges rÃ©servÃ©s :</strong> ${reservedSeats}</p>
+    <p><strong>ðŸ’° Montant total :</strong> ${user.amount.toFixed(2)} â‚¬</p>
+    <p><strong>ðŸ’³ Statut :</strong> ${user.paid ? "âœ… PayÃ©" : "âŒ Non payÃ©"}</p>
     <p>Voici votre QR Code de confirmation :</p>
 <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
 
-    <p>À très bientôt au Théâtre Saint Martin 🎭</p>
+    <p>Ã€ trÃ¨s bientÃ´t au ThÃ©Ã¢tre Saint Martin ðŸŽ­</p>
   `;
 
   try {
   if (EMAIL_TEST_MODE) {
-  console.log("🚫 [MODE TEST] Email non envoyé — aperçu ci-dessous :");
+  console.log("ðŸš« [MODE TEST] Email non envoyÃ© â€” aperÃ§u ci-dessous :");
   console.log("Destinataire :", user.email);
 
-  // 🧩 Affiche la modale de prévisualisation
+  // ðŸ§© Affiche la modale de prÃ©visualisation
   const previewModal = document.getElementById("emailPreviewModal");
   const previewContent = document.getElementById("emailPreviewContent");
   previewContent.innerHTML = html; // injecte le contenu HTML
@@ -1923,27 +1923,27 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
     previewModal.classList.add("hidden");
   };
 
-  alert(`📩 Mode test : aucun envoi, mais aperçu disponible`);
+  alert(`ðŸ“© Mode test : aucun envoi, mais aperÃ§u disponible`);
 } else {
   await sendViaBrevo(
     user.email,
-    "🎭 Confirmation de votre réservation",
+    "ðŸŽ­ Confirmation de votre rÃ©servation",
     html
   );
-  console.log("✅ Email Brevo envoyé à", user.email);
+  console.log("âœ… Email Brevo envoyÃ© Ã ", user.email);
 }
 
 
 } catch (err) {
-  console.error("❌ Erreur EmailJS :", err);
+  console.error("âŒ Erreur EmailJS :", err);
 }
 }
 // ===================================================
-// 🔔 EMAIL DE RAPPEL (billet + QR)
+// ðŸ”” EMAIL DE RAPPEL (billet + QR)
 // ===================================================
 async function sendReminderEmail(user) {
 
-// 🎟️ Si sièges fournis directement (participants), on les utilise
+// ðŸŽŸï¸ Si siÃ¨ges fournis directement (participants), on les utilise
 let reservedSeats = "";
 
 if (Array.isArray(user.seats) && user.seats.length) {
@@ -1965,32 +1965,32 @@ if (Array.isArray(user.seats) && user.seats.length) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
   const html = `
-    <h2>🔔 Rappel : votre spectacle approche — Théâtre Saint Martin</h2>
+    <h2>ðŸ”” Rappel : votre spectacle approche â€” ThÃ©Ã¢tre Saint Martin</h2>
     <p>Bonjour <strong>${user.name}</strong>,</p>
 
 <p>
-Nous vous rappelons votre réservation pour le spectacle à venir
+Nous vous rappelons votre rÃ©servation pour le spectacle Ã  venir
 
 </p>
 
 
-<p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
+<p><strong>ðŸŽŸï¸ SiÃ¨ges rÃ©servÃ©s :</strong> ${reservedSeats}</p>
 
 ${user.isParticipant ? "" : `
-  <p><strong>💰 Montant :</strong> ${user.amount.toFixed(2)} €</p>
-  <p><strong>💳 Statut :</strong> ${user.paid ? "Payé" : "❌ Non payé"}</p>
+  <p><strong>ðŸ’° Montant :</strong> ${user.amount.toFixed(2)} â‚¬</p>
+  <p><strong>ðŸ’³ Statut :</strong> ${user.paid ? "PayÃ©" : "âŒ Non payÃ©"}</p>
 `}
 
 
-    <p>Merci de présenter ce QR Code à l’entrée :</p>
+    <p>Merci de prÃ©senter ce QR Code Ã  lâ€™entrÃ©e :</p>
     <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
 
     <p style="margin-top:10px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
-      📍 Théâtre Saint Martin
+      ðŸ“… <strong>24 janvier 2026 â€“ 20h30</strong><br>
+      ðŸ“ ThÃ©Ã¢tre Saint Martin
     </p>
 
-    <p>À très bientôt 🎭</p>
+    <p>Ã€ trÃ¨s bientÃ´t ðŸŽ­</p>
   `;
 
   if (EMAIL_TEST_MODE) {
@@ -2001,7 +2001,7 @@ ${user.isParticipant ? "" : `
 
 await sendViaBrevo(
   user.email,
-  "🔔 Rappel — Votre réservation (billet + QR)",
+  "ðŸ”” Rappel â€” Votre rÃ©servation (billet + QR)",
   html
 );
 
@@ -2011,17 +2011,17 @@ await sendViaBrevo(
 
 
 async function notifyClientUpdate(email) {
-  // ✅ Si aucun email passé, on tente de le retrouver via le nom du client sélectionné
+  // âœ… Si aucun email passÃ©, on tente de le retrouver via le nom du client sÃ©lectionnÃ©
   if (!email && typeof groupClient !== "undefined" && groupClient) {
     const anySeat = Object.values(seats).find(s => s.name === groupClient);
     if (anySeat && anySeat.email) {
       email = anySeat.email;
-      console.log(`📩 Email récupéré automatiquement pour ${groupClient} → ${email}`);
+      console.log(`ðŸ“© Email rÃ©cupÃ©rÃ© automatiquement pour ${groupClient} â†’ ${email}`);
     }
   }
 
   if (!email) {
-    console.warn(`⚠️ Aucun email trouvé pour "${groupClient || "?"}" (email passé: ${email || "aucun"})`);
+    console.warn(`âš ï¸ Aucun email trouvÃ© pour "${groupClient || "?"}" (email passÃ©: ${email || "aucun"})`);
     return;
   }
 
@@ -2031,7 +2031,7 @@ async function notifyClientUpdate(email) {
     .map(([id, s]) => ({ id, ...s }));
 
   if (!clientSeats.length) {
-    console.warn("❌ Aucun siège trouvé pour ce client.");
+    console.warn("âŒ Aucun siÃ¨ge trouvÃ© pour ce client.");
     return;
   }
 
@@ -2054,30 +2054,30 @@ async function notifyClientUpdate(email) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
   const html = `
-    <h2>🎭 Mise à jour de votre réservation — Théâtre Saint Martin</h2>
+    <h2>ðŸŽ­ Mise Ã  jour de votre rÃ©servation â€” ThÃ©Ã¢tre Saint Martin</h2>
     <p>Bonjour <strong>${client.name}</strong>,</p>
-    <p>Votre réservation a été mise à jour par notre équipe.</p>
+    <p>Votre rÃ©servation a Ã©tÃ© mise Ã  jour par notre Ã©quipe.</p>
 
-    ${added.length ? `<p>🟢 <strong>Sièges ajoutés :</strong> ${added.join(", ")}</p>` : ""}
-    ${removed.length ? `<p>🔴 <strong>Sièges supprimés :</strong> ${removed.join(", ")}</p>` : ""}
+    ${added.length ? `<p>ðŸŸ¢ <strong>SiÃ¨ges ajoutÃ©s :</strong> ${added.join(", ")}</p>` : ""}
+    ${removed.length ? `<p>ðŸ”´ <strong>SiÃ¨ges supprimÃ©s :</strong> ${removed.join(", ")}</p>` : ""}
 
-    <p>📍 <strong>Sièges actuels réservés :</strong> ${allSeats}</p>
-       <p>💳 <strong>Statut :</strong> ${paye ? "✅ Payé" : "❌ Non payé"}</p>
+    <p>ðŸ“ <strong>SiÃ¨ges actuels rÃ©servÃ©s :</strong> ${allSeats}</p>
+       <p>ðŸ’³ <strong>Statut :</strong> ${paye ? "âœ… PayÃ©" : "âŒ Non payÃ©"}</p>
 
-    <p>Voici votre QR Code mis à jour :</p>
+    <p>Voici votre QR Code mis Ã  jour :</p>
     <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
 
-    <p>Merci et à bientôt au théâtre 🎭<br>— L’équipe Saint Martin</p>
+    <p>Merci et Ã  bientÃ´t au thÃ©Ã¢tre ðŸŽ­<br>â€” Lâ€™Ã©quipe Saint Martin</p>
   `;
 
-  console.log("📧 Envoi du mail de mise à jour à", email);
+  console.log("ðŸ“§ Envoi du mail de mise Ã  jour Ã ", email);
 
   try {
   if (EMAIL_TEST_MODE) {
-    console.log("🚫 [MODE TEST] Aucun envoi réel — aperçu ci-dessous :");
+    console.log("ðŸš« [MODE TEST] Aucun envoi rÃ©el â€” aperÃ§u ci-dessous :");
     console.log("Destinataire :", email);
 
-    // 💌 Prévisualisation HTML
+    // ðŸ’Œ PrÃ©visualisation HTML
     const previewModal = document.getElementById("emailPreviewModal");
     const previewContent = document.getElementById("emailPreviewContent");
     previewContent.innerHTML = html;
@@ -2086,18 +2086,18 @@ async function notifyClientUpdate(email) {
     document.getElementById("closeEmailPreview").onclick = () =>
       previewModal.classList.add("hidden");
 
-    alert(`📩 Mode test : aucun email envoyé à ${email}`);
+    alert(`ðŸ“© Mode test : aucun email envoyÃ© Ã  ${email}`);
 } else {
   await sendViaBrevo(
     email,
-    "🎭 Mise à jour de votre réservation",
+    "ðŸŽ­ Mise Ã  jour de votre rÃ©servation",
     html
   );
-  console.log("✅ Email Brevo envoyé à", email);
+  console.log("âœ… Email Brevo envoyÃ© Ã ", email);
 }
 
 } catch (err) {
-  console.error("❌ Erreur d’envoi du mail :", err);
+  console.error("âŒ Erreur dâ€™envoi du mail :", err);
 }
 }
 
@@ -2110,63 +2110,63 @@ adminBtn.onclick = () => {
     const p = prompt("Mot de passe admin :");
     if (p === "admin123") {
       admin = true;
-      alert("✅ Mode admin activé");
+      alert("âœ… Mode admin activÃ©");
       resetBtn.style.display = "inline-block";
       document.getElementById("export").style.display = "inline-block";
       scanBtn.style.display = "none";
       infoBtn.style.display = "none";
       document.body.classList.add("admin");
-      adminBtn.textContent = "🚪 Sortir du mode admin";
+      adminBtn.textContent = "ðŸšª Sortir du mode admin";
       updateTable();
 
-      toggleAdminUI(); // ✅ ajoute cette ligne ici aussi
+      toggleAdminUI(); // âœ… ajoute cette ligne ici aussi
     } else {
-      alert("❌ Mot de passe incorrect.");
+      alert("âŒ Mot de passe incorrect.");
     }
   } else {
     admin = false;
-    alert("👋 Mode admin désactivé");
+    alert("ðŸ‘‹ Mode admin dÃ©sactivÃ©");
     resetBtn.style.display = "none";
     document.getElementById("export").style.display = "none";
     scanBtn.style.display = "inline-block";
     infoBtn.style.display = "inline-block";
     document.body.classList.remove("admin");
-    adminBtn.textContent = "🔐 Admin";
+    adminBtn.textContent = "ðŸ” Admin";
     updateTable();
-    toggleAdminUI(); // ✅ déjà présent ici
+    toggleAdminUI(); // âœ… dÃ©jÃ  prÃ©sent ici
   }
 };
 document.getElementById("portierBtn").onclick = () => {
   const code = prompt("Code portier :");
-  if (code !== "portier123") return alert("❌ Code incorrect");
+  if (code !== "portier123") return alert("âŒ Code incorrect");
 
   portierMode = !portierMode;
   document.body.classList.toggle("portier", portierMode);
 
-  alert(portierMode ? "🚪 Mode portier ACTIVÉ" : "🚪 Mode portier DÉSACTIVÉ");
+  alert(portierMode ? "ðŸšª Mode portier ACTIVÃ‰" : "ðŸšª Mode portier DÃ‰SACTIVÃ‰");
   updateTable();
 };
 
 
 
-/* === Réinitialiser === */
+/* === RÃ©initialiser === */
 resetBtn.onclick = async () => {
   if (!admin) return alert("Activez le mode admin.");
-  if (confirm(`Effacer toutes les réservations ?\n\nAvant d’effacer, les contacts email seront sauvegardés dans l’archive mailing.`)) {
+  if (confirm(`Effacer toutes les rÃ©servations ?\n\nAvant dâ€™effacer, les contacts email seront sauvegardÃ©s dans lâ€™archive mailing.`)) {
     let archivedCount = 0;
 
     try {
-      archivedCount = await archiveCurrentMailingContacts("Archive avant réinitialisation");
+      archivedCount = await archiveCurrentMailingContacts("Archive avant rÃ©initialisation");
     } catch (err) {
-      console.error("❌ Sauvegarde archive mailing impossible", err);
-      if (!confirm("⚠️ Les contacts mailing n’ont pas pu être sauvegardés. Continuer quand même la réinitialisation ?")) return;
+      console.error("âŒ Sauvegarde archive mailing impossible", err);
+      if (!confirm("âš ï¸ Les contacts mailing nâ€™ont pas pu Ãªtre sauvegardÃ©s. Continuer quand mÃªme la rÃ©initialisation ?")) return;
     }
 
     seats = {};
     save();
-	updateStatsBar(); // ✅ ajout ici
-    alert(`✅ Réinitialisation complète.
-📇 ${archivedCount} contact(s) sauvegardé(s) pour le mailing.`);
+	updateStatsBar(); // âœ… ajout ici
+    alert(`âœ… RÃ©initialisation complÃ¨te.
+ðŸ“‡ ${archivedCount} contact(s) sauvegardÃ©(s) pour le mailing.`);
   }
 };
 
@@ -2175,16 +2175,16 @@ document.getElementById("export").onclick = () => {
   const entries = Object.entries(seats)
     .sort(([a], [b]) => a.localeCompare(b, 'fr', { numeric: true }));
   const now = new Date().toLocaleString("fr-FR");
-  let csv = `Export des réservations – Théâtre Saint Martin (${now})\n\n`;
-  csv += "RANGÉE;SIÈGE;NOM;EMAIL;TÉLÉPHONE;ADULTES;ENFANTS;MOINS_DE_X_ANS;TOTAL(€)\n";
+  let csv = `Export des rÃ©servations â€“ ThÃ©Ã¢tre Saint Martin (${now})\n\n`;
+  csv += "RANGÃ‰E;SIÃˆGE;NOM;EMAIL;TÃ‰LÃ‰PHONE;ADULTES;ENFANTS;MOINS_DE_X_ANS;TOTAL(â‚¬)\n";
 
   for (const [k, v] of entries) {
     const [r, s] = k.split("-");
 csv += `${r};${s};${v.name};${v.email};${v.phone};${v.nbAdult||0};${v.nbChild||0};${v.nbBaby||0};${v.amount||0}\n`;
   }
-  csv += `\nTOTAL RÉSERVATIONS;${entries.length}\n`;
+  csv += `\nTOTAL RÃ‰SERVATIONS;${entries.length}\n`;
   // ===============================
-// 📧 Liste des emails uniques
+// ðŸ“§ Liste des emails uniques
 // ===============================
 const emailsSet = new Set();
 
@@ -2207,10 +2207,10 @@ for (const email of emailsSet) {
   a.click();
 };
 
-/* === Liste réservations === */
+/* === Liste rÃ©servations === */
 
 // ===============================
-// 👥 PARTICIPANTS (affichage dans la réservation)
+// ðŸ‘¥ PARTICIPANTS (affichage dans la rÃ©servation)
 // ===============================
 function escapeHTML(str="") {
   return String(str)
@@ -2231,16 +2231,16 @@ async function loadParticipants(reservationId) {
     const list = Object.entries(data);
 
     if (!list.length) {
-      box.innerHTML = `<div style="margin-top:10px;font-size:13px;color:#666;">👥 Aucun participant enregistré.</div>`;
+      box.innerHTML = `<div style="margin-top:10px;font-size:13px;color:#666;">ðŸ‘¥ Aucun participant enregistrÃ©.</div>`;
       return;
     }
 
-    // Tri par nom puis prénom
+    // Tri par nom puis prÃ©nom
     list.sort(([,a],[,b]) => ((a.name || `${a.nom||""} ${a.prenom||""}`).trim()).localeCompare(((b.name || `${b.nom||""} ${b.prenom||""}`).trim()), "fr", { sensitivity:"base" }));
 
     box.innerHTML = `
       <div style="margin-top:12px;padding:10px;border-radius:10px;background:#f6f7fb;border:1px solid #e1e3ee;">
-        <div style="font-weight:700;margin-bottom:8px;">👥 Participants (${list.length})</div>
+        <div style="font-weight:700;margin-bottom:8px;">ðŸ‘¥ Participants (${list.length})</div>
         <button
   class="add-participant-btn"
   data-resid="${reservationId}"
@@ -2254,7 +2254,7 @@ async function loadParticipants(reservationId) {
     font-weight:600;
     margin-bottom:8px;
   ">
-  ➕ Ajouter un participant
+  âž• Ajouter un participant
 </button>
 
         <div style="display:flex;flex-direction:column;gap:8px;">
@@ -2271,21 +2271,21 @@ ${list.map(([pid,p]) => `
   ">
     <div style="font-size:13px;line-height:1.35;">
       <div style="font-weight:700;">${escapeHTML(p.name||"")}</div>
-      <div>📧 ${escapeHTML(p.email||"—")}</div>
-      <div>📱 ${escapeHTML(p.phone||"—")}</div>
+      <div>ðŸ“§ ${escapeHTML(p.email||"â€”")}</div>
+      <div>ðŸ“± ${escapeHTML(p.phone||"â€”")}</div>
     </div>
 
     <div style="display:flex;gap:6px;">
-      <!-- ✏️ Modifier -->
+      <!-- âœï¸ Modifier -->
       <button
         class="edit-participant-btn"
         data-resid="${reservationId}"
         data-pid="${pid}"
         style="background:#ffb300;color:#000;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
-        ✏️
+        âœï¸
       </button>
 
-      <!-- 🖨️ Envoyer billet -->
+      <!-- ðŸ–¨ï¸ Envoyer billet -->
 <button
   class="send-ticket-btn ${p.ticketSent ? "sent" : ""}"
   data-resid="${reservationId}"
@@ -2294,20 +2294,20 @@ ${list.map(([pid,p]) => `
   data-email="${escapeHTML(p.email||"")}"
   data-phone="${escapeHTML(p.phone||"")}"
 >
-  🖨️
+  ðŸ–¨ï¸
 </button>
 
 
 
 
-      <!-- 🗑️ Supprimer -->
+      <!-- ðŸ—‘ï¸ Supprimer -->
       ${admin ? `
       <button
         class="delete-participant-btn"
         data-resid="${reservationId}"
         data-pid="${pid}"
         style="background:#d32f2f;color:white;border:none;border-radius:6px;padding:6px 8px;cursor:pointer;">
-        ❌
+        âŒ
       </button>
       ` : ""}
     </div>
@@ -2318,8 +2318,8 @@ ${list.map(([pid,p]) => `
       </div>
     `;
   } catch (err) {
-    console.error("❌ Erreur chargement participants :", err);
-    box.innerHTML = `<div style="margin-top:10px;color:#d32f2f;font-weight:600;">❌ Impossible de charger les participants.</div>`;
+    console.error("âŒ Erreur chargement participants :", err);
+    box.innerHTML = `<div style="margin-top:10px;color:#d32f2f;font-weight:600;">âŒ Impossible de charger les participants.</div>`;
   }
 }
 window.loadParticipants = loadParticipants;
@@ -2329,7 +2329,7 @@ document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".delete-participant-btn");
   if (!btn) return;
 
-  if (!admin) return alert("❌ Mode admin requis");
+  if (!admin) return alert("âŒ Mode admin requis");
 
   const reservationId = btn.dataset.resid;
   const pid = btn.dataset.pid;
@@ -2340,13 +2340,13 @@ document.addEventListener("click", async (e) => {
   try {
     await set(ref(db, `participants/${reservationId}/${pid}`), null);
     await loadParticipants(reservationId);
-    alert("✅ Participant supprimé");
+    alert("âœ… Participant supprimÃ©");
   } catch (err) {
-    console.error("❌ Erreur suppression participant :", err);
-    alert("❌ Erreur suppression (voir console)");
+    console.error("âŒ Erreur suppression participant :", err);
+    alert("âŒ Erreur suppression (voir console)");
   }
 });
-// ✏️ Modifier participant
+// âœï¸ Modifier participant
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".edit-participant-btn");
   if (!btn) return;
@@ -2363,7 +2363,7 @@ document.addEventListener("click", async (e) => {
   if (!name) return;
 
   const email = prompt("Email :", p.email || "");
-  const phone = prompt("Téléphone :", p.phone || "");
+  const phone = prompt("TÃ©lÃ©phone :", p.phone || "");
 
   await set(ref(db, `participants/${reservationId}/${pid}`), {
     ...p,
@@ -2392,7 +2392,7 @@ document.addEventListener("click", async (e) => {
 
   if (!email) {
     sendingParticipantTicket = false;
-    return alert("❌ Pas d'email pour ce participant");
+    return alert("âŒ Pas d'email pour ce participant");
   }
 
   const clientSeats = Object.entries(seats)
@@ -2402,7 +2402,7 @@ document.addEventListener("click", async (e) => {
 
   if (!clientSeats) {
     sendingParticipantTicket = false;
-    return alert("❌ Aucun siège trouvé");
+    return alert("âŒ Aucun siÃ¨ge trouvÃ©");
   }
 
   const qrData = JSON.stringify({
@@ -2415,32 +2415,32 @@ document.addEventListener("click", async (e) => {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 const mainClientName =
   Object.values(seats).find(s => s.reservationId === reservationId)?.name
-  || "le réservant principal";
+  || "le rÃ©servant principal";
 
   const html = `
-    <h2>🎭 Votre billet nominatif — Théâtre Saint Martin</h2>
+    <h2>ðŸŽ­ Votre billet nominatif â€” ThÃ©Ã¢tre Saint Martin</h2>
 
   <p>
-  Ce billet vous est transmis suite à la réservation effectuée par
+  Ce billet vous est transmis suite Ã  la rÃ©servation effectuÃ©e par
   <strong>${mainClientName}</strong>.
 
           <p style="font-size:14px;color:#555;">
-          Merci de présenter ce billet (imprimé ou sur téléphone) à l’entrée.
+          Merci de prÃ©senter ce billet (imprimÃ© ou sur tÃ©lÃ©phone) Ã  lâ€™entrÃ©e.
         </p>
 </p>
-    <p><strong>🎟️ Sièges :</strong> ${clientSeats}</p>
+    <p><strong>ðŸŽŸï¸ SiÃ¨ges :</strong> ${clientSeats}</p>
     <img src="${qrUrl}" style="margin-top:10px;" />
-    <p>Merci et à très bientôt 🎭</p>
+    <p>Merci et Ã  trÃ¨s bientÃ´t ðŸŽ­</p>
   `;
 
   try {
     await sendViaBrevo(
   email,
-  "🎟️ Votre billet – Théâtre Saint Martin",
+  "ðŸŽŸï¸ Votre billet â€“ ThÃ©Ã¢tre Saint Martin",
   html
 );
 
-// ✅ MARQUE LE BILLET COMME ENVOYÉ
+// âœ… MARQUE LE BILLET COMME ENVOYÃ‰
 const pid = btn.closest("[data-pid]")?.dataset.pid;
 if (pid) {
   await set(
@@ -2449,11 +2449,11 @@ if (pid) {
   );
 }
 
-alert("✅ Billet envoyé à " + email);
-updateTable(); // 🔄 rafraîchit le badge
+alert("âœ… Billet envoyÃ© Ã  " + email);
+updateTable(); // ðŸ”„ rafraÃ®chit le badge
 
   } catch (err) {
-    alert("❌ Erreur envoi billet");
+    alert("âŒ Erreur envoi billet");
   }
 
   sendingParticipantTicket = false;
@@ -2465,9 +2465,9 @@ function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
   const entries = Object.entries(seats || {});
-  if (!entries.length) return container.innerHTML = '<p>Aucune réservation.</p>';
+  if (!entries.length) return container.innerHTML = '<p>Aucune rÃ©servation.</p>';
 
-  // === Regroupement des réservations par client ===
+  // === Regroupement des rÃ©servations par client ===
 const grouped = {};
 
 for (const [id, data] of entries) {
@@ -2485,13 +2485,13 @@ for (const [id, data] of entries) {
   grouped[key].seats.push({
   id,
   paid: !!data.paid,
-  type: data.type || null,   // 👈 essentiel
+  type: data.type || null,   // ðŸ‘ˆ essentiel
 });
 
 
   grouped[key].emails.add(data.email || "N/A");
 
-  // ✅ Si au moins un siège n’est pas payé → la ligne sera rose
+  // âœ… Si au moins un siÃ¨ge nâ€™est pas payÃ© â†’ la ligne sera rose
   if (!data.paid) grouped[key].allPaid = false;
 }
 
@@ -2504,7 +2504,7 @@ for (const [id, data] of entries) {
   for (const [name, info] of sorted) {
     let reservationId = info.reservationId || info.resId || info.reservationID || info.reservation_id || null;
     if (!reservationId) {
-      // ⚠️ anciennes réservations : pas de reservationId stocké
+      // âš ï¸ anciennes rÃ©servations : pas de reservationId stockÃ©
       reservationId = `legacy-${btoa(unescape(encodeURIComponent((info.email||name||"").toString()))).replace(/=+$/,"")}`;
     }
   const div = document.createElement("div");
@@ -2520,7 +2520,7 @@ if (entered >= total && total > 0) {
 header.className = `accordion-header ${
   info.free ? "free-line" : (info.allPaid ? "paid" : "unpaid")
 }`;
-// 🧹 Supprime un éventuel ancien badge participant (évite doublons)
+// ðŸ§¹ Supprime un Ã©ventuel ancien badge participant (Ã©vite doublons)
 const oldBadge = header.querySelector(".participant-badge");
 if (oldBadge) oldBadge.remove();
 
@@ -2537,7 +2537,7 @@ const freeBadge = hasFreeSeat
 
 header.innerHTML = `
 <div>
-  👤 ${name}
+  ðŸ‘¤ ${name}
   ${
     info.free
       ? ""
@@ -2546,7 +2546,7 @@ header.innerHTML = `
          </span>`
   }
   <br>
-🎟️ Entrés : ${localEntered[reservationId] ?? 0} / ${info.seats.length}
+ðŸŽŸï¸ EntrÃ©s : ${localEntered[reservationId] ?? 0} / ${info.seats.length}
 
 
 
@@ -2557,13 +2557,13 @@ header.innerHTML = `
 </div>
 
 <div class="badge-container" style="display:flex;align-items:center;gap:8px;">
-  <span>${info.allPaid ? "💰" : "❌ Partiel / Non payé"}</span>
+  <span>${info.allPaid ? "ðŸ’°" : "âŒ Partiel / Non payÃ©"}</span>
   ${freeBadge}
 </div>
 `;
 
 
-// 🔔 BADGE PARTICIPANTS NON ENVOYÉS (hors admin)
+// ðŸ”” BADGE PARTICIPANTS NON ENVOYÃ‰S (hors admin)
 if (reservationId && !admin) {
   get(ref(db, `participants/${reservationId}`)).then(snap => {
     const participants = snap.val() || {};
@@ -2607,14 +2607,14 @@ header.onclick = () => {
 
   const content = document.createElement("div");
   content.className = "accordion-content";
-  // --- Ajout à faire juste avant content.innerHTML = ...
+  // --- Ajout Ã  faire juste avant content.innerHTML = ...
   const adults = info.seats.filter(s => s.type === "adulte");
 const children = info.seats.filter(s => s.type === "enfant");
 const babies = info.seats.filter(s => s.type === "moins8");
 
 content.innerHTML = `
-  <p><strong>Email :</strong> ${info.email || "—"}</p>
-  <p><strong>Téléphone :</strong> ${info.phone || "—"}</p>
+  <p><strong>Email :</strong> ${info.email || "â€”"}</p>
+  <p><strong>TÃ©lÃ©phone :</strong> ${info.phone || "â€”"}</p>
 
 <button
   class="open-participants-btn"
@@ -2629,7 +2629,7 @@ content.innerHTML = `
     cursor:pointer;
     font-weight:600;
   ">
-  👥 Gérer les participants
+  ðŸ‘¥ GÃ©rer les participants
 </button>
 <button
   class="send-participants-form-btn"
@@ -2645,34 +2645,34 @@ content.innerHTML = `
     cursor:pointer;
     font-weight:600;
   ">
-  📨 Envoyer le formulaire participants
+  ðŸ“¨ Envoyer le formulaire participants
 </button>
 
 <div id="participants-${reservationId}"></div>
 
 
-  <p><strong>🧍 Adultes :</strong> ${adults.length} × ${PRICE_ADULT} € →
+  <p><strong>ðŸ§ Adultes :</strong> ${adults.length} Ã— ${PRICE_ADULT} â‚¬ â†’
     <span style="color:#1565c0;font-weight:600">
-      ${adults.map(s => s.id).join(", ") || "—"}
+      ${adults.map(s => s.id).join(", ") || "â€”"}
     </span>
   </p>
 
-  <p><strong>🧒 Enfants :</strong> ${children.length} × ${PRICE_CHILD} € →
+  <p><strong>ðŸ§’ Enfants :</strong> ${children.length} Ã— ${PRICE_CHILD} â‚¬ â†’
     <span style="color:#0288d1;font-weight:600">
-      ${children.map(s => s.id).join(", ") || "—"}
+      ${children.map(s => s.id).join(", ") || "â€”"}
     </span>
   </p>
 
-  <p><strong>🍼 Moins de 8 ans :</strong> ${babies.length} →
+  <p><strong>ðŸ¼ Moins de 8 ans :</strong> ${babies.length} â†’
     <span style="color:#6a1b9a;font-weight:600">
-      ${babies.map(s => s.id).join(", ") || "—"}
+      ${babies.map(s => s.id).join(", ") || "â€”"}
     </span>
   </p>
 
   <p><strong>Total :</strong> ${(
   (info.seats.filter(s => s.type === "adulte").length * PRICE_ADULT) +
   (info.seats.filter(s => s.type === "enfant").length * PRICE_CHILD)
-).toFixed(2)} €</p>
+).toFixed(2)} â‚¬</p>
 
 `;
 
@@ -2680,12 +2680,12 @@ content.innerHTML += `
   <div class="seat-list" style="margin-top:8px;">
     ${info.seats.map(s => {
       const icon =
-s.type === "moins8" || s.type === "gratuit" ? "🎟️ GRATUIT" :
-s.type === "adulte" ? "🧍" :
-s.type === "enfant" ? "🧒" : "🎟️";
+s.type === "moins8" || s.type === "gratuit" ? "ðŸŽŸï¸ GRATUIT" :
+s.type === "adulte" ? "ðŸ§" :
+s.type === "enfant" ? "ðŸ§’" : "ðŸŽŸï¸";
 
 
-      const paidIcon = s.paid ? "💰" : "❌";
+      const paidIcon = s.paid ? "ðŸ’°" : "âŒ";
 
       return `
         <span class="badge-seat" style="
@@ -2701,7 +2701,7 @@ s.type === "enfant" ? "🧒" : "🎟️";
             title="Supprimer cette place"
             style="background:rgba(255,255,255,.25);color:white;border:1px solid rgba(255,255,255,.7);
                    border-radius:50%;width:20px;height:20px;line-height:16px;padding:0;
-                   font-weight:900;cursor:pointer;font-size:14px;">×</button>` : ""}
+                   font-weight:900;cursor:pointer;font-size:14px;">Ã—</button>` : ""}
         </span>
       `;
     }).join("")}
@@ -2710,23 +2710,23 @@ s.type === "enfant" ? "🧒" : "🎟️";
 
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:6px;">
-  <label>💶 Tout payé 
+  <label>ðŸ’¶ Tout payÃ© 
     <input type="checkbox" class="paid-toggle-client" data-name="${name}" ${info.allPaid ? "checked" : ""}>
   </label>
 
   ${admin ? `
   <div class="group-actions" data-client="${name}" style="display:flex;gap:6px;flex-wrap:wrap;">
-    <button class="group-add-btn" data-name="${name}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">➕ Ajout groupé</button>
-    <button class="group-remove-btn" data-name="${name}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">🗑️ Suppression groupée</button>
-    <button class="group-validate-btn" data-name="${name}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider</button>
+    <button class="group-add-btn" data-name="${name}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">âž• Ajout groupÃ©</button>
+    <button class="group-remove-btn" data-name="${name}" style="background:#d32f2f;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">ðŸ—‘ï¸ Suppression groupÃ©e</button>
+    <button class="group-validate-btn" data-name="${name}" style="display:none;background:#1565c0;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">âœ… Valider</button>
 
-    <!-- 📧 NOUVEAU BOUTON -->
+    <!-- ðŸ“§ NOUVEAU BOUTON -->
     <button
       class="resend-ticket-btn"
       data-name="${name}"
       data-email="${info.email}"
       style="background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
-      📧 Renvoyer le billet
+      ðŸ“§ Renvoyer le billet
     </button>
   </div>
   ` : ""}
@@ -2746,11 +2746,11 @@ controls.innerHTML = `
         data-max="${info.seats.length}">+</button>
 
 <button class="portier-btn portier-minus"
-        data-resid="${reservationId}">−</button>
+        data-resid="${reservationId}">âˆ’</button>
 
 <button class="portier-btn portier-all"
         data-resid="${reservationId}"
-        data-max="${info.seats.length}">✓</button>
+        data-max="${info.seats.length}">âœ“</button>
 `;
 
 
@@ -2761,18 +2761,18 @@ controls.innerHTML = `
 div.append(content);
 
   container.append(div);
-  // 👥 charge la liste des participants si disponible
+  // ðŸ‘¥ charge la liste des participants si disponible
 
 }
 
 
 
-  // === Gestion stable de la case "Tout payé" (sans cumul) ===
-    // === Gestion stable de la case "Tout payé" (sans cumul) ===
+  // === Gestion stable de la case "Tout payÃ©" (sans cumul) ===
+    // === Gestion stable de la case "Tout payÃ©" (sans cumul) ===
     document.querySelectorAll(".paid-toggle-client").forEach(cb => {
       cb.addEventListener("change", async e => {
     if (!admin) {
-      alert("⚠️ Vous devez être en mode admin pour modifier le paiement.");
+      alert("âš ï¸ Vous devez Ãªtre en mode admin pour modifier le paiement.");
       e.target.checked = !e.target.checked;
       return;
     }
@@ -2780,9 +2780,9 @@ div.append(content);
     const clientName = e.target.dataset.name;
     const isPaid = e.target.checked;
 
-    console.log(`💶 Mise à jour du paiement pour ${clientName} → ${isPaid}`);
+    console.log(`ðŸ’¶ Mise Ã  jour du paiement pour ${clientName} â†’ ${isPaid}`);
 
-    // ✅ Met à jour tous les sièges de ce client dans Firebase
+    // âœ… Met Ã  jour tous les siÃ¨ges de ce client dans Firebase
     for (const [id, data] of Object.entries(seats)) {
       if (data.name === clientName) {
         data.paid = isPaid;
@@ -2791,19 +2791,19 @@ await update(ref(db, `seats/${id}`), { paid: isPaid });
       }
     }
 
-    // 🔄 Rafraîchit les affichages
+    // ðŸ”„ RafraÃ®chit les affichages
     render();
     updateTable();
     updateStatsBar();
 
-    // 📧 (Optionnel) Notifie le client
+    // ðŸ“§ (Optionnel) Notifie le client
     const clientSeat = Object.values(seats).find(s => s.name === clientName);
     if (clientSeat?.email) {
       try {
         await notifyClientUpdate(clientSeat.email);
-        console.log(`📨 Email envoyé à ${clientSeat.email}`);
+        console.log(`ðŸ“¨ Email envoyÃ© Ã  ${clientSeat.email}`);
       } catch (err) {
-        console.error("Erreur d’envoi d’e-mail :", err);
+        console.error("Erreur dâ€™envoi dâ€™e-mail :", err);
       }
     }
   });
@@ -2812,13 +2812,13 @@ await update(ref(db, `seats/${id}`), { paid: isPaid });
 
 
 
-}); // ← ferme cb.addEventListener
-};   // ← ferme updateTable()
+}); // â† ferme cb.addEventListener
+};   // â† ferme updateTable()
 window.updateTable = updateTable;
 
 
 // ===================================================
-// 🗑️ Suppression directe d’une place depuis la liste
+// ðŸ—‘ï¸ Suppression directe dâ€™une place depuis la liste
 // ===================================================
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".delete-seat-badge-btn");
@@ -2827,13 +2827,13 @@ document.addEventListener("click", async (e) => {
   e.preventDefault();
   e.stopPropagation();
 
-  if (!admin) return alert("❌ Mode admin requis");
+  if (!admin) return alert("âŒ Mode admin requis");
 
   const seatId = btn.dataset.seat;
   const data = seats[seatId];
 
   if (!data) {
-    alert("Cette place est déjà libre.");
+    alert("Cette place est dÃ©jÃ  libre.");
     render();
     updateTable();
     updateStatsBar();
@@ -2844,7 +2844,7 @@ document.addEventListener("click", async (e) => {
   const clientName = data.name || btn.dataset.client || "";
   const clientEmail = data.email || "";
 
-  if (!confirm(`Supprimer la place ${seatId} de la réservation de ${clientName || "ce client"} ?`)) return;
+  if (!confirm(`Supprimer la place ${seatId} de la rÃ©servation de ${clientName || "ce client"} ?`)) return;
 
   delete seats[seatId];
 
@@ -2861,11 +2861,11 @@ document.addEventListener("click", async (e) => {
     if (sendMail) await notifyClientUpdate(clientEmail);
   }
 
-  alert(`✅ Place ${seatId} supprimée. Tout est synchronisé.`);
+  alert(`âœ… Place ${seatId} supprimÃ©e. Tout est synchronisÃ©.`);
 });
 
 // ===================================================
-// 🎟️ Génération HTML du billet (client principal)
+// ðŸŽŸï¸ GÃ©nÃ©ration HTML du billet (client principal)
 // ===================================================
 function generateBilletHTML(user) {
   const reservedSeats = Object.entries(seats)
@@ -2883,36 +2883,36 @@ function generateBilletHTML(user) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`;
 
   return `
-    <h2>🎭 Votre billet — Théâtre Saint Martin</h2>
+    <h2>ðŸŽ­ Votre billet â€” ThÃ©Ã¢tre Saint Martin</h2>
 
     <p>
-      Merci de votre réservation <strong>${user.name}</strong>,<br>
-      Voici votre billet à présenter à l’entrée du spectacle,
-      soit <strong>imprimé</strong>, soit sur <strong>votre téléphone</strong>.
+      Merci de votre rÃ©servation <strong>${user.name}</strong>,<br>
+      Voici votre billet Ã  prÃ©senter Ã  lâ€™entrÃ©e du spectacle,
+      soit <strong>imprimÃ©</strong>, soit sur <strong>votre tÃ©lÃ©phone</strong>.
     </p>
 
-    <p><strong>🎟️ Sièges réservés :</strong> ${reservedSeats}</p>
+    <p><strong>ðŸŽŸï¸ SiÃ¨ges rÃ©servÃ©s :</strong> ${reservedSeats}</p>
 
     <img src="${qrUrl}" alt="QR Code" style="margin-top:12px;" />
 
     <p style="margin-top:12px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
-      📍 Théâtre Saint Martin
+      ðŸ“… <strong>24 janvier 2026 â€“ 20h30</strong><br>
+      ðŸ“ ThÃ©Ã¢tre Saint Martin
     </p>
 
-    <p>À très bientôt 🎭</p>
+    <p>Ã€ trÃ¨s bientÃ´t ðŸŽ­</p>
   `;
 }
 
 // ===================================================
-// 📧 BOUTON ADMIN : RENVOYER LE BILLET AU CLIENT
+// ðŸ“§ BOUTON ADMIN : RENVOYER LE BILLET AU CLIENT
 // ===================================================
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".resend-ticket-btn");
   if (!btn) return;
 
   if (!admin) {
-    alert("❌ Mode admin requis");
+    alert("âŒ Mode admin requis");
     return;
   }
 
@@ -2920,16 +2920,16 @@ document.addEventListener("click", async (e) => {
   const name = btn.dataset.name;
 
   if (!email) {
-    alert("❌ Aucun email pour ce client");
+    alert("âŒ Aucun email pour ce client");
     return;
   }
 
-  // 🔍 Retrouve tous les sièges du client
+  // ðŸ” Retrouve tous les siÃ¨ges du client
   const clientSeats = Object.entries(seats)
     .filter(([_, s]) => s.email === email);
 
   if (!clientSeats.length) {
-    alert("❌ Aucune réservation trouvée");
+    alert("âŒ Aucune rÃ©servation trouvÃ©e");
     return;
   }
 
@@ -2941,30 +2941,30 @@ document.addEventListener("click", async (e) => {
     amount: clientSeats[0][1].amount || 0
   };
 
-  if (!confirm(`📧 Renvoyer le billet à ${email} ?`)) return;
+  if (!confirm(`ðŸ“§ Renvoyer le billet Ã  ${email} ?`)) return;
 
 const html = generateBilletHTML(user);
 
 await sendViaBrevo(
   user.email,
-  "🎟️ Votre billet – Théâtre Saint-Martin (Salle)",
+  "ðŸŽŸï¸ Votre billet â€“ ThÃ©Ã¢tre Saint-Martin (Salle)",
   html
 );
 
 
 
-  alert("✅ Billet renvoyé avec succès");
+  alert("âœ… Billet renvoyÃ© avec succÃ¨s");
 });
 
 
-// === Ajouter des sièges manuellement (mode admin) ===
+// === Ajouter des siÃ¨ges manuellement (mode admin) ===
 document.querySelectorAll(".add-seat-btn").forEach(btn => {
 btn.addEventListener("click", async () => {
 
-    if (!admin) return alert("⚠️ Activez le mode admin.");
+    if (!admin) return alert("âš ï¸ Activez le mode admin.");
     const clientName = btn.dataset.name;
     const clientSeat = Object.entries(seats).find(([_, d]) => d.name === clientName);
-    if (!clientSeat) return alert("❌ Client introuvable.");
+    if (!clientSeat) return alert("âŒ Client introuvable.");
 
     const modal = document.getElementById("addSeatModal");
     const map = document.getElementById("miniSeatMap");
@@ -2982,9 +2982,9 @@ btn.addEventListener("click", async () => {
     adultInput.value = 0;
     childInput.value = 0;
     babyInput.value = 0;
-    totalDisplay.textContent = "Total : 0 €";
+    totalDisplay.textContent = "Total : 0 â‚¬";
 
-    // 🎨 Affichage des sièges libres (mini version)
+    // ðŸŽ¨ Affichage des siÃ¨ges libres (mini version)
     const allSeats = Array.from(document.querySelectorAll(".seat.free"));
     allSeats.forEach(el => {
       const id = el.dataset.id;
@@ -3005,12 +3005,12 @@ btn.addEventListener("click", async () => {
       map.appendChild(seatBtn);
     });
 
-    // 🧮 Recalcul du total
+    // ðŸ§® Recalcul du total
     function updateTotal() {
       const a = parseInt(adultInput.value) || 0;
       const c = parseInt(childInput.value) || 0;
       const b = parseInt(babyInput.value) || 0;
-      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} €`; // 👶 Moins de 8 ans gratuit
+      totalDisplay.textContent = `Total : ${(a * PRICE_ADULT + c * PRICE_CHILD).toFixed(2)} â‚¬`; // ðŸ‘¶ Moins de 8 ans gratuit
     }
     adultInput.oninput = childInput.oninput = babyInput.oninput = updateTotal;
 
@@ -3026,13 +3026,13 @@ btn.addEventListener("click", async () => {
   const nbC = parseInt(childInput.value) || 0;
   const nbB = parseInt(babyInput.value) || 0;
   const totalPeople = nbA + nbC + nbB;
-  const totalAdd = nbA * PRICE_ADULT + nbC * PRICE_CHILD; // 👶 moins de 8 ans gratuit
+  const totalAdd = nbA * PRICE_ADULT + nbC * PRICE_CHILD; // ðŸ‘¶ moins de 8 ans gratuit
 
-  if (!allChosen.length) return alert("⚠️ Aucun siège sélectionné.");
+  if (!allChosen.length) return alert("âš ï¸ Aucun siÃ¨ge sÃ©lectionnÃ©.");
   if (totalPeople !== allChosen.length)
-    return alert(`⚠️ ${totalPeople} personne(s) pour ${allChosen.length} siège(s).`);
+    return alert(`âš ï¸ ${totalPeople} personne(s) pour ${allChosen.length} siÃ¨ge(s).`);
 
-  // 🔍 Récupère les anciens totaux du client
+  // ðŸ” RÃ©cupÃ¨re les anciens totaux du client
   let oldA = 0, oldC = 0, oldB = 0, oldTotal = 0;
   for (const [sid, data] of Object.entries(seats)) {
     if (data.name === clientName) {
@@ -3049,25 +3049,25 @@ btn.addEventListener("click", async () => {
   const newB = oldB + nbB;
   const newTotal = oldTotal + totalAdd;
 
-  // 🪑 Ajout des nouveaux sièges
+  // ðŸª‘ Ajout des nouveaux siÃ¨ges
   let added = 0;
   for (let id of allChosen) {
 
-    // ✅ Correction : normalise les IDs pour les strapontins ("S15", "S16" → "A-S15", etc.)
+    // âœ… Correction : normalise les IDs pour les strapontins ("S15", "S16" â†’ "A-S15", etc.)
     if (/^S\d+$/i.test(id)) {
-      id = `A-${id}`; // 🟡 tu peux changer la lettre de rangée ici si besoin
+      id = `A-${id}`; // ðŸŸ¡ tu peux changer la lettre de rangÃ©e ici si besoin
     }
 
     const seatEl = document.querySelector(`.seat[data-id="${id}"]`);
-    console.log("Ajout manuel :", id, "→", seatEl ? "OK" : "non trouvé");
+    console.log("Ajout manuel :", id, "â†’", seatEl ? "OK" : "non trouvÃ©");
 
     if (!seatEl) {
-      alert(`⚠️ Le siège ${id} n'existe pas dans le plan.`);
+      alert(`âš ï¸ Le siÃ¨ge ${id} n'existe pas dans le plan.`);
       continue;
     }
 
     if (!seatEl.classList.contains("free")) {
-      alert(`⚠️ Le siège ${id} est déjà réservé.`);
+      alert(`âš ï¸ Le siÃ¨ge ${id} est dÃ©jÃ  rÃ©servÃ©.`);
       continue;
     }
 
@@ -3082,13 +3082,13 @@ btn.addEventListener("click", async () => {
   nbChild: baseData.nbChild,
   nbBaby: baseData.nbBaby,
   amount: baseData.amount,
-  type: seatType, // ✅ maintenant le bon type est gardé
+  type: seatType, // âœ… maintenant le bon type est gardÃ©
 };
 
     added++;
   }
 
-  // ✅ Met à jour TOUS les sièges du client avec les nouveaux totaux
+  // âœ… Met Ã  jour TOUS les siÃ¨ges du client avec les nouveaux totaux
   for (const [sid, data] of Object.entries(seats)) {
     if (data.name === clientName) {
       data.nbAdult = newA;
@@ -3100,11 +3100,11 @@ btn.addEventListener("click", async () => {
 
   if (added > 0) {
     save();
-    render();       // 🟢 met à jour visuellement le plan
-    updateTable();  // 🟢 met à jour la liste de réservations
-    updateStatsBar(); // 🧮 met à jour la barre de stats
+    render();       // ðŸŸ¢ met Ã  jour visuellement le plan
+    updateTable();  // ðŸŸ¢ met Ã  jour la liste de rÃ©servations
+    updateStatsBar(); // ðŸ§® met Ã  jour la barre de stats
 
-    // ✨ Ouvre automatiquement l’accordéon du client ajouté
+    // âœ¨ Ouvre automatiquement lâ€™accordÃ©on du client ajoutÃ©
     setTimeout(() => {
       const accHeader = [...document.querySelectorAll('.accordion-header')]
         .find(h => h.textContent.includes(clientName));
@@ -3116,14 +3116,14 @@ btn.addEventListener("click", async () => {
         setTimeout(() => accHeader.style.background = "", 1200);
       }
     }, 300);
-// 📧 Envoi automatique d'un e-mail de mise à jour avec QR code actualisé
+// ðŸ“§ Envoi automatique d'un e-mail de mise Ã  jour avec QR code actualisÃ©
 const clientData = Object.values(seats).find(s => s.name === clientName);
 if (clientData) {
-  await notifyClientUpdate(clientData.email); // ✅ on envoie la version “mise à jour complète”
-  console.log(`📨 Email de mise à jour envoyé à ${clientData.email} après ajout de siège.`);
+  await notifyClientUpdate(clientData.email); // âœ… on envoie la version â€œmise Ã  jour complÃ¨teâ€
+  console.log(`ðŸ“¨ Email de mise Ã  jour envoyÃ© Ã  ${clientData.email} aprÃ¨s ajout de siÃ¨ge.`);
 }
 
-    alert(`✅ ${added} siège(s) ajouté(s) à ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
+    alert(`âœ… ${added} siÃ¨ge(s) ajoutÃ©(s) Ã  ${clientName} (${newA} adultes, ${newC} enfants, ${newB} -8 ans).`);
   }
 
   modal.classList.add("hidden");
@@ -3136,46 +3136,46 @@ if (clientData) {
 
 
 
-// === ⚙️ Gestion des ajouts/suppressions groupés (version finale propre) ===
+// === âš™ï¸ Gestion des ajouts/suppressions groupÃ©s (version finale propre) ===
 let groupMode = null;
 let groupClient = null;
 let groupChanges = [];
 
-// === ⚙️ Gestion des ajouts/suppressions groupés ===
+// === âš™ï¸ Gestion des ajouts/suppressions groupÃ©s ===
 document.addEventListener("click", async (e) => {
   const addBtn = e.target.closest(".group-add-btn");
   const removeBtn = e.target.closest(".group-remove-btn");
   const validateBtn = e.target.closest(".group-validate-btn");
 
-  // ➕ AJOUT GROUPÉ
+  // âž• AJOUT GROUPÃ‰
   if (addBtn) {
     groupMode = "add";
     groupClient = addBtn.dataset.name;
     groupChanges = [];
     addBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
-    alert(`🟢 Mode AJOUT groupé activé pour ${groupClient}. Sélectionnez les sièges libres à ajouter.`);
+    alert(`ðŸŸ¢ Mode AJOUT groupÃ© activÃ© pour ${groupClient}. SÃ©lectionnez les siÃ¨ges libres Ã  ajouter.`);
     return;
   }
 
-  // 🗑️ SUPPRESSION GROUPÉE
+  // ðŸ—‘ï¸ SUPPRESSION GROUPÃ‰E
   if (removeBtn) {
     groupMode = "remove";
     groupClient = removeBtn.dataset.name;
     groupChanges = [];
     removeBtn.parentElement.querySelector(".group-validate-btn").style.display = "inline-block";
-    alert(`🔴 Mode SUPPRESSION groupée activé pour ${groupClient}. Cliquez sur les sièges réservés à supprimer.`);
+    alert(`ðŸ”´ Mode SUPPRESSION groupÃ©e activÃ© pour ${groupClient}. Cliquez sur les siÃ¨ges rÃ©servÃ©s Ã  supprimer.`);
     return;
   }
 
-  // ✅ VALIDATION
+  // âœ… VALIDATION
   if (validateBtn) {
     if (!groupClient || !groupChanges.length) {
-      alert("Aucune modification détectée.");
+      alert("Aucune modification dÃ©tectÃ©e.");
       return;
     }
 
-    const action = groupMode === "add" ? "ajoutés" : "supprimés";
-    if (!confirm(`Confirmer ${groupChanges.length} siège(s) ${action} pour ${groupClient} ?`)) return;
+    const action = groupMode === "add" ? "ajoutÃ©s" : "supprimÃ©s";
+    if (!confirm(`Confirmer ${groupChanges.length} siÃ¨ge(s) ${action} pour ${groupClient} ?`)) return;
 
     // --- SUPPRESSION
 if (groupMode === "remove") {
@@ -3200,7 +3200,7 @@ if (groupMode === "remove") {
     await syncPublicRequestAfterSeatChanges(requestId);
   }
 
-  // ✅ Enregistre les changements et rafraîchit l’affichage
+  // âœ… Enregistre les changements et rafraÃ®chit lâ€™affichage
   save();
   render();
   updateTable();
@@ -3218,7 +3218,7 @@ if (groupMode === "remove") {
     if (groupMode === "add") {
       const baseData = Object.values(seats).find(s => s.name === groupClient);
       if (!baseData) {
-        alert(`❌ Impossible d’ajouter : aucune donnée trouvée pour ${groupClient}`);
+        alert(`âŒ Impossible dâ€™ajouter : aucune donnÃ©e trouvÃ©e pour ${groupClient}`);
       } else {
         let addAdult = 0, addChild = 0, addBaby = 0;
 
@@ -3276,22 +3276,22 @@ else if (seatType === "moins8" || seatType === "gratuit") addBaby++;
           if (sendMail) await notifyClientUpdate(clientData.email);
         }
 
-        alert(`✅ Ajout terminé : ${addAdult} adulte(s), ${addChild} enfant(s), ${addBaby} -8 ans`);
+        alert(`âœ… Ajout terminÃ© : ${addAdult} adulte(s), ${addChild} enfant(s), ${addBaby} -8 ans`);
       }
     }
 
     // --- FIN ---
-    alert(`✅ ${groupChanges.length} siège(s) ${groupMode === "add" ? "ajouté(s)" : "supprimé(s)"} pour ${groupClient}.`);
+    alert(`âœ… ${groupChanges.length} siÃ¨ge(s) ${groupMode === "add" ? "ajoutÃ©(s)" : "supprimÃ©(s)"} pour ${groupClient}.`);
 
     groupMode = null;
     groupClient = null;
     groupChanges = [];
     document.querySelectorAll(".group-validate-btn").forEach(b => (b.style.display = "none"));
   }
-}); // ✅ plus aucune erreur ici
+}); // âœ… plus aucune erreur ici
 
 
-// === Clic sur un siège pendant un mode groupé ===
+// === Clic sur un siÃ¨ge pendant un mode groupÃ© ===
 hall.addEventListener("click", (e) => {
   const seatEl = e.target.closest(".seat");
   if (!seatEl || !groupMode || !groupClient) return;
@@ -3389,13 +3389,13 @@ wrapper.addEventListener("touchend", e => {
 });
 
 
-/* === 💶 Gestion des tarifs personnalisables === */
+/* === ðŸ’¶ Gestion des tarifs personnalisables === */
 const editPricesBtn = document.getElementById("editPrices");
 const priceModal = document.getElementById("priceModal");
 const priceAdultInput = document.getElementById("priceAdult");
 const priceChildInput = document.getElementById("priceChild");
 
-// === Valeurs par défaut ou chargées du localStorage ===
+// === Valeurs par dÃ©faut ou chargÃ©es du localStorage ===
 
 
 /* === Affiche les tarifs actuels dans les labels === */
@@ -3430,7 +3430,7 @@ document.getElementById("savePrices").onclick = async () => {
   const newAdult = parseFloat(priceAdultInput.value);
   const newChild = parseFloat(priceChildInput.value);
   if (isNaN(newAdult) || isNaN(newChild)) {
-    alert("⚠️ Les tarifs doivent être des nombres valides.");
+    alert("âš ï¸ Les tarifs doivent Ãªtre des nombres valides.");
     return;
   }
 
@@ -3450,8 +3450,8 @@ document.getElementById("savePrices").onclick = async () => {
       updatedAt: new Date().toISOString()
     });
   } catch (err) {
-    console.error("❌ Impossible de sauvegarder les tarifs partagés", err);
-    alert("❌ Les tarifs ont été changés ici, mais pas sauvegardés pour la page publique. Vérifie les règles Firebase.");
+    console.error("âŒ Impossible de sauvegarder les tarifs partagÃ©s", err);
+    alert("âŒ Les tarifs ont Ã©tÃ© changÃ©s ici, mais pas sauvegardÃ©s pour la page publique. VÃ©rifie les rÃ¨gles Firebase.");
   }
 
   updatePriceLabels();
@@ -3460,9 +3460,9 @@ document.getElementById("savePrices").onclick = async () => {
 
   const msg = document.getElementById("priceMessage");
   if (msg) {
-    msg.textContent = `✔️ Tarifs mis à jour :
-    Adulte : ${oldAdult.toFixed(2)} € → ${PRICE_ADULT.toFixed(2)} € |
-    Enfant : ${oldChild.toFixed(2)} € → ${PRICE_CHILD.toFixed(2)} €`;
+    msg.textContent = `âœ”ï¸ Tarifs mis Ã  jour :
+    Adulte : ${oldAdult.toFixed(2)} â‚¬ â†’ ${PRICE_ADULT.toFixed(2)} â‚¬ |
+    Enfant : ${oldChild.toFixed(2)} â‚¬ â†’ ${PRICE_CHILD.toFixed(2)} â‚¬`;
     msg.style.display = "block";
     msg.style.opacity = 1;
 
@@ -3477,27 +3477,27 @@ document.getElementById("savePrices").onclick = async () => {
   }
 };
 
-// === 💌 Bouton de test Email (avec sauvegarde persistante) ===
+// === ðŸ’Œ Bouton de test Email (avec sauvegarde persistante) ===
 const emailTestBtn = document.getElementById("toggleEmailTest");
 
-// 🔄 Charge la préférence sauvegardée dans le navigateur
-// Désactivé par défaut, activé uniquement si "true" est enregistré
+// ðŸ”„ Charge la prÃ©fÃ©rence sauvegardÃ©e dans le navigateur
+// DÃ©sactivÃ© par dÃ©faut, activÃ© uniquement si "true" est enregistrÃ©
 
 
 
-// ⚙️ Fonction pour mettre à jour l’apparence du bouton
+// âš™ï¸ Fonction pour mettre Ã  jour lâ€™apparence du bouton
 function updateEmailTestButton() {
   const banner = document.getElementById("emailModeBanner");
 
-  // Met à jour le texte et la couleur du bouton admin
+  // Met Ã  jour le texte et la couleur du bouton admin
   emailTestBtn.textContent = EMAIL_TEST_MODE
-    ? "✉️ Mode email : TEST"
-    : "✉️ Mode email : RÉEL";
+    ? "âœ‰ï¸ Mode email : TEST"
+    : "âœ‰ï¸ Mode email : RÃ‰EL";
   emailTestBtn.style.background = EMAIL_TEST_MODE ? "#607d8b" : "#2e7d32";
 
-  // 💡 Affiche le bandeau uniquement quand le mode TEST est actif
+  // ðŸ’¡ Affiche le bandeau uniquement quand le mode TEST est actif
   if (EMAIL_TEST_MODE) {
-    banner.textContent = "✉️ Mode email : TEST (aucun envoi)";
+    banner.textContent = "âœ‰ï¸ Mode email : TEST (aucun envoi)";
     banner.style.background = "#607d8b";
     banner.style.display = "block";
   } else {
@@ -3507,23 +3507,23 @@ function updateEmailTestButton() {
 
 
 
-// 🧩 Clique sur le bouton pour basculer le mode
+// ðŸ§© Clique sur le bouton pour basculer le mode
 emailTestBtn.onclick = () => {
   EMAIL_TEST_MODE = !EMAIL_TEST_MODE;
 
-  // 💾 Sauvegarde la préférence dans localStorage
+  // ðŸ’¾ Sauvegarde la prÃ©fÃ©rence dans localStorage
   localStorage.setItem("EMAIL_TEST_MODE", EMAIL_TEST_MODE);
 
-  // 🔄 Met à jour le bouton
+  // ðŸ”„ Met Ã  jour le bouton
   updateEmailTestButton();
 
 alert(
-  `🔧 Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÉEL (Brevo actif)"}`
+  `ðŸ”§ Mode email ${EMAIL_TEST_MODE ? "TEST (aucun envoi)" : "RÃ‰EL (Brevo actif)"}`
 );
 
 };
 
-// ➕ Affiche le bouton seulement en mode admin
+// âž• Affiche le bouton seulement en mode admin
 function toggleAdminUI() {
   const isAdmin = document.body.classList.contains("admin");
 
@@ -3551,13 +3551,13 @@ function toggleAdminUI() {
 }
 
 
-// 🔹 Initialisation de l’interface
+// ðŸ”¹ Initialisation de lâ€™interface
 editPricesBtn.onclick = openPriceModal;
 updatePriceLabels();
 
 
 // ===================================================
-// 📨 DEMANDES PUBLIQUES DIRECTEMENT DANS LA SALLE
+// ðŸ“¨ DEMANDES PUBLIQUES DIRECTEMENT DANS LA SALLE
 // ===================================================
 function getPublicRequestArray() {
   return Object.entries(publicRequests || {})
@@ -3574,7 +3574,7 @@ function isPublicRequestExpired(r) {
 }
 
 function formatPublicRequestDate(iso) {
-  if (!iso) return "—";
+  if (!iso) return "â€”";
   try { return new Date(iso).toLocaleString("fr-FR"); }
   catch { return iso; }
 }
@@ -3590,7 +3590,7 @@ function renderPublicRequestsPanel() {
   const items = getPublicRequestArray();
   const newCount = items.filter(r => (r.status || "nouvelle") === "nouvelle").length;
   const expiredCount = items.filter(isPublicRequestExpired).length;
-  summary.textContent = `Total : ${items.length} — Nouvelles : ${newCount} — Expirées : ${expiredCount}`;
+  summary.textContent = `Total : ${items.length} â€” Nouvelles : ${newCount} â€” ExpirÃ©es : ${expiredCount}`;
 
   if (!items.length) {
     list.innerHTML = `<p style="margin:0;color:#666;">Aucune demande publique en attente.</p>`;
@@ -3603,53 +3603,99 @@ function renderPublicRequestsPanel() {
     const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== r.id);
     const missingHold = seatsList.filter(seatId => !publicHolds[seatId] || publicHolds[seatId].requestId !== r.id);
     const expired = isPublicRequestExpired(r);
+    const adults = Number(r.adultCount || 0);
+    const children = Number(r.childCount || 0);
+    const babies = Number(r.babyCount || 0);
+    const amount = Number(r.amount || 0).toFixed(2);
 
     return `
-      <div class="public-request-card" style="
-        border-left:7px solid ${expired ? "#6a1b9a" : "#cf683d"};
-        background:#fffaf4;
-        border-radius:12px;
-        padding:12px;
-        box-shadow:0 1px 4px rgba(0,0,0,.08);
+      <div class="accordion open public-request-card" style="
+        background:#fff;
+        border-radius:8px;
+        margin:10px 0;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        overflow:hidden;
+        border-left:6px solid #ff9800;
       ">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div class="accordion-header" style="
+          background:#ffe0b2;
+          color:#212121;
+          padding:10px 14px;
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          font-weight:600;
+          cursor:default;
+        ">
           <div>
-            <strong style="font-size:17px;">👤 ${escapeHTML(r.name || "Sans nom")}</strong>
-            <div style="font-size:13px;color:#666;margin-top:3px;">
-              Référence : ${escapeHTML(r.id)}<br>
-              ${formatPublicRequestDate(r.createdAt)} — Statut : <strong>${escapeHTML(status)}</strong>
-              ${expired ? ` — <span style="color:#c62828;font-weight:800;">blocage expiré</span>` : ""}
-            </div>
+            ðŸ“¨ ${escapeHTML(r.name || "Sans nom")}
+            <br><span style="font-weight:700;color:#d84315;">(${Number(r.totalPeople || seatsList.length || 0)} places demandÃ©es)</span>
           </div>
-          <div style="font-weight:800;">${Number(r.totalPeople || seatsList.length || 0)} place(s)</div>
+          <div style="font-weight:700;color:#4a2416;">
+            â³ Demande publique ${expired ? "â€” expirÃ©e" : ""}
+          </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📧 <strong>Email</strong><br>${escapeHTML(r.email || "—")}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">📱 <strong>Téléphone</strong><br>${escapeHTML(r.phone || "—")}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">👥 <strong>Détail</strong><br>Adultes : ${r.adultCount || 0}<br>9-14 ans : ${r.childCount || 0}<br>-8 ans : ${r.babyCount || 0}</div>
-          <div style="background:#f7f2e8;border-radius:9px;padding:8px;font-size:13px;">💰 <strong>Montant</strong><br>${Number(r.amount || 0).toFixed(2)} €</div>
-        </div>
+        <div class="accordion-content" style="
+          display:block;
+          background:#fff;
+          padding:12px 14px;
+          border-top:1px solid #eee;
+          text-align:center;
+        ">
+          <p><strong>Email :</strong> ${escapeHTML(r.email || "â€”")}</p>
+          <p><strong>TÃ©lÃ©phone :</strong> ${escapeHTML(r.phone || "â€”")}</p>
 
-        <div style="margin-top:10px;background:#fff1d0;border:1px solid #e0b471;border-radius:10px;padding:9px;font-weight:800;color:#4a2416;">
-          🎟️ Places demandées : ${seatsList.map(escapeHTML).join(", ") || "—"}
-          ${taken.length ? `<br><span style="color:#c62828;">Déjà réservées ailleurs : ${taken.map(escapeHTML).join(", ")}</span>` : ""}
-          ${missingHold.length && status === "nouvelle" ? `<br><span style="color:#c62828;">Blocage absent ou expiré : ${missingHold.map(escapeHTML).join(", ")}</span>` : ""}
-        </div>
+          <p><strong>ðŸ§ Adultes :</strong> ${adults} Ã— ${PRICE_ADULT} â‚¬ â†’
+            <span style="color:#1565c0;font-weight:600">
+              ${seatsList.slice(0, adults).map(escapeHTML).join(", ") || "â€”"}
+            </span>
+          </p>
 
-        ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:10px;padding:9px;white-space:pre-wrap;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+          <p><strong>ðŸ§’ Enfants :</strong> ${children} Ã— ${PRICE_CHILD} â‚¬ â†’
+            <span style="color:#0288d1;font-weight:600">
+              ${seatsList.slice(adults, adults + children).map(escapeHTML).join(", ") || "â€”"}
+            </span>
+          </p>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-          <button type="button" class="public-mail-btn" data-email="${escapeHTML(r.email || "")}" style="background:#0277bd;">Écrire</button>
-          <button type="button" class="public-call-btn" data-phone="${escapeHTML(String(r.phone || "").replace(/\D/g, ""))}" style="background:#cf683d;">Appeler</button>
-          <button type="button" class="public-contact-btn" data-id="${escapeHTML(r.id)}" style="background:#607d8b;">Contactée</button>
-          <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">✅ Valider + envoyer confirmation</button>
-          <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libérer</button>
-          <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+          <p><strong>ðŸ¼ Moins de 8 ans :</strong> ${babies} â†’
+            <span style="color:#6a1b9a;font-weight:600">
+              ${seatsList.slice(adults + children, adults + children + babies).map(escapeHTML).join(", ") || "â€”"}
+            </span>
+          </p>
+
+          <p><strong>Total :</strong> ${amount} â‚¬</p>
+
+          <div class="seat-list" style="margin-top:8px;justify-content:center;">
+            ${seatsList.map((seatId, index) => {
+              const icon = index < adults ? "ðŸ§" : index < adults + children ? "ðŸ§’" : "ðŸŽŸï¸ GRATUIT";
+              return `
+                <span class="badge-seat" style="
+                  background:#ff9800;
+                  color:white;
+                  border-radius:6px;
+                  padding:4px 8px;
+                  font-size:0.85rem;
+                  font-weight:700;
+                ">${icon} ${escapeHTML(seatId)}</span>
+              `;
+            }).join("")}
+          </div>
+
+          ${taken.length ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">DÃ©jÃ  rÃ©servÃ©es ailleurs : ${taken.map(escapeHTML).join(", ")}</p>` : ""}
+          ${missingHold.length && status === "nouvelle" ? `<p style="color:#c62828;font-weight:800;margin-top:8px;">Blocage absent ou expirÃ© : ${missingHold.map(escapeHTML).join(", ")}</p>` : ""}
+          ${r.message ? `<div style="margin-top:10px;background:#f8f8f8;border-radius:8px;padding:8px;white-space:pre-wrap;text-align:left;"><strong>Message :</strong><br>${escapeHTML(r.message)}</div>` : ""}
+
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <button type="button" class="public-confirm-btn" data-id="${escapeHTML(r.id)}" style="background:#2e7d32;">âœ… Valider + envoyer confirmation</button>
+            <button type="button" class="public-refuse-btn" data-id="${escapeHTML(r.id)}" style="background:#c62828;">Refuser + libÃ©rer</button>
+            <button type="button" class="public-delete-btn" data-id="${escapeHTML(r.id)}" style="background:#8e0000;">Supprimer</button>
+          </div>
         </div>
       </div>`;
   }).join("");
 }
+
 
 function distributePublicRequestSeatTypes(r) {
   let adult = Number(r.adultCount || 0);
@@ -3676,54 +3722,54 @@ function buildPublicConfirmationEmail(r) {
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;background:#f6ead2;padding:22px;color:#342014;">
       <div style="max-width:680px;margin:0 auto;background:#fff8e8;border:1px solid #d7a85f;border-radius:16px;padding:24px;">
-        <h2 style="margin:0 0 12px;color:#2f7b64;">✅ Votre réservation est confirmée</h2>
+        <h2 style="margin:0 0 12px;color:#2f7b64;">âœ… Votre rÃ©servation est confirmÃ©e</h2>
         <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">Bonjour <strong>${escapeHTML(r.name || "")}</strong>,</p>
         <p style="font-size:16px;line-height:1.6;margin:0 0 16px;">
-          La Troupe Saint-Martin confirme votre réservation pour <strong>« Je préfère qu’on reste amies »</strong>.
+          La Troupe Saint-Martin confirme votre rÃ©servation pour <strong>Â« Je prÃ©fÃ¨re quâ€™on reste amies Â»</strong>.
         </p>
 
         <div style="background:#fff1d0;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
-          <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 à 20h30")}<br>
-          <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA à Avermes (03)")}<br>
-          <strong>Places confirmées :</strong> ${seatsList.map(escapeHTML).join(", ")}<br>
+          <strong>Date :</strong> ${escapeHTML(r.date || "11 octobre 2026 Ã  20h30")}<br>
+          <strong>Lieu :</strong> ${escapeHTML(r.lieu || "Salle ISLEA Ã  Avermes (03)")}<br>
+          <strong>Places confirmÃ©es :</strong> ${seatsList.map(escapeHTML).join(", ")}<br>
           <strong>Nombre de places :</strong> ${totalPeople}<br>
           <strong>Adultes :</strong> ${adultCount}<br>
           <strong>Enfants :</strong> ${childCount}<br>
           <strong>BB / -8 ans :</strong> ${babyCount}<br>
-          <strong>Montant total à régler :</strong> ${amount} €
+          <strong>Montant total Ã  rÃ©gler :</strong> ${amount} â‚¬
         </div>
 
         <div style="background:#ffffff;border:1px solid #e3c99c;border-radius:12px;padding:16px;margin:16px 0;line-height:1.75;">
-          <h3 style="margin:0 0 10px;color:#4a2416;">💳 Règlement</h3>
+          <h3 style="margin:0 0 10px;color:#4a2416;">ðŸ’³ RÃ¨glement</h3>
           <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
-            Afin de finaliser votre réservation, merci d’effectuer votre règlement dans un délai de
-            <strong>7 jours après réception de cet email</strong>.
+            Afin de finaliser votre rÃ©servation, merci dâ€™effectuer votre rÃ¨glement dans un dÃ©lai de
+            <strong>7 jours aprÃ¨s rÃ©ception de cet email</strong>.
           </p>
           <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
-            Sans règlement passé ce délai, la réservation pourra être annulée afin de libérer les places.
+            Sans rÃ¨glement passÃ© ce dÃ©lai, la rÃ©servation pourra Ãªtre annulÃ©e afin de libÃ©rer les places.
           </p>
           <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
             <strong>Par virement bancaire :</strong><br>
-            IBAN : <strong>[à compléter]</strong><br>
-            BIC : <strong>[à compléter]</strong><br>
-            Titulaire du compte : <strong>[à compléter]</strong>
+            IBAN : <strong>[Ã  complÃ©ter]</strong><br>
+            BIC : <strong>[Ã  complÃ©ter]</strong><br>
+            Titulaire du compte : <strong>[Ã  complÃ©ter]</strong>
           </div>
           <div style="background:#f8f3ea;border-radius:10px;padding:12px;margin:12px 0;">
-            <strong>Ou par chèque :</strong><br>
-            Chèque à l’ordre de : <strong>[à compléter]</strong><br>
-            Adresse d’envoi du chèque :<br>
-            <strong>[à compléter]</strong>
+            <strong>Ou par chÃ¨que :</strong><br>
+            ChÃ¨que Ã  lâ€™ordre de : <strong>[Ã  complÃ©ter]</strong><br>
+            Adresse dâ€™envoi du chÃ¨que :<br>
+            <strong>[Ã  complÃ©ter]</strong>
           </div>
           <p style="margin:12px 0 0;font-size:15px;line-height:1.6;">
-            <strong>Important :</strong> si le chèque n’est pas au même nom que la réservation,
-            merci d’indiquer au dos du chèque le nom utilisé pour la réservation.
-            Vous pouvez aussi imprimer cet email et le joindre au chèque.
+            <strong>Important :</strong> si le chÃ¨que nâ€™est pas au mÃªme nom que la rÃ©servation,
+            merci dâ€™indiquer au dos du chÃ¨que le nom utilisÃ© pour la rÃ©servation.
+            Vous pouvez aussi imprimer cet email et le joindre au chÃ¨que.
           </p>
         </div>
 
         <p style="font-size:15px;line-height:1.6;margin:16px 0 0;">Pour toute question : <strong>06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</strong>.</p>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">À très bientôt,<br><strong>La Troupe Saint-Martin</strong></p>
-        <p style="margin:18px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(r.id)}</p>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;">Ã€ trÃ¨s bientÃ´t,<br><strong>La Troupe Saint-Martin</strong></p>
+        <p style="margin:18px 0 0;color:#777;font-size:12px;">RÃ©fÃ©rence : ${escapeHTML(r.id)}</p>
       </div>
     </div>`;
 }
@@ -3740,7 +3786,7 @@ async function removePublicHoldSeat(seatId, requestId) {
 }
 
 async function contactPublicRequest(id) {
-  if (!admin) return alert("❌ Active le mode admin pour modifier une demande.");
+  if (!admin) return alert("âŒ Active le mode admin pour modifier une demande.");
   const r = publicRequests[id];
   if (!r) return alert("Demande introuvable.");
   await setPublicRequestFull(id, {
@@ -3751,18 +3797,18 @@ async function contactPublicRequest(id) {
 }
 
 async function confirmPublicRequestFromSalle(id) {
-  if (!admin) return alert("❌ Active le mode admin pour valider une demande.");
+  if (!admin) return alert("âŒ Active le mode admin pour valider une demande.");
   const r = publicRequests[id];
   if (!r) return alert("Demande introuvable.");
 
   const seatsList = Array.isArray(r.seats) ? r.seats : [];
   const taken = seatsList.filter(seatId => seats[seatId] && seats[seatId].reservationId !== id);
   if (taken.length) {
-    return alert(`Impossible de confirmer : ces places sont déjà réservées ailleurs : ${taken.join(", ")}`);
+    return alert(`Impossible de confirmer : ces places sont dÃ©jÃ  rÃ©servÃ©es ailleurs : ${taken.join(", ")}`);
   }
 
-  const expiredText = isPublicRequestExpired(r) ? "\n\n⚠️ Cette demande est expirée. Si les places sont encore libres, tu peux quand même la valider." : "";
-  if (!confirm(`Valider la demande de ${r.name || "ce client"} et envoyer l’email de confirmation ?\n\nPlaces : ${seatsList.join(", ")}${expiredText}`)) return;
+  const expiredText = isPublicRequestExpired(r) ? "\n\nâš ï¸ Cette demande est expirÃ©e. Si les places sont encore libres, tu peux quand mÃªme la valider." : "";
+  if (!confirm(`Valider la demande de ${r.name || "ce client"} et envoyer lâ€™email de confirmation ?\n\nPlaces : ${seatsList.join(", ")}${expiredText}`)) return;
 
   const base = {
     reservationId: id,
@@ -3797,16 +3843,16 @@ async function confirmPublicRequestFromSalle(id) {
   });
 
   try {
-    await saveMailingContact(base.email, base.name, "Demande publique validée", { phone: base.phone });
+    await saveMailingContact(base.email, base.name, "Demande publique validÃ©e", { phone: base.phone });
   } catch (err) {
-    console.warn("Contact mailing non sauvegardé depuis demande publique", err);
+    console.warn("Contact mailing non sauvegardÃ© depuis demande publique", err);
   }
 
   let mailOk = false;
   try {
     await sendViaBrevo(
       base.email,
-      "✅ Réservation confirmée — Je préfère qu’on reste amies",
+      "âœ… RÃ©servation confirmÃ©e â€” Je prÃ©fÃ¨re quâ€™on reste amies",
       buildPublicConfirmationEmail({ id, ...r })
     );
     mailOk = true;
@@ -3818,7 +3864,7 @@ async function confirmPublicRequestFromSalle(id) {
       updatedAt: new Date().toISOString()
     });
   } catch (err) {
-    console.error("Email de confirmation non envoyé", err);
+    console.error("Email de confirmation non envoyÃ©", err);
   }
 
   render();
@@ -3826,14 +3872,14 @@ async function confirmPublicRequestFromSalle(id) {
   updateStatsBar();
   renderPublicRequestsPanel();
 
-  alert(mailOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.");
+  alert(mailOk ? "âœ… RÃ©servation confirmÃ©e et email envoyÃ©." : "âœ… RÃ©servation confirmÃ©e, mais lâ€™email nâ€™a pas pu Ãªtre envoyÃ©.");
 }
 
 async function refusePublicRequestFromSalle(id) {
-  if (!admin) return alert("❌ Active le mode admin pour refuser une demande.");
+  if (!admin) return alert("âŒ Active le mode admin pour refuser une demande.");
   const r = publicRequests[id];
   if (!r) return alert("Demande introuvable.");
-  if (!confirm(`Refuser la demande de ${r.name || "ce client"} et libérer les places ?`)) return;
+  if (!confirm(`Refuser la demande de ${r.name || "ce client"} et libÃ©rer les places ?`)) return;
 
   for (const seatId of (Array.isArray(r.seats) ? r.seats : [])) {
     await removePublicHoldSeat(seatId, id);
@@ -3858,10 +3904,10 @@ async function refusePublicRequestFromSalle(id) {
 }
 
 async function deletePublicRequestFromSalle(id) {
-  if (!admin) return alert("❌ Active le mode admin pour supprimer une demande.");
+  if (!admin) return alert("âŒ Active le mode admin pour supprimer une demande.");
   const r = publicRequests[id];
   if (!r) return alert("Demande introuvable.");
-  if (!confirm("Supprimer cette demande ? Les places liées à cette demande seront libérées.")) return;
+  if (!confirm("Supprimer cette demande ? Les places liÃ©es Ã  cette demande seront libÃ©rÃ©es.")) return;
 
   for (const seatId of (Array.isArray(r.seats) ? r.seats : [])) {
     await removePublicHoldSeat(seatId, id);
@@ -3914,7 +3960,7 @@ document.addEventListener("click", async (e) => {
 
 
 // ===================================================
-// 🖨️ LISTE PAPIER DE SECOURS
+// ðŸ–¨ï¸ LISTE PAPIER DE SECOURS
 // ===================================================
 function seatSortValue(id) {
   const [row, rawSeat = ""] = String(id || "").split("-");
@@ -3931,7 +3977,7 @@ function formatTicketType(type) {
     gratuit: "Gratuit",
     autre: "Autre"
   };
-  return map[type] || "—";
+  return map[type] || "â€”";
 }
 
 function buildBackupPrintData() {
@@ -3945,18 +3991,18 @@ function buildBackupPrintData() {
     if (!groups.has(key)) {
       groups.set(key, {
         key,
-        name: seatData.name || "—",
-        email: seatData.email || "—",
-        phone: seatData.phone || "—",
+        name: seatData.name || "â€”",
+        email: seatData.email || "â€”",
+        phone: seatData.phone || "â€”",
         amount: Number(seatData.amount || 0),
         seats: []
       });
     }
 
     const group = groups.get(key);
-    group.name = group.name !== "—" ? group.name : (seatData.name || "—");
-    group.email = group.email !== "—" ? group.email : (seatData.email || "—");
-    group.phone = group.phone !== "—" ? group.phone : (seatData.phone || "—");
+    group.name = group.name !== "â€”" ? group.name : (seatData.name || "â€”");
+    group.email = group.email !== "â€”" ? group.email : (seatData.email || "â€”");
+    group.phone = group.phone !== "â€”" ? group.phone : (seatData.phone || "â€”");
     group.amount = Math.max(group.amount, Number(seatData.amount || 0));
 
     group.seats.push({
@@ -3997,10 +4043,10 @@ function buildBackupPrintData() {
 }
 
 function openPrintableBackupList() {
-  if (!admin) return alert("❌ Mode admin requis");
+  if (!admin) return alert("âŒ Mode admin requis");
 
   const { reservations, seatRows } = buildBackupPrintData();
-  if (!reservations.length) return alert("Aucune réservation à imprimer.");
+  if (!reservations.length) return alert("Aucune rÃ©servation Ã  imprimer.");
 
   const now = new Date().toLocaleString("fr-FR");
   const totalSeats = seatRows.length;
@@ -4021,16 +4067,16 @@ function openPrintableBackupList() {
           <td class="c-checks">${makeArrivalChecks(r.seats.length)}</td>
           <td class="c-contact">
             <div class="name">${escapeHTML(r.name)}</div>
-            <div class="phone">☎ ${escapeHTML(r.phone || "—")}</div>
-            <div class="email">${escapeHTML(r.email || "—")}</div>
+            <div class="phone">â˜Ž ${escapeHTML(r.phone || "â€”")}</div>
+            <div class="email">${escapeHTML(r.email || "â€”")}</div>
           </td>
           <td class="c-seats seats">${escapeHTML(seatsText)}</td>
           <td class="c-total">${r.seats.length}</td>
           <td class="c-ad">${r.nbAdult || 0}</td>
           <td class="c-enf">${r.nbChild || 0}</td>
           <td class="c-bb">${r.nbBaby || 0}</td>
-          <td class="c-amount">${r.amount.toFixed(2).replace(".", ",")} €</td>
-          <td class="c-pay"><span class="badge ${r.paid ? "ok" : "warn"}">${r.paid ? "Payé" : "À vérifier"}</span></td>
+          <td class="c-amount">${r.amount.toFixed(2).replace(".", ",")} â‚¬</td>
+          <td class="c-pay"><span class="badge ${r.paid ? "ok" : "warn"}">${r.paid ? "PayÃ©" : "Ã€ vÃ©rifier"}</span></td>
         </tr>`;
   }).join("");
 
@@ -4265,36 +4311,36 @@ function openPrintableBackupList() {
 </head>
 <body>
   <div class="toolbar">
-    <button class="print-btn" onclick="window.print()">🖨️ Imprimer</button>
+    <button class="print-btn" onclick="window.print()">ðŸ–¨ï¸ Imprimer</button>
   </div>
 
   <div class="sheet">
     <div class="header">
       <div class="title">
-        <h1>🎭 Liste papier de secours — Théâtre Saint-Martin</h1>
-        <div class="sub">Générée le ${escapeHTML(now)} — à utiliser si le scan QR ne fonctionne pas.</div>
+        <h1>ðŸŽ­ Liste papier de secours â€” ThÃ©Ã¢tre Saint-Martin</h1>
+        <div class="sub">GÃ©nÃ©rÃ©e le ${escapeHTML(now)} â€” Ã  utiliser si le scan QR ne fonctionne pas.</div>
       </div>
       <div class="summary">
-        <div class="card"><span class="k">Réservations</span><span class="v">${reservations.length}</span></div>
+        <div class="card"><span class="k">RÃ©servations</span><span class="v">${reservations.length}</span></div>
         <div class="card"><span class="k">Places</span><span class="v">${totalSeats}</span></div>
         <div class="card"><span class="k">Adultes</span><span class="v">${totalAdult}</span></div>
         <div class="card"><span class="k">Enfants</span><span class="v">${totalChild}</span></div>
         <div class="card"><span class="k">BB / -8 ans</span><span class="v">${totalBaby}</span></div>
-        <div class="card"><span class="k">À vérifier</span><span class="v">${unpaidSeats}</span></div>
+        <div class="card"><span class="k">Ã€ vÃ©rifier</span><span class="v">${unpaidSeats}</span></div>
       </div>
     </div>
 
     <div class="note">
-      <strong>Principe :</strong> une case = une personne / une place. Si un groupe arrive séparément, il suffit de cocher une case à chaque arrivée.
+      <strong>Principe :</strong> une case = une personne / une place. Si un groupe arrive sÃ©parÃ©ment, il suffit de cocher une case Ã  chaque arrivÃ©e.
     </div>
 
     <table>
       <thead>
         <tr>
           <th class="c-num">#</th>
-          <th class="c-checks">Arrivées</th>
+          <th class="c-checks">ArrivÃ©es</th>
           <th class="c-contact">Nom / contact</th>
-          <th class="c-seats">Sièges</th>
+          <th class="c-seats">SiÃ¨ges</th>
           <th class="c-total">Total</th>
           <th class="c-ad">Adultes</th>
           <th class="c-enf">Enfants</th>
@@ -4306,13 +4352,13 @@ function openPrintableBackupList() {
       <tbody>${reservationRows}</tbody>
     </table>
 
-    <div class="footer">Caisse organisée pour un pointage rapide à l’entrée. Mise en page pensée pour rester lisible même avec un grand nombre de réservations.</div>
+    <div class="footer">Caisse organisÃ©e pour un pointage rapide Ã  lâ€™entrÃ©e. Mise en page pensÃ©e pour rester lisible mÃªme avec un grand nombre de rÃ©servations.</div>
   </div>
 </body>
 </html>`;
 
   const win = window.open("", "_blank");
-  if (!win) return alert("❌ La fenêtre d’impression a été bloquée par le navigateur.");
+  if (!win) return alert("âŒ La fenÃªtre dâ€™impression a Ã©tÃ© bloquÃ©e par le navigateur.");
   win.document.open();
   win.document.write(html);
   win.document.close();
@@ -4326,18 +4372,18 @@ if (printBackupListBtn) {
 
 toggleAdminUI();
 
-// 🧩 Met à jour le texte du bouton au démarrage
+// ðŸ§© Met Ã  jour le texte du bouton au dÃ©marrage
 updateEmailTestButton();
 
 
-  // 🔹 Regroupe par client
+  // ðŸ”¹ Regroupe par client
   const grouped = {};
   for (const [id, data] of Object.entries(seats)) {
     if (!grouped[data.name]) grouped[data.name] = [];
     grouped[data.name].push(data);
   }
 
-// 🔄 Nouvelle logique : on compte chaque siège payé individuellement
+// ðŸ”„ Nouvelle logique : on compte chaque siÃ¨ge payÃ© individuellement
 function updateStatsBar() {
   let totalAmount = 0;
   let totalAdult = 0;
@@ -4345,14 +4391,14 @@ function updateStatsBar() {
   let totalBaby = 0;
   const soldSeats = Object.keys(seats).length;
 
-  // 🔹 Regroupe les sièges par client
+  // ðŸ”¹ Regroupe les siÃ¨ges par client
   const grouped = {};
   for (const data of Object.values(seats)) {
     if (!grouped[data.name]) grouped[data.name] = [];
     grouped[data.name].push(data);
   }
 
-  // 🔹 Pour chaque client : si tous ses sièges sont payés → on recalcule son total
+  // ðŸ”¹ Pour chaque client : si tous ses siÃ¨ges sont payÃ©s â†’ on recalcule son total
   for (const client of Object.values(grouped)) {
     const allPaid = client.every(s => s.paid);
     if (allPaid) {
@@ -4367,17 +4413,17 @@ function updateStatsBar() {
     }
   }
 
-  // 🔄 Mise à jour visuelle
+  // ðŸ”„ Mise Ã  jour visuelle
   document.getElementById("stat-total").textContent =
-    `💰 Total encaissé : ${totalAmount.toFixed(2)} €`;
+    `ðŸ’° Total encaissÃ© : ${totalAmount.toFixed(2)} â‚¬`;
   document.getElementById("stat-adult").textContent =
-    `🧍 Adultes : ${totalAdult}`;
+    `ðŸ§ Adultes : ${totalAdult}`;
   document.getElementById("stat-child").textContent =
-    `👶 Enfants : ${totalChild}`;
+    `ðŸ‘¶ Enfants : ${totalChild}`;
   document.getElementById("stat-baby").textContent =
-    `🍼 Moins de 8 ans : ${totalBaby}`;
+    `ðŸ¼ Moins de 8 ans : ${totalBaby}`;
   document.getElementById("stat-sold").textContent =
-    `🎟️ Places réservées : ${soldSeats}`;
+    `ðŸŽŸï¸ Places rÃ©servÃ©es : ${soldSeats}`;
 }
 
 
@@ -4385,7 +4431,7 @@ async function askEmailConfirmation(email) {
   return new Promise(resolve => {
     const modal = document.getElementById("emailConfirmModal");
     const text = document.getElementById("emailConfirmText");
-    text.textContent = `Souhaitez-vous envoyer un e-mail de mise à jour à ${email} ?`;
+    text.textContent = `Souhaitez-vous envoyer un e-mail de mise Ã  jour Ã  ${email} ?`;
 
     modal.classList.remove("hidden");
 
@@ -4408,10 +4454,10 @@ async function askEmailConfirmation(email) {
 }
 
 // ===================================================
-// 🔔 OUVERTURE MODALE RAPPEL (choix des clients)
+// ðŸ”” OUVERTURE MODALE RAPPEL (choix des clients)
 // ===================================================
 document.getElementById("bulkReminder").onclick = () => {
-  if (!admin) return alert("❌ Mode admin requis");
+  if (!admin) return alert("âŒ Mode admin requis");
 
   const modal = document.getElementById("bulkSelectModal");
   const list = document.getElementById("clientCheckboxList");
@@ -4432,7 +4478,7 @@ document.getElementById("bulkReminder").onclick = () => {
     }
   }
 
-  // Crée les checkbox
+  // CrÃ©e les checkbox
   Object.values(clients).forEach(c => {
     const div = document.createElement("div");
     div.style.marginBottom = "6px";
@@ -4446,7 +4492,7 @@ document.getElementById("bulkReminder").onclick = () => {
     list.appendChild(div);
   });
 
-  // ✔️ Tous / aucun
+  // âœ”ï¸ Tous / aucun
   selectAll.onchange = () => {
     document.querySelectorAll(".client-check")
       .forEach(cb => cb.checked = selectAll.checked);
@@ -4456,39 +4502,39 @@ document.getElementById("bulkReminder").onclick = () => {
 };
 
 // ===================================================
-// ❌ ÉTAPE 4 — BOUTON ANNULER (FERMETURE MODALE RAPPEL)
+// âŒ Ã‰TAPE 4 â€” BOUTON ANNULER (FERMETURE MODALE RAPPEL)
 // ===================================================
 document.getElementById("bulkCancel").onclick = () => {
   document.getElementById("bulkSelectModal").classList.add("hidden");
 };
 // ===================================================
-// 📧 ÉTAPE 5 — ENVOI RAPPEL AUX CLIENTS SÉLECTIONNÉS
+// ðŸ“§ Ã‰TAPE 5 â€” ENVOI RAPPEL AUX CLIENTS SÃ‰LECTIONNÃ‰S
 // ===================================================
 document.getElementById("bulkSendSelected").onclick = async () => {
   if (!admin) {
-    alert("❌ Mode admin requis");
+    alert("âŒ Mode admin requis");
     return;
   }
 
   const checked = [...document.querySelectorAll(".client-check:checked")];
 
   if (!checked.length) {
-    alert("⚠️ Aucun destinataire sélectionné");
+    alert("âš ï¸ Aucun destinataire sÃ©lectionnÃ©");
     return;
   }
 
-  if (!confirm(`📧 Envoyer un rappel à ${checked.length} client(s) ?`)) return;
+  if (!confirm(`ðŸ“§ Envoyer un rappel Ã  ${checked.length} client(s) ?`)) return;
 
   for (const cb of checked) {
     const email = cb.value;
 
-    // 🔍 Récupère tous les sièges de ce client
+    // ðŸ” RÃ©cupÃ¨re tous les siÃ¨ges de ce client
     const clientSeats = Object.entries(seats)
       .filter(([_, s]) => s.email === email);
 
     if (!clientSeats.length) continue;
 
-// 🔍 Nom du réservant principal
+// ðŸ” Nom du rÃ©servant principal
 let mainClientName = clientSeats[0][1].name;
 
 const user = {
@@ -4498,14 +4544,14 @@ const user = {
   paid: clientSeats.every(([_, s]) => s.paid),
   amount: clientSeats[0][1].amount || 0,
   reservationId: clientSeats[0][1].reservationId || null,
-  mainClientName // 👈 ON LE PASSE ICI
+  mainClientName // ðŸ‘ˆ ON LE PASSE ICI
 };
 
 
     try {
-      await sendReminderEmail(user); // ✅ billet + QR code
+      await sendReminderEmail(user); // âœ… billet + QR code
       // ===============================
-// 👥 ENVOI DU RAPPEL AUX PARTICIPANTS
+// ðŸ‘¥ ENVOI DU RAPPEL AUX PARTICIPANTS
 // ===============================
 try {
   const snap = await get(ref(db, `participants/${user.reservationId || ""}`));
@@ -4526,19 +4572,19 @@ const participantUser = {
 
 
     await sendReminderEmail(participantUser);
-    console.log("📨 Rappel envoyé au participant :", p.email);
+    console.log("ðŸ“¨ Rappel envoyÃ© au participant :", p.email);
   }
 } catch (err) {
-  console.error("❌ Erreur rappel participants :", err);
+  console.error("âŒ Erreur rappel participants :", err);
 }
 
-      console.log("📨 Rappel envoyé à", email);
+      console.log("ðŸ“¨ Rappel envoyÃ© Ã ", email);
     } catch (err) {
-      console.error("❌ Erreur envoi", email, err);
+      console.error("âŒ Erreur envoi", email, err);
     }
   }
 
-  alert("✅ Rappel envoyé aux clients sélectionnés");
+  alert("âœ… Rappel envoyÃ© aux clients sÃ©lectionnÃ©s");
   document.getElementById("bulkSelectModal").classList.add("hidden");
 };
 
@@ -4546,7 +4592,7 @@ const participantUser = {
 
 
 // ===================================================
-// 📢 MAILING NOUVELLE PIÈCE
+// ðŸ“¢ MAILING NOUVELLE PIÃˆCE
 // ===================================================
 const newPieceMailingBtn = document.getElementById("newPieceMailing");
 const newPieceMailingModal = document.getElementById("newPieceMailingModal");
@@ -4583,7 +4629,7 @@ async function saveMailingContact(email, name, source, extra = {}) {
     const snap = await get(contactRef);
     previous = snap.val() || {};
   } catch (err) {
-    console.warn("Ancien contact mailing non récupéré", cleanEmail, err);
+    console.warn("Ancien contact mailing non rÃ©cupÃ©rÃ©", cleanEmail, err);
   }
 
   const sources = new Set(
@@ -4596,7 +4642,7 @@ async function saveMailingContact(email, name, source, extra = {}) {
 
   await set(contactRef, {
     email: cleanEmail,
-    name: String(name || previous.name || "Invité").trim() || "Invité",
+    name: String(name || previous.name || "InvitÃ©").trim() || "InvitÃ©",
     phone: String(extra.phone || previous.phone || "").trim(),
     sources: [...sources].join(" + "),
     createdAt: previous.createdAt || new Date().toISOString(),
@@ -4620,7 +4666,7 @@ async function addArchivedMailingContacts(recipients) {
       );
     });
   } catch (err) {
-    console.warn("Archive mailing non récupérée", err);
+    console.warn("Archive mailing non rÃ©cupÃ©rÃ©e", err);
   }
 }
 
@@ -4632,7 +4678,7 @@ async function archiveCurrentMailingContacts(reason = "Archive manuelle") {
     const ok = await saveMailingContact(
       r.email,
       r.name,
-      r.sources ? `${reason} — ${r.sources}` : reason
+      r.sources ? `${reason} â€” ${r.sources}` : reason
     );
     if (ok) saved++;
   }
@@ -4651,14 +4697,14 @@ function addMailingRecipient(map, email, name, source) {
   if (!map.has(cleanEmail)) {
     map.set(cleanEmail, {
       email: cleanEmail,
-      name: String(name || "").trim() || "Invité",
+      name: String(name || "").trim() || "InvitÃ©",
       sources: new Set()
     });
   }
 
   const existing = map.get(cleanEmail);
   const cleanName = String(name || "").trim();
-  if (cleanName && (!existing.name || existing.name === "Invité")) {
+  if (cleanName && (!existing.name || existing.name === "InvitÃ©")) {
     existing.name = cleanName;
   }
 
@@ -4676,7 +4722,7 @@ async function addParticipantsForReservation(recipients, reservationId, sourceLa
       addMailingRecipient(recipients, p.email, p.name, sourceLabel);
     });
   } catch (err) {
-    console.warn("Participants non récupérés pour", reservationId, err);
+    console.warn("Participants non rÃ©cupÃ©rÃ©s pour", reservationId, err);
   }
 }
 
@@ -4689,7 +4735,7 @@ async function collectNewPieceRecipients(options = {}) {
   }
 
 
-  // 1) ISLEA — réservants principaux depuis la base des sièges
+  // 1) ISLEA â€” rÃ©servants principaux depuis la base des siÃ¨ges
   let isleaSeats = seats || {};
 
   try {
@@ -4698,11 +4744,11 @@ async function collectNewPieceRecipients(options = {}) {
       isleaSeats = isleaSnap.val() || {};
     }
   } catch (err) {
-    console.warn("Réservations ISLEA non récupérées depuis Firebase, utilisation de la copie locale", err);
+    console.warn("RÃ©servations ISLEA non rÃ©cupÃ©rÃ©es depuis Firebase, utilisation de la copie locale", err);
   }
 
   Object.values(isleaSeats || {}).forEach(s => {
-    addMailingRecipient(recipients, s.email, s.name, "ISLEA réservation");
+    addMailingRecipient(recipients, s.email, s.name, "ISLEA rÃ©servation");
   });
 
   const isleaReservationIds = new Set(
@@ -4715,20 +4761,20 @@ async function collectNewPieceRecipients(options = {}) {
     await addParticipantsForReservation(recipients, resId, "ISLEA participant");
   }
 
-  // 2) Bessay — réservants principaux + participants
+  // 2) Bessay â€” rÃ©servants principaux + participants
   try {
     const bessaySnap = await get(ref(db, "spectacles/salle_bessay"));
     const bessayReservations = bessaySnap.val() || {};
 
     Object.entries(bessayReservations).forEach(([resId, r]) => {
-      addMailingRecipient(recipients, r.email, r.name, "Bessay réservation");
+      addMailingRecipient(recipients, r.email, r.name, "Bessay rÃ©servation");
     });
 
     for (const [resId] of Object.entries(bessayReservations)) {
       await addParticipantsForReservation(recipients, resId, "Bessay participant");
     }
   } catch (err) {
-    console.warn("Réservations Bessay non récupérées", err);
+    console.warn("RÃ©servations Bessay non rÃ©cupÃ©rÃ©es", err);
   }
 
   return [...recipients.values()]
@@ -4740,7 +4786,7 @@ function renderNewPieceRecipients(recipients) {
   mailingRecipientsList.innerHTML = "";
 
   if (!recipients.length) {
-    mailingRecipientsList.innerHTML = `<p style="color:#b71c1c;margin:0;">Aucun email trouvé.</p>`;
+    mailingRecipientsList.innerHTML = `<p style="color:#b71c1c;margin:0;">Aucun email trouvÃ©.</p>`;
     return;
   }
 
@@ -4755,7 +4801,7 @@ function renderNewPieceRecipients(recipients) {
       <input type="checkbox" class="new-piece-recipient" value="${safeEmail}" data-name="${safeName}" checked>
       <strong>${safeName}</strong>
       <span style="font-size:12px;color:#555;">(${safeEmail})</span>
-      <span style="font-size:11px;color:#777;">— ${safeSources}</span>
+      <span style="font-size:11px;color:#777;">â€” ${safeSources}</span>
     `;
     mailingRecipientsList.appendChild(row);
   });
@@ -4795,7 +4841,7 @@ function buildNewPieceEmailHTML(name, bodyText) {
 
               <tr>
                 <td align="center" style="padding:0 40px 30px 40px;">
-                  <img src="${afficheUrl}" alt="Affiche de la pièce" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">
+                  <img src="${afficheUrl}" alt="Affiche de la piÃ¨ce" style="display:block;width:100%;max-width:640px;height:auto;border:0;border-radius:16px;">
                 </td>
               </tr>
 
@@ -4806,7 +4852,7 @@ function buildNewPieceEmailHTML(name, bodyText) {
                      style="display:inline-block;background:#8e24aa;color:#ffffff;text-decoration:none;
                             padding:15px 26px;border-radius:12px;font-weight:bold;font-size:18px;
                             box-shadow:0 3px 8px rgba(0,0,0,0.18);">
-                    🎟️ Réserver mes places
+                    ðŸŽŸï¸ RÃ©server mes places
                   </a>
                 </td>
               </tr>
@@ -4814,11 +4860,11 @@ function buildNewPieceEmailHTML(name, bodyText) {
               <tr>
                 <td align="center" style="padding:0 58px 44px 58px;">
                   <div style="background:#cf683d;color:#ffffff;border-radius:18px;padding:20px 16px;">
-                    <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Ou réservation par téléphone</div>
+                    <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Ou rÃ©servation par tÃ©lÃ©phone</div>
                     <div style="font-size:20px;font-weight:bold;letter-spacing:1px;white-space:nowrap;">06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</div>
                   </div>
                   <p style="font-size:12px;color:#777;margin:16px 0 0 0;line-height:1.4;">
-                    Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
+                    Vous recevez cet email suite Ã  votre rÃ©servation auprÃ¨s du ThÃ©Ã¢tre Saint-Martin.
                   </p>
                 </td>
               </tr>
@@ -4836,30 +4882,30 @@ function sleepMailing(ms) {
 
 if (newPieceMailingBtn) {
   newPieceMailingBtn.addEventListener("click", async () => {
-    if (!admin) return alert("❌ Mode admin requis");
+    if (!admin) return alert("âŒ Mode admin requis");
 
     newPieceMailingModal.classList.remove("hidden");
-    mailingStatus.textContent = "Chargement des destinataires…";
+    mailingStatus.textContent = "Chargement des destinatairesâ€¦";
     mailingRecipientsList.innerHTML = "";
 
     const recipients = await collectNewPieceRecipients();
     renderNewPieceRecipients(recipients);
-    mailingStatus.textContent = `${recipients.length} destinataire(s) unique(s) trouvé(s).`;
+    mailingStatus.textContent = `${recipients.length} destinataire(s) unique(s) trouvÃ©(s).`;
   });
 }
 
 if (archiveMailingContactsBtn) {
   archiveMailingContactsBtn.addEventListener("click", async () => {
-    if (!admin) return alert("❌ Mode admin requis");
-    if (!confirm("Sauvegarder les contacts actuels dans l’archive mailing ?")) return;
+    if (!admin) return alert("âŒ Mode admin requis");
+    if (!confirm("Sauvegarder les contacts actuels dans lâ€™archive mailing ?")) return;
 
     archiveMailingContactsBtn.disabled = true;
     try {
       const count = await archiveCurrentMailingContacts("Archive manuelle");
-      alert(`✅ ${count} contact(s) sauvegardé(s) dans l’archive mailing.`);
+      alert(`âœ… ${count} contact(s) sauvegardÃ©(s) dans lâ€™archive mailing.`);
     } catch (err) {
-      console.error("❌ Archive mailing échouée", err);
-      alert("❌ Impossible de sauvegarder les contacts mailing. Regarde la console.");
+      console.error("âŒ Archive mailing Ã©chouÃ©e", err);
+      alert("âŒ Impossible de sauvegarder les contacts mailing. Regarde la console.");
     } finally {
       archiveMailingContactsBtn.disabled = false;
     }
@@ -4882,18 +4928,18 @@ if (mailingCancelBtn) {
 
 if (mailingTestBtn) {
   mailingTestBtn.addEventListener("click", async () => {
-    if (!admin) return alert("❌ Mode admin requis");
+    if (!admin) return alert("âŒ Mode admin requis");
 
     const subject = mailingSubjectInput.value.trim();
     const body = mailingBodyInput.value.trim();
 
-    if (!subject) return alert("❌ Sujet manquant");
-    if (!body) return alert("❌ Message manquant");
+    if (!subject) return alert("âŒ Sujet manquant");
+    if (!body) return alert("âŒ Message manquant");
 
-    if (!confirm(`Envoyer un email TEST réel à ${MAILING_TEST_EMAIL} ?`)) return;
+    if (!confirm(`Envoyer un email TEST rÃ©el Ã  ${MAILING_TEST_EMAIL} ?`)) return;
 
     mailingTestBtn.disabled = true;
-    mailingStatus.textContent = `Envoi du test vers ${MAILING_TEST_EMAIL}…`;
+    mailingStatus.textContent = `Envoi du test vers ${MAILING_TEST_EMAIL}â€¦`;
 
     try {
       await sendViaBrevo(
@@ -4902,12 +4948,12 @@ if (mailingTestBtn) {
         buildNewPieceEmailHTML("Nelly", body),
         { forceRealSend: true }
       );
-      mailingStatus.textContent = `✅ Email test envoyé à ${MAILING_TEST_EMAIL}.`;
-      alert(`✅ Email test envoyé à ${MAILING_TEST_EMAIL}. Vérifie ta boîte mail et tes spams.`);
+      mailingStatus.textContent = `âœ… Email test envoyÃ© Ã  ${MAILING_TEST_EMAIL}.`;
+      alert(`âœ… Email test envoyÃ© Ã  ${MAILING_TEST_EMAIL}. VÃ©rifie ta boÃ®te mail et tes spams.`);
     } catch (err) {
-      console.error("❌ Email test échoué", err);
-      mailingStatus.textContent = "❌ Erreur pendant l’envoi du test.";
-      alert("❌ Impossible d’envoyer l’email test. Regarde la console ou réessaie.");
+      console.error("âŒ Email test Ã©chouÃ©", err);
+      mailingStatus.textContent = "âŒ Erreur pendant lâ€™envoi du test.";
+      alert("âŒ Impossible dâ€™envoyer lâ€™email test. Regarde la console ou rÃ©essaie.");
     } finally {
       mailingTestBtn.disabled = false;
     }
@@ -4916,18 +4962,18 @@ if (mailingTestBtn) {
 
 if (mailingSendBtn) {
   mailingSendBtn.addEventListener("click", async () => {
-    if (!admin) return alert("❌ Mode admin requis");
+    if (!admin) return alert("âŒ Mode admin requis");
 
     const checked = [...document.querySelectorAll(".new-piece-recipient:checked")];
     const subject = mailingSubjectInput.value.trim();
     const body = mailingBodyInput.value.trim();
 
-    if (!subject) return alert("❌ Sujet manquant");
-    if (!body) return alert("❌ Message manquant");
-    if (!checked.length) return alert("⚠️ Aucun destinataire sélectionné");
+    if (!subject) return alert("âŒ Sujet manquant");
+    if (!body) return alert("âŒ Message manquant");
+    if (!checked.length) return alert("âš ï¸ Aucun destinataire sÃ©lectionnÃ©");
 
     const modeLabel = window.EMAIL_TEST_MODE === true ? "SIMULER" : "ENVOYER";
-    if (!confirm(`${modeLabel} le mailing à ${checked.length} destinataire(s) ?`)) return;
+    if (!confirm(`${modeLabel} le mailing Ã  ${checked.length} destinataire(s) ?`)) return;
 
     mailingSendBtn.disabled = true;
     mailingCancelBtn.disabled = true;
@@ -4940,29 +4986,29 @@ if (mailingSendBtn) {
       const name = cb.dataset.name || "";
 
       try {
-        mailingStatus.textContent = `Envoi ${sent + failed + 1}/${checked.length} → ${email}`;
+        mailingStatus.textContent = `Envoi ${sent + failed + 1}/${checked.length} â†’ ${email}`;
         await sendViaBrevo(email, subject, buildNewPieceEmailHTML(name, body));
         sent++;
         await sleepMailing(250);
       } catch (err) {
         failed++;
-        console.error("❌ Mailing échoué pour", email, err);
+        console.error("âŒ Mailing Ã©chouÃ© pour", email, err);
       }
     }
 
     mailingSendBtn.disabled = false;
     mailingCancelBtn.disabled = false;
-    mailingStatus.textContent = `Terminé : ${sent} envoyé(s), ${failed} échec(s).`;
+    mailingStatus.textContent = `TerminÃ© : ${sent} envoyÃ©(s), ${failed} Ã©chec(s).`;
 
     alert(
       window.EMAIL_TEST_MODE === true
-        ? `🧪 Mode TEST : ${sent} email(s) simulé(s), ${failed} échec(s).`
-        : `✅ Mailing terminé : ${sent} email(s) envoyé(s), ${failed} échec(s).`
+        ? `ðŸ§ª Mode TEST : ${sent} email(s) simulÃ©(s), ${failed} Ã©chec(s).`
+        : `âœ… Mailing terminÃ© : ${sent} email(s) envoyÃ©(s), ${failed} Ã©chec(s).`
     );
   });
 }
 
-// 👥 (SUPPRIMÉ) Ancien affichage global des participants
+// ðŸ‘¥ (SUPPRIMÃ‰) Ancien affichage global des participants
 
 
 
@@ -4971,22 +5017,22 @@ if (mailingSendBtn) {
 
 
 
-<!-- 🧮 Fenêtre admin : saisie adultes/enfants -->
+<!-- ðŸ§® FenÃªtre admin : saisie adultes/enfants -->
 <div id="adminPaymentModal" class="modal hidden">
   <div class="modal-content">
-    <h3>💰 Saisie du paiement</h3>
+    <h3>ðŸ’° Saisie du paiement</h3>
     <p id="adminClientName" style="font-weight:600;margin-bottom:10px;"></p>
 
-    <label for="adminAdult">Nombre d’adultes (14 €)</label>
+    <label for="adminAdult">Nombre dâ€™adultes (14 â‚¬)</label>
     <input id="adminAdult" type="number" min="0" value="0" step="1">
 
-    <label for="adminChild">Nombre d’enfants (10 €)</label>
+    <label for="adminChild">Nombre dâ€™enfants (10 â‚¬)</label>
     <input id="adminChild" type="number" min="0" value="0" step="1">
 	<label for="adminBaby">Nombre de moins de 8 ans</label>
 <input id="adminBaby" type="number" min="0" value="0" step="1">
 
 
-    <p id="adminTotal" style="font-weight:600;color:#2e7d32;margin-top:8px;">Total : 0 €</p>
+    <p id="adminTotal" style="font-weight:600;color:#2e7d32;margin-top:8px;">Total : 0 â‚¬</p>
 
     <div style="margin-top:12px;">
       <button id="adminSavePayment">Valider</button>
@@ -4994,14 +5040,14 @@ if (mailingSendBtn) {
     </div>
   </div>
 </div>
-<!-- 🆕 Modale ajout manuel de sièges -->
-<!-- 🆕 Modale ajout manuel de sièges -->
+<!-- ðŸ†• Modale ajout manuel de siÃ¨ges -->
+<!-- ðŸ†• Modale ajout manuel de siÃ¨ges -->
 <div id="addSeatModal" class="modal hidden">
   <div class="modal-content" style="max-width:480px;">
-    <h3>➕ Ajouter des sièges</h3>
+    <h3>âž• Ajouter des siÃ¨ges</h3>
     <p id="addSeatClient" style="font-weight:600;margin-bottom:10px;"></p>
 
-    <!-- 🧭 Mini plan des sièges -->
+    <!-- ðŸ§­ Mini plan des siÃ¨ges -->
     <div id="miniSeatMap" style="
       display:grid;
       grid-template-columns: repeat(10, 1fr);
@@ -5021,7 +5067,7 @@ if (mailingSendBtn) {
 
     <div class="payment-group">
       <div class="payment-line">
-        <label for="addSeatAdult">Adultes (${PRICE_ADULT} €)</label>
+        <label for="addSeatAdult">Adultes (${PRICE_ADULT} â‚¬)</label>
         <input id="addSeatAdult" type="number" min="0" value="0" step="1" style="width:60px;">
       </div>
 	  <div class="payment-line">
@@ -5030,15 +5076,15 @@ if (mailingSendBtn) {
 </div>
 
       <div class="payment-line">
-        <label for="addSeatChild">Enfants (${PRICE_CHILD} €)</label>
+        <label for="addSeatChild">Enfants (${PRICE_CHILD} â‚¬)</label>
         <input id="addSeatChild" type="number" min="0" value="0" step="1" style="width:60px;">
       </div>
-      <p id="addSeatTotal" style="margin-top:8px;text-align:right;font-weight:600;color:#2e7d32;">Total : 0 €</p>
+      <p id="addSeatTotal" style="margin-top:8px;text-align:right;font-weight:600;color:#2e7d32;">Total : 0 â‚¬</p>
     </div>
 
     <label style="display:flex;align-items:center;gap:6px;margin:10px 0;">
       <input type="checkbox" id="addSeatPaid">
-      💶 Sièges payés
+      ðŸ’¶ SiÃ¨ges payÃ©s
     </label>
 
     <div style="margin-top:12px;">
@@ -5049,16 +5095,16 @@ if (mailingSendBtn) {
 </div>
 
 
-<!-- 💶 Fenêtre modale de modification des tarifs -->
+<!-- ðŸ’¶ FenÃªtre modale de modification des tarifs -->
 <div id="priceModal" class="modal hidden">
   <div class="modal-content">
-    <h3>💶 Modifier les tarifs</h3>
+    <h3>ðŸ’¶ Modifier les tarifs</h3>
 
-<label for="priceAdult">Tarif adulte (€)</label>
+<label for="priceAdult">Tarif adulte (â‚¬)</label>
 <input id="priceAdult" type="number" min="0" step="0.5" value="14">
 <span id="labelPriceAdult" style="display:none;"></span>
 
-<label for="priceChild">Tarif enfant (€)</label>
+<label for="priceChild">Tarif enfant (â‚¬)</label>
 <input id="priceChild" type="number" min="0" step="0.5" value="10">
 <span id="labelPriceChild" style="display:none;"></span>
 
@@ -5076,50 +5122,50 @@ if (mailingSendBtn) {
   display: flex; justify-content: center; align-items: center;
   z-index: 9999;">
   <div style="background: white; padding: 20px 30px; border-radius: 12px; text-align: center;">
-    <h3>🎫 Type de billet pour les sièges ajoutés</h3>
-    <p>Sélectionnez le type appliqué à tous les nouveaux sièges :</p>
-    <button class="type-btn" data-type="adulte" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#1565c0;color:white;">🧍 Adulte</button>
-    <button class="type-btn" data-type="enfant" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#2e7d32;color:white;">🧒 Enfant</button>
-    <button class="type-btn" data-type="moins8" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#f57c00;color:white;">🍼 Moins de 8 ans</button>
+    <h3>ðŸŽ« Type de billet pour les siÃ¨ges ajoutÃ©s</h3>
+    <p>SÃ©lectionnez le type appliquÃ© Ã  tous les nouveaux siÃ¨ges :</p>
+    <button class="type-btn" data-type="adulte" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#1565c0;color:white;">ðŸ§ Adulte</button>
+    <button class="type-btn" data-type="enfant" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#2e7d32;color:white;">ðŸ§’ Enfant</button>
+    <button class="type-btn" data-type="moins8" style="margin:6px;padding:10px 16px;border:none;border-radius:8px;background:#f57c00;color:white;">ðŸ¼ Moins de 8 ans</button>
   </div>
 </div>
-<!-- 🎫 Modal de choix du type de billet -->
+<!-- ðŸŽ« Modal de choix du type de billet -->
 <div id="ticketTypeModal" class="modal hidden">
   <div class="modal-content" style="max-width: 360px; text-align: center;">
-    <h3>🎫 Type de billet</h3>
+    <h3>ðŸŽ« Type de billet</h3>
     <p id="ticketTypeSeat" style="font-weight:600; color:#0d47a1;"></p>
-    <p>Choisis le type de place à attribuer :</p>
+    <p>Choisis le type de place Ã  attribuer :</p>
     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-      <button class="ticket-type-btn" data-type="adulte" style="background:#1565c0;color:#fff;">🧍 Adulte</button>
-      <button class="ticket-type-btn" data-type="enfant" style="background:#2e7d32;color:#fff;">🧒 Enfant</button>
-      <button class="ticket-type-btn" data-type="moins8" style="background:#f57c00;color:#fff;">🍼 Moins de 8 ans</button>
+      <button class="ticket-type-btn" data-type="adulte" style="background:#1565c0;color:#fff;">ðŸ§ Adulte</button>
+      <button class="ticket-type-btn" data-type="enfant" style="background:#2e7d32;color:#fff;">ðŸ§’ Enfant</button>
+      <button class="ticket-type-btn" data-type="moins8" style="background:#f57c00;color:#fff;">ðŸ¼ Moins de 8 ans</button>
       <button class="ticket-type-btn" data-type="gratuit"
   style="background:#ff9800;color:#fff;">
-  🎟️ Gratuit
+  ðŸŽŸï¸ Gratuit
 </button>
 
-      <button id="cancelTicketType" style="background:#757575;color:#fff;">❌ Annuler</button>
+      <button id="cancelTicketType" style="background:#757575;color:#fff;">âŒ Annuler</button>
     </div>
   </div>
 </div>
 
-<!-- 🔔 Modale de confirmation d'envoi d'email -->
+<!-- ðŸ”” Modale de confirmation d'envoi d'email -->
 <div id="emailConfirmModal" class="modal hidden">
   <div class="modal-content" style="text-align:center; max-width:400px;">
-    <h3>📩 Envoi d’e-mail de mise à jour</h3>
-    <p id="emailConfirmText" style="margin:15px 0;">Souhaitez-vous envoyer un e-mail à cet utilisateur ?</p>
+    <h3>ðŸ“© Envoi dâ€™e-mail de mise Ã  jour</h3>
+    <p id="emailConfirmText" style="margin:15px 0;">Souhaitez-vous envoyer un e-mail Ã  cet utilisateur ?</p>
     <div style="display:flex;justify-content:center;gap:15px;margin-top:10px;">
-      <button id="emailConfirmYes" style="background:#1565c0;color:white;">✅ Oui</button>
-      <button id="emailConfirmNo" style="background:#9e9e9e;color:white;">❌ Non</button>
+      <button id="emailConfirmYes" style="background:#1565c0;color:white;">âœ… Oui</button>
+      <button id="emailConfirmNo" style="background:#9e9e9e;color:white;">âŒ Non</button>
     </div>
   </div>
 </div>
 
 
-<!-- 💌 Modale de prévisualisation d’email -->
+<!-- ðŸ’Œ Modale de prÃ©visualisation dâ€™email -->
 <div id="emailPreviewModal" class="modal hidden">
   <div class="modal-content" style="max-width:600px;max-height:80vh;overflow:auto;text-align:left;">
-    <h3>📧 Aperçu de l’email</h3>
+    <h3>ðŸ“§ AperÃ§u de lâ€™email</h3>
     <div id="emailPreviewContent" style="border:1px solid #ccc;padding:10px;margin-top:10px;background:#fff;"></div>
     <div style="text-align:center;margin-top:12px;">
       <button id="closeEmailPreview" style="background:#1565c0;color:white;">Fermer</button>
@@ -5129,16 +5175,16 @@ if (mailingSendBtn) {
 <script>
 
   // ===================================================
-// ❌ Bouton FERMER – aperçu email
+// âŒ Bouton FERMER â€“ aperÃ§u email
 // ===================================================
 
 async function sendViaBrevo(to, subject, html, options = {}) {
 
-  // 🚫 MODE TEST → AUCUN ENVOI, sauf email test volontaire
+  // ðŸš« MODE TEST â†’ AUCUN ENVOI, sauf email test volontaire
   if (window.EMAIL_TEST_MODE === true && options.forceRealSend !== true) {
-    console.warn("🚫 [MODE TEST] Envoi Brevo bloqué");
-    console.log("📧 Destinataire :", to);
-    console.log("📨 Sujet :", subject);
+    console.warn("ðŸš« [MODE TEST] Envoi Brevo bloquÃ©");
+    console.log("ðŸ“§ Destinataire :", to);
+    console.log("ðŸ“¨ Sujet :", subject);
     return;
   }
 
@@ -5159,7 +5205,7 @@ async function sendViaBrevo(to, subject, html, options = {}) {
 
 
 
-// 👥 Toggle affichage participants
+// ðŸ‘¥ Toggle affichage participants
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".open-participants-btn");
   if (!btn) return;
@@ -5175,7 +5221,7 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-// ➕ Ajout participant
+// âž• Ajout participant
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".add-participant-btn");
   if (!btn) return;
@@ -5187,7 +5233,7 @@ document.addEventListener("click", async (e) => {
   if (!name) return;
 
   const email = prompt("Email :") || "";
-  const phone = prompt("Téléphone :") || "";
+  const phone = prompt("TÃ©lÃ©phone :") || "";
 
   const pid = crypto.randomUUID();
 
@@ -5199,7 +5245,7 @@ document.addEventListener("click", async (e) => {
 
   await loadParticipants(reservationId);
 });
-// 📨 Envoi formulaire participants
+// ðŸ“¨ Envoi formulaire participants
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest(".send-participants-form-btn");
   if (!btn) return;
@@ -5208,40 +5254,40 @@ document.addEventListener("click", async (e) => {
   const reservationId = btn.dataset.resid;
 
   if (!email || !reservationId) {
-    return alert("❌ Email ou réservation manquante");
+    return alert("âŒ Email ou rÃ©servation manquante");
   }
 
 const formLink = `https://orleanne03.github.io/theatre-saint-martin/participants.html?resId=${encodeURIComponent(reservationId)}&salle=salle`;
 
 
 const html = `
-  <h2>👥 Informations des participants — Théâtre Saint Martin</h2>
+  <h2>ðŸ‘¥ Informations des participants â€” ThÃ©Ã¢tre Saint Martin</h2>
 
   <p>
     Bonjour.
   </p>
 
   <p>
-    Vous avez réservé plusieurs places places pour le spectacle à la Salle de Bessay
-    Mais tout le monde n’arrive pas en même temps ? Pas de souci 😊,
+    Vous avez rÃ©servÃ© plusieurs places places pour le spectacle Ã  la Salle de Bessay
+    Mais tout le monde nâ€™arrive pas en mÃªme temps ? Pas de souci ðŸ˜Š,
   </p>
-<p>Par contre, chaque groupe devra simplement présenter son QR code personnel à l’entrée. Le QR code étant identique 1 seul par groupe suffira.</p>
+<p>Par contre, chaque groupe devra simplement prÃ©senter son QR code personnel Ã  lâ€™entrÃ©e. Le QR code Ã©tant identique 1 seul par groupe suffira.</p>
   <p>
-Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soient envoyés directement à une personne responsable du groupe suivant:
+Il vous suffit de complÃ©ter le formulaire ci-dessous pour que les QR codes soient envoyÃ©s directement Ã  une personne responsable du groupe suivant:
   </p>
-<p>Une fois le formulaire complété, nous pourrons envoyer les billets à chaque personne concernée.</p>
+<p>Une fois le formulaire complÃ©tÃ©, nous pourrons envoyer les billets Ã  chaque personne concernÃ©e.</p>
   <p>
-    👉 <a href="${formLink}" target="_blank"
+    ðŸ‘‰ <a href="${formLink}" target="_blank"
       style="font-weight:600;color:#1976d2;">
       Remplir le formulaire participants
     </a>
   </p>
 
   <p style="font-size:14px;color:#555;">
-    Ce lien est personnel et lié à votre réservation.
+    Ce lien est personnel et liÃ© Ã  votre rÃ©servation.
   </p>
 
-  <p>Merci et à très bientôt 🎭</p>
+  <p>Merci et Ã  trÃ¨s bientÃ´t ðŸŽ­</p>
 `;
 
 
@@ -5249,34 +5295,34 @@ Il vous suffit de compléter le formulaire ci-dessous pour que les QR codes soie
   try {
     await sendViaBrevo(
       email,
-      "👥 Formulaire participants – Théâtre Saint Martin",
+      "ðŸ‘¥ Formulaire participants â€“ ThÃ©Ã¢tre Saint Martin",
       html
     );
-    alert("✅ Formulaire envoyé");
+    alert("âœ… Formulaire envoyÃ©");
   } catch (err) {
-    alert("❌ Erreur envoi formulaire");
+    alert("âŒ Erreur envoi formulaire");
   }
 });
 
 
 
 // ==========================
-// 🚪 MODE PORTIER : + / −
+// ðŸšª MODE PORTIER : + / âˆ’
 // ==========================
 
 function syncPortier(reservationId) {
 
-  // 🔄 met à jour les sièges liés à la réservation
+  // ðŸ”„ met Ã  jour les siÃ¨ges liÃ©s Ã  la rÃ©servation
   for (const seat of Object.values(seats)) {
     if (seat.reservationId === reservationId) {
       seat.enteredCount = localEntered[reservationId];
     }
   }
 
-  // 🔥 sauvegarde Firebase (en arrière-plan)
+  // ðŸ”¥ sauvegarde Firebase (en arriÃ¨re-plan)
   save();
 
-  // ⚡ rafraîchit l’affichage immédiatement
+  // âš¡ rafraÃ®chit lâ€™affichage immÃ©diatement
   updateTable();
 }
 window.syncPortier = syncPortier;
@@ -5288,7 +5334,7 @@ document.addEventListener("click", (e) => {
 });
 
 // ==========================
-// 🚪 MODE PORTIER : + / − (INSTANTANÉ)
+// ðŸšª MODE PORTIER : + / âˆ’ (INSTANTANÃ‰)
 // ==========================
 document.addEventListener("click", (e) => {
   const plus = e.target.closest(".portier-plus");
@@ -5297,7 +5343,7 @@ document.addEventListener("click", (e) => {
   if (!plus && !minus && !all) return;
 
 
-  e.stopPropagation(); // ✅ AJOUT ICI
+  e.stopPropagation(); // âœ… AJOUT ICI
 
 const resid = (plus || minus || all).dataset.resid;
 
@@ -5353,7 +5399,7 @@ syncPortier(resid);
 
 </script>
 
-<!-- 📨 Indicateur visuel du mode email -->
+<!-- ðŸ“¨ Indicateur visuel du mode email -->
 <div id="emailModeBanner" style="
   position: fixed;
   top: 10px;
@@ -5367,47 +5413,47 @@ syncPortier(resid);
   z-index: 10000;
   display: none;
 ">
-  ✉️ Mode email : TEST
+  âœ‰ï¸ Mode email : TEST
 </div>
-<!-- 📢 Modale mailing nouvelle pièce -->
+<!-- ðŸ“¢ Modale mailing nouvelle piÃ¨ce -->
 <div id="newPieceMailingModal" class="modal hidden">
   <div class="modal-content" style="max-width:720px;width:92%;max-height:90vh;overflow:auto;">
-    <h3>📢 Mailing nouvelle pièce</h3>
+    <h3>ðŸ“¢ Mailing nouvelle piÃ¨ce</h3>
     <p style="font-size:13px;color:#555;text-align:left;margin:0 0 10px;">
-      Les destinataires sont récupérés depuis ISLEA, Bessay et l’archive mailing, puis dédupliqués par adresse email.
+      Les destinataires sont rÃ©cupÃ©rÃ©s depuis ISLEA, Bessay et lâ€™archive mailing, puis dÃ©dupliquÃ©s par adresse email.
     </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
-    <input id="mailingSubject" type="text" value="Nouvelle pièce au Théâtre Saint-Martin : ISLEA – 24 janvier 2026" style="width:96%;">
+    <input id="mailingSubject" type="text" value="Nouvelle piÃ¨ce au ThÃ©Ã¢tre Saint-Martin : ISLEA â€“ 24 janvier 2026" style="width:96%;">
 
     <label for="mailingBody" style="font-weight:600;display:block;text-align:left;margin-top:10px;">Message</label>
     <textarea id="mailingBody" style="width:96%;min-height:220px;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:Arial,sans-serif;">Bonjour {nom},
 
-La Troupe Saint-Martin vous donne rendez-vous pour sa nouvelle comédie :
+La Troupe Saint-Martin vous donne rendez-vous pour sa nouvelle comÃ©die :
 
-« Je préfère qu’on reste amies »
-une pièce de Laurent Ruquier.
+Â« Je prÃ©fÃ¨re quâ€™on reste amies Â»
+une piÃ¨ce de Laurent Ruquier.
 
-Pour cette représentation, nous vous proposons une version inédite, entièrement revisitée, portée par deux femmes, avec une lecture nouvelle, drôle et touchante de cette histoire.
+Pour cette reprÃ©sentation, nous vous proposons une version inÃ©dite, entiÃ¨rement revisitÃ©e, portÃ©e par deux femmes, avec une lecture nouvelle, drÃ´le et touchante de cette histoire.
 
-Claudine s’apprête à faire une déclaration à Valentine, sa meilleure amie…
-Mais rien ne va se passer comme prévu.
+Claudine sâ€™apprÃªte Ã  faire une dÃ©claration Ã  Valentine, sa meilleure amieâ€¦
+Mais rien ne va se passer comme prÃ©vu.
 
-Une soirée pleine de tendresse, de surprises et de vérités qui éclatent.
+Une soirÃ©e pleine de tendresse, de surprises et de vÃ©ritÃ©s qui Ã©clatent.
 
-À noter : le langage de certaines répliques peut heurter la sensibilité des jeunes enfants.
+Ã€ noter : le langage de certaines rÃ©pliques peut heurter la sensibilitÃ© des jeunes enfants.
 
-Réservez vos places directement en cliquant sur le bouton ci-dessous.
+RÃ©servez vos places directement en cliquant sur le bouton ci-dessous.
 
-Ou par téléphone au 06 46 32 06 49.
+Ou par tÃ©lÃ©phone au 06 46 32 06 49.
 
-À très bientôt,
+Ã€ trÃ¨s bientÃ´t,
 La Troupe Saint-Martin</textarea>
 
     <div style="margin:14px 0 8px;text-align:left;">
       <label style="font-weight:600;">
         <input type="checkbox" id="mailingSelectAll" checked>
-        ✔️ Tous les destinataires
+        âœ”ï¸ Tous les destinataires
       </label>
     </div>
 
@@ -5417,22 +5463,22 @@ La Troupe Saint-Martin</textarea>
 
     <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
       <button id="mailingCancel" style="background:#9e9e9e;">Annuler</button>
-      <button id="mailingSendTest" style="background:#0277bd;">📨 Envoyer un test à nellylac@gmail.com</button>
-      <button id="mailingSend" style="background:#8e24aa;">📧 Envoyer le mailing</button>
+      <button id="mailingSendTest" style="background:#0277bd;">ðŸ“¨ Envoyer un test Ã  nellylac@gmail.com</button>
+      <button id="mailingSend" style="background:#8e24aa;">ðŸ“§ Envoyer le mailing</button>
     </div>
   </div>
 </div>
 
-<!-- 📧 Modale choix destinataires rappel -->
+<!-- ðŸ“§ Modale choix destinataires rappel -->
 <div id="bulkSelectModal" class="modal hidden">
   <div class="modal-content" style="max-width:520px;">
-    <h3>🔔 Rappel réservation</h3>
+    <h3>ðŸ”” Rappel rÃ©servation</h3>
     <p>Choisissez les destinataires :</p>
 
     <div style="margin-bottom:10px;">
       <label style="font-weight:600;">
         <input type="checkbox" id="selectAllClients">
-        ✔️ Tous les réservants
+        âœ”ï¸ Tous les rÃ©servants
       </label>
     </div>
 
@@ -5444,7 +5490,7 @@ La Troupe Saint-Martin</textarea>
 
     <div style="display:flex;justify-content:flex-end;gap:10px;">
       <button id="bulkCancel" style="background:#9e9e9e;">Annuler</button>
-      <button id="bulkSendSelected" style="background:#1976d2;">📧 Envoyer</button>
+      <button id="bulkSendSelected" style="background:#1976d2;">ðŸ“§ Envoyer</button>
     </div>
   </div>
 </div>
