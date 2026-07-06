@@ -1064,7 +1064,7 @@ background: magenta !important;
 </div>
 
 <h1>🎭 Théâtre Saint Martin</h1>
-	<h3>LE 24 JANVIER 2026 à 20H30</h3>
+	<h3>10 octobre 2026 à 20h30</h3>
   <br> Adulte : 14€ / Enfant 9-14 ans : 10e / Gratuit - de 8 ans</br>
 <div class="scene">SCÈNE</div>
 
@@ -1339,6 +1339,44 @@ function sortSeatIdsForPublicRequest(a, b) {
   return String(a).localeCompare(String(b), "fr", { numeric: true });
 }
 
+function normalizeClientValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function seatBelongsToClient(seatData, clientName = "", clientEmail = "", reservationId = "") {
+  if (!seatData) return false;
+  if (reservationId && seatData.reservationId === reservationId) return true;
+
+  const cleanEmail = normalizeClientValue(clientEmail);
+  if (cleanEmail && normalizeClientValue(seatData.email) === cleanEmail) return true;
+
+  return normalizeClientValue(seatData.name) === normalizeClientValue(clientName);
+}
+
+function recalcClientReservation(clientName = "", clientEmail = "", reservationId = "") {
+  const matchingEntries = Object.entries(seats || {})
+    .filter(([_, seatData]) => seatBelongsToClient(seatData, clientName, clientEmail, reservationId));
+
+  const adultCount = matchingEntries.filter(([_, s]) => s.type === "adulte").length;
+  const childCount = matchingEntries.filter(([_, s]) => s.type === "enfant").length;
+  const babyCount  = matchingEntries.filter(([_, s]) => s.type === "moins8" || s.type === "gratuit").length;
+  const amount = adultCount * PRICE_ADULT + childCount * PRICE_CHILD;
+
+  for (const [seatId, seatData] of matchingEntries) {
+    seats[seatId] = {
+      ...seatData,
+      nbAdult: adultCount,
+      nbChild: childCount,
+      nbBaby: babyCount,
+      amount,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  return matchingEntries.length;
+}
+
+
 // 🔄 Synchronise demandes-public.html quand une place est ajoutée/supprimée depuis salle.html/salle2.html
 async function syncPublicRequestAfterSeatChanges(requestId) {
   if (!requestId) return;
@@ -1414,7 +1452,7 @@ onValue(publicRequestsRef, snapshot => {
   renderPublicRequestsPanel();
 });
 
-function save(){ set(seatsRef, seats); }
+function save(){ return set(seatsRef, seats || {}); }
 // 🎨 Nouvelle modale de choix du type de billet (accessible partout)
 async function askSeatType(id) {
   return new Promise(resolve => {
@@ -1539,11 +1577,12 @@ if (admin && seats[id] && groupMode !== "remove") {
     const clientEmail = seatDataBeforeDelete.email;
 
     delete seats[id];
+    await set(ref(db, `seats/${id}`), null);
 
-    recalcClientReservation(clientName, clientEmail);
+    recalcClientReservation(clientName, clientEmail, seatDataBeforeDelete.reservationId || "");
     await syncPublicRequestAfterSeatChanges(publicRequestId);
 
-    save();
+    await save();
     render();
     updateTable();
     updateStatsBar();
@@ -1766,7 +1805,7 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${e
     <p>Bonjour <strong>${user.name}</strong>,</p>
     <p>Merci pour votre réservation.</p>
     <p style="margin-top:10px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
+      📅 <strong>10 octobre 2026 à 20h30</strong><br>
       📍 Théâtre Saint Martin
     </p>
     <p><strong>📍 Sièges réservés :</strong> ${reservedSeats}</p>
@@ -1857,7 +1896,7 @@ ${user.isParticipant ? "" : `
     <img src="${qrUrl}" alt="QR Code" style="margin-top:8px;"/>
 
     <p style="margin-top:10px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
+      📅 <strong>10 octobre 2026 à 20h30</strong><br>
       📍 Théâtre Saint Martin
     </p>
 
@@ -2025,7 +2064,7 @@ resetBtn.onclick = async () => {
     }
 
     seats = {};
-    save();
+    await save();
 	updateStatsBar(); // ✅ ajout ici
     alert(`✅ Réinitialisation complète.
 📇 ${archivedCount} contact(s) sauvegardé(s) pour le mailing.`);
@@ -2723,11 +2762,12 @@ document.addEventListener("click", async (e) => {
   if (!confirm(`Supprimer la place ${seatId} de la réservation de ${clientName || "ce client"} ?`)) return;
 
   delete seats[seatId];
+  await set(ref(db, `seats/${seatId}`), null);
 
-  const remaining = recalcClientReservation(clientName, clientEmail);
+  const remaining = recalcClientReservation(clientName, clientEmail, data.reservationId || "");
   await syncPublicRequestAfterSeatChanges(publicRequestId);
 
-  save();
+  await save();
   render();
   updateTable();
   updateStatsBar();
@@ -2772,7 +2812,7 @@ function generateBilletHTML(user) {
     <img src="${qrUrl}" alt="QR Code" style="margin-top:12px;" />
 
     <p style="margin-top:12px;">
-      📅 <strong>24 janvier 2026 – 20h30</strong><br>
+      📅 <strong>10 octobre 2026 à 20h30</strong><br>
       📍 Théâtre Saint Martin
     </p>
 
@@ -3066,7 +3106,10 @@ if (groupMode === "remove") {
   )];
 
   for (const id of groupChanges) {
-    if (seats[id]) delete seats[id];
+    if (seats[id]) {
+      delete seats[id];
+      await set(ref(db, `seats/${id}`), null);
+    }
   }
 
   recalcClientReservation(groupClient, clientEmail);
@@ -3076,7 +3119,7 @@ if (groupMode === "remove") {
   }
 
   // ✅ Enregistre les changements et rafraîchit l’affichage
-  save();
+  await save();
   render();
   updateTable();
   updateStatsBar();
@@ -3139,7 +3182,7 @@ else if (seatType === "moins8" || seatType === "gratuit") addBaby++;
         recalcClientReservation(groupClient, baseData.email);
         await syncPublicRequestAfterSeatChanges(getPublicRequestIdFromSeatData(baseData));
 
-        save();
+        await save();
         render();
         updateTable();
         updateStatsBar();
@@ -3736,7 +3779,7 @@ async function confirmPublicRequestFromSalle(id) {
     seats[item.seatId] = { ...base, type: item.type };
   }
 
-  save();
+  await save();
 
   for (const seatId of seatsList) {
     await removePublicHoldSeat(seatId, id);
@@ -3808,6 +3851,7 @@ async function refusePublicRequestFromSalle(id) {
 
     if (seats[seatId] && seats[seatId].reservationId === id) {
       delete seats[seatId];
+      await set(ref(db, `seats/${seatId}`), null);
     }
   }
 
@@ -3818,7 +3862,7 @@ async function refusePublicRequestFromSalle(id) {
     updatedAt: new Date().toISOString()
   });
 
-  save();
+  await save();
   render();
   updateTable();
   updateStatsBar();
@@ -3836,12 +3880,13 @@ async function deletePublicRequestFromSalle(id) {
 
     if (seats[seatId] && seats[seatId].reservationId === id) {
       delete seats[seatId];
+      await set(ref(db, `seats/${seatId}`), null);
     }
   }
 
   await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${id}`), null);
 
-  save();
+  await save();
   render();
   updateTable();
   updateStatsBar();
