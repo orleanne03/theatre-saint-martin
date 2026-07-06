@@ -1163,6 +1163,10 @@ body.portier .accordion-header {
     📢 Mailing nouvelle pièce
   </button>
 
+  <button id="archiveMailingContacts" style="display:none;background:#00695c;">
+    💾 Sauvegarder contacts mailing
+  </button>
+
   
   <!-- === Bouton retour Tableau de bord === -->
 <button id="retour-dashboard" class="back-btn">🏠 Retour au tableau de bord</button>
@@ -1666,6 +1670,13 @@ let freeRemaining  = nbFree;
 
   save();
 
+// 📇 Sauvegarde automatique du contact pour les futurs mailings, même après réinitialisation
+try {
+  await saveMailingContact(user.email, user.name, "ISLEA réservation", { phone: user.phone });
+} catch (err) {
+  console.warn("Contact mailing non sauvegardé", err);
+}
+
 // 📧 Envoi de l’email (autorisé en mode test même en admin)
 if (!EMAIL_TEST_MODE) {
   await sendEmail(user);
@@ -1968,13 +1979,23 @@ document.getElementById("portierBtn").onclick = () => {
 
 
 /* === Réinitialiser === */
-resetBtn.onclick = () => {
+resetBtn.onclick = async () => {
   if (!admin) return alert("Activez le mode admin.");
-  if (confirm("Effacer toutes les réservations ?")) {
+  if (confirm(`Effacer toutes les réservations ?\n\nAvant d’effacer, les contacts email seront sauvegardés dans l’archive mailing.`)) {
+    let archivedCount = 0;
+
+    try {
+      archivedCount = await archiveCurrentMailingContacts("Archive avant réinitialisation");
+    } catch (err) {
+      console.error("❌ Sauvegarde archive mailing impossible", err);
+      if (!confirm("⚠️ Les contacts mailing n’ont pas pu être sauvegardés. Continuer quand même la réinitialisation ?")) return;
+    }
+
     seats = {};
     save();
 	updateStatsBar(); // ✅ ajout ici
-    alert("✅ Réinitialisation complète.");
+    alert(`✅ Réinitialisation complète.
+📇 ${archivedCount} contact(s) sauvegardé(s) pour le mailing.`);
   }
 };
 
@@ -3243,6 +3264,10 @@ function toggleAdminUI() {
   if (newPieceMailingBtn) {
     newPieceMailingBtn.style.display = isAdmin ? "inline-block" : "none";
   }
+  const archiveMailingContactsBtn = document.getElementById("archiveMailingContacts");
+  if (archiveMailingContactsBtn) {
+    archiveMailingContactsBtn.style.display = isAdmin ? "inline-block" : "none";
+  }
 }
 
 
@@ -3485,6 +3510,86 @@ const mailingSubjectInput = document.getElementById("mailingSubject");
 const mailingBodyInput = document.getElementById("mailingBody");
 const mailingStatus = document.getElementById("mailingStatus");
 
+
+const MAILING_ARCHIVE_PATH = "mailing_contacts_archive";
+const archiveMailingContactsBtn = document.getElementById("archiveMailingContacts");
+
+function mailingContactKey(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[.#$\/\[\]]/g, "_");
+}
+
+async function saveMailingContact(email, name, source, extra = {}) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (!isValidMailingEmail(cleanEmail)) return false;
+
+  const key = mailingContactKey(cleanEmail);
+  const contactRef = ref(db, `${MAILING_ARCHIVE_PATH}/${key}`);
+
+  let previous = {};
+  try {
+    const snap = await get(contactRef);
+    previous = snap.val() || {};
+  } catch (err) {
+    console.warn("Ancien contact mailing non récupéré", cleanEmail, err);
+  }
+
+  const sources = new Set(
+    String(previous.sources || "")
+      .split(" + ")
+      .map(s => s.trim())
+      .filter(Boolean)
+  );
+  if (source) sources.add(source);
+
+  await set(contactRef, {
+    email: cleanEmail,
+    name: String(name || previous.name || "Invité").trim() || "Invité",
+    phone: String(extra.phone || previous.phone || "").trim(),
+    sources: [...sources].join(" + "),
+    createdAt: previous.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+
+  return true;
+}
+
+async function addArchivedMailingContacts(recipients) {
+  try {
+    const snap = await get(ref(db, MAILING_ARCHIVE_PATH));
+    const archived = snap.val() || {};
+
+    Object.values(archived).forEach(c => {
+      addMailingRecipient(
+        recipients,
+        c.email,
+        c.name,
+        c.sources ? `Archive mailing (${c.sources})` : "Archive mailing"
+      );
+    });
+  } catch (err) {
+    console.warn("Archive mailing non récupérée", err);
+  }
+}
+
+async function archiveCurrentMailingContacts(reason = "Archive manuelle") {
+  const recipients = await collectNewPieceRecipients({ includeArchive: false });
+  let saved = 0;
+
+  for (const r of recipients) {
+    const ok = await saveMailingContact(
+      r.email,
+      r.name,
+      r.sources ? `${reason} — ${r.sources}` : reason
+    );
+    if (ok) saved++;
+  }
+
+  return saved;
+}
+
 function isValidMailingEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 }
@@ -3501,7 +3606,13 @@ function addMailingRecipient(map, email, name, source) {
     });
   }
 
-  if (source) map.get(cleanEmail).sources.add(source);
+  const existing = map.get(cleanEmail);
+  const cleanName = String(name || "").trim();
+  if (cleanName && (!existing.name || existing.name === "Invité")) {
+    existing.name = cleanName;
+  }
+
+  if (source) existing.sources.add(source);
 }
 
 async function addParticipantsForReservation(recipients, reservationId, sourceLabel) {
@@ -3519,8 +3630,14 @@ async function addParticipantsForReservation(recipients, reservationId, sourceLa
   }
 }
 
-async function collectNewPieceRecipients() {
+async function collectNewPieceRecipients(options = {}) {
   const recipients = new Map();
+  const includeArchive = options.includeArchive !== false;
+
+  if (includeArchive) {
+    await addArchivedMailingContacts(recipients);
+  }
+
 
   // 1) ISLEA — réservants principaux depuis la base des sièges
   let isleaSeats = seats || {};
@@ -3641,6 +3758,24 @@ if (newPieceMailingBtn) {
     const recipients = await collectNewPieceRecipients();
     renderNewPieceRecipients(recipients);
     mailingStatus.textContent = `${recipients.length} destinataire(s) unique(s) trouvé(s).`;
+  });
+}
+
+if (archiveMailingContactsBtn) {
+  archiveMailingContactsBtn.addEventListener("click", async () => {
+    if (!admin) return alert("❌ Mode admin requis");
+    if (!confirm("Sauvegarder les contacts actuels dans l’archive mailing ?")) return;
+
+    archiveMailingContactsBtn.disabled = true;
+    try {
+      const count = await archiveCurrentMailingContacts("Archive manuelle");
+      alert(`✅ ${count} contact(s) sauvegardé(s) dans l’archive mailing.`);
+    } catch (err) {
+      console.error("❌ Archive mailing échouée", err);
+      alert("❌ Impossible de sauvegarder les contacts mailing. Regarde la console.");
+    } finally {
+      archiveMailingContactsBtn.disabled = false;
+    }
   });
 }
 
@@ -4152,7 +4287,7 @@ syncPortier(resid);
   <div class="modal-content" style="max-width:720px;width:92%;max-height:90vh;overflow:auto;">
     <h3>📢 Mailing nouvelle pièce</h3>
     <p style="font-size:13px;color:#555;text-align:left;margin:0 0 10px;">
-      Les destinataires sont récupérés depuis ISLEA et Bessay, puis dédupliqués par adresse email.
+      Les destinataires sont récupérés depuis ISLEA, Bessay et l’archive mailing, puis dédupliqués par adresse email.
     </p>
 
     <label for="mailingSubject" style="font-weight:600;display:block;text-align:left;margin-top:8px;">Sujet</label>
