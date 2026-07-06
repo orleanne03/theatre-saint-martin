@@ -83,7 +83,7 @@
           <div class="kicker">La Troupe Saint-Martin présente</div>
           <h1>Je préfère qu’on reste amies</h1>
           <p class="subtitle">Une pièce de <strong>Laurent Ruquier</strong>, dans une version inédite entièrement revisitée, portée par deux femmes.</p>
-          <div class="infos"><div class="pill">📅 10 octobre 2026 à 20h30</div><div class="pill">📍 Salle ISLEA à Avermes 03</div></div>
+          <div class="infos"><div class="pill">📅 11 octobre 2026 à 20h30</div><div class="pill">📍 Salle ISLEA à Avermes 03</div></div>
           <div class="notice">À noter : le langage de certaines répliques peut heurter la sensibilité des jeunes enfants.</div>
         </div>
       </div>
@@ -103,7 +103,7 @@
         <h2>2. Vos informations</h2>
         <p class="small">Votre demande sera confirmée ou refusée par la troupe. Les places restent bloquées temporairement pendant <strong>24 heures</strong>.</p>
         <div class="grid">
-          <div><label for="name">Nom complet *</label><input id="name" autocomplete="name" required /></div>
+          <div><label for="name">Votre NOM en 1er + Prénom *</label><input id="name" autocomplete="name" placeholder="Exemple : DUPONT Marie" required /></div>
           <div><label for="phone">Téléphone *</label><input id="phone" inputmode="tel" autocomplete="tel" required /></div>
           <div class="full"><label for="email">Adresse email *</label><input id="email" type="email" autocomplete="email" required /></div>
           <div class="full counts">
@@ -337,7 +337,7 @@
             <strong>Message :</strong><br>${message}
           </div>
           <p style="margin:0;font-size:15px;line-height:1.5;">
-            Ouvre <strong>demandes-public.html</strong> pour valider ou refuser cette demande.
+            Ouvre <strong>salle.html</strong> pour valider ou refuser cette demande dans la liste des réservations.
           </p>
           <p style="margin:16px 0 0;color:#777;font-size:12px;">Référence : ${escapeHTML(request.id)}</p>
         </div>
@@ -365,8 +365,8 @@
             <strong>Montant estimé :</strong> ${amount} €<br>
             <strong>Blocage jusqu’au :</strong> ${new Date(request.expiresAt).toLocaleString("fr-FR")}
           </div>
-          <p style="font-size:18px;line-height:1.6;margin:0 0 14px;color: #b94825;">
-            <strong>La réservation sera définitive uniquement après validation par la troupe. Vous recevrez ensuite un email de confirmation précisant les modalités de paiement via chèque ou virement.</strong>
+          <p style="font-size:15px;line-height:1.6;margin:0 0 14px;">
+            La réservation sera définitive uniquement après validation par la troupe. Tu recevras ensuite un email de confirmation.
           </p>
           <p style="font-size:15px;line-height:1.6;margin:0;">
             Pour toute question : <strong>06 46 32 06 49</strong>.
@@ -383,9 +383,19 @@
         `🎭 Demande reçue — Je préfère qu’on reste amies`,
         buildCustomerRequestEmail(request)
       );
+      await dbPatch(`${REQUESTS_PATH}/${request.id}`, {
+        customerEmailSentAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
       console.log("✅ Email de réception envoyé à", request.email);
+      return true;
     }catch(err){
+      await dbPatch(`${REQUESTS_PATH}/${request.id}`, {
+        customerEmailError: String(err && err.message ? err.message : err),
+        updatedAt: new Date().toISOString()
+      }).catch(() => {});
       console.warn("⚠️ Demande enregistrée, mais email spectateur non envoyé", err);
+      return false;
     }
   }
 
@@ -396,9 +406,21 @@
         `🎭 Nouvelle demande de réservation — ${request.name} — ${request.seats.join(", ")}`,
         buildAdminNotificationEmail(request)
       );
+      await dbPatch(`${REQUESTS_PATH}/${request.id}`, {
+        adminNotificationEmail: ADMIN_NOTIFICATION_EMAIL,
+        adminNotificationSentAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
       console.log("✅ Notification admin envoyée à", ADMIN_NOTIFICATION_EMAIL);
+      return true;
     }catch(err){
+      await dbPatch(`${REQUESTS_PATH}/${request.id}`, {
+        adminNotificationEmail: ADMIN_NOTIFICATION_EMAIL,
+        adminNotificationError: String(err && err.message ? err.message : err),
+        updatedAt: new Date().toISOString()
+      }).catch(() => {});
       console.warn("⚠️ Demande enregistrée, mais notification admin non envoyée", err);
+      return false;
     }
   }
 
@@ -446,11 +468,19 @@
         if(!ok) throw new Error(`La place ${seatId} vient d’être prise.`);
         acquired.push(seatId);
       }
-      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, totalPeople, amount, seats, message };
+      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, totalPeople, amount, seats, message, adminNotificationEmail:ADMIN_NOTIFICATION_EMAIL };
       await dbSet(`${REQUESTS_PATH}/${requestId}`, payload);
-      notifyAdminNewPublicRequest(payload);
-      notifyCustomerRequestReceived(payload);
-      showStatus("ok", `✅ Votre demande a bien été envoyée.<br>Places bloquées temporairement : <strong>${seats.map(escapeHTML).join(", ")}</strong><br>Référence : <strong>${requestId}</strong><br>Un email récapitulatif vient d’être envoyé. La troupe vous recontactera pour confirmer.`);
+
+      showStatus("ok", "✅ Demande enregistrée. Envoi des emails en cours…");
+      const [adminResult, customerResult] = await Promise.allSettled([
+        notifyAdminNewPublicRequest(payload),
+        notifyCustomerRequestReceived(payload)
+      ]);
+
+      const adminOk = adminResult.status === "fulfilled" && adminResult.value === true;
+      const customerOk = customerResult.status === "fulfilled" && customerResult.value === true;
+
+      showStatus("ok", `✅ Votre demande a bien été envoyée.<br>Places bloquées temporairement : <strong>${seats.map(escapeHTML).join(", ")}</strong><br>Référence : <strong>${requestId}</strong><br>${customerOk ? "Un email récapitulatif vient d’être envoyé." : "La demande est enregistrée, mais l’email récapitulatif n’a pas pu être envoyé automatiquement."} La troupe vous recontactera pour confirmer.${adminOk ? "" : "<br><small>Notification admin non confirmée, mais la demande apparaîtra dans la liste des réservations.</small>"}`);
       document.getElementById("reservationForm").reset();
       document.getElementById("adultCount").value = 1;
       selected = [];
