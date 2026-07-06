@@ -475,7 +475,7 @@
         if(!ok) throw new Error(`La place ${seatId} vient d’être prise.`);
         acquired.push(seatId);
       }
-      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, freeCount, totalPeople, amount, seats, message, adminNotificationEmail:ADMIN_NOTIFICATION_EMAIL };
+      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"10 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, freeCount, totalPeople, amount, seats, message, adminNotificationEmail:ADMIN_NOTIFICATION_EMAIL };
       await dbSet(`${REQUESTS_PATH}/${requestId}`, payload);
 
       showStatus("ok", "✅ Demande enregistrée. Envoi des emails en cours…");
