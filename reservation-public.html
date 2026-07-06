@@ -58,7 +58,7 @@
     input,textarea{width:100%;padding:12px 13px;border:1px solid #d4b582;border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:var(--texte);}
     textarea{min-height:86px;resize:vertical;}
     .full{grid-column:1/-1;}
-    .counts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .counts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
     .checkbox-line{display:flex;align-items:flex-start;gap:10px;margin-top:16px;font-size:14px;line-height:1.4;}
     .checkbox-line input{width:auto;margin-top:2px;}
     .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:22px;}
@@ -110,6 +110,7 @@
             <div><label for="adultCount">Adultes <span id="publicPriceAdult" class="price-note">14 €</span></label><input id="adultCount" type="number" min="0" max="12" value="1" /></div>
             <div><label for="childCount">Enfants 9-14 ans <span id="publicPriceChild" class="price-note">10 €</span></label><input id="childCount" type="number" min="0" max="12" value="0" /></div>
             <div><label for="babyCount">Moins de 8 ans <span class="price-note">gratuit</span></label><input id="babyCount" type="number" min="0" max="12" value="0" /></div>
+            <div><label for="freeCount">Accompagnants <span class="price-note">gratuit</span></label><input id="freeCount" type="number" min="0" max="12" value="0" /></div>
           </div>
           <div class="full"><label for="message">Message facultatif</label><textarea id="message" placeholder="Exemple : arrivée avec une personne à mobilité réduite, besoin de rester côté allée…"></textarea></div>
         </div>
@@ -329,7 +330,7 @@
             <strong>Email :</strong> ${escapeHTML(request.email)}<br>
             <strong>Téléphone :</strong> ${escapeHTML(request.phone)}<br>
             <strong>Places :</strong> ${safeSeats}<br>
-            <strong>Adultes :</strong> ${request.adultCount || 0} — <strong>Enfants :</strong> ${request.childCount || 0} — <strong>-8 ans :</strong> ${request.babyCount || 0}<br>
+            <strong>Adultes :</strong> ${request.adultCount || 0} — <strong>Enfants :</strong> ${request.childCount || 0} — <strong>-8 ans :</strong> ${request.babyCount || 0} — <strong>Accompagnants :</strong> ${request.freeCount || 0}<br>
             <strong>Montant estimé :</strong> ${amount} €<br>
             <strong>Blocage jusqu’au :</strong> ${new Date(request.expiresAt).toLocaleString("fr-FR")}
           </div>
@@ -362,6 +363,10 @@
             <strong>Lieu :</strong> ${escapeHTML(request.lieu || "Salle ISLEA à Avermes 03")}<br>
             <strong>Places demandées :</strong> ${safeSeats}<br>
             <strong>Nombre de places :</strong> ${request.totalPeople || (request.seats || []).length}<br>
+            <strong>Adultes :</strong> ${request.adultCount || 0}<br>
+            <strong>Enfants 9-14 ans :</strong> ${request.childCount || 0}<br>
+            <strong>Moins de 8 ans :</strong> ${request.babyCount || 0}<br>
+            <strong>Accompagnants gratuits :</strong> ${request.freeCount || 0}<br>
             <strong>Montant estimé :</strong> ${amount} €<br>
             <strong>Blocage jusqu’au :</strong> ${new Date(request.expiresAt).toLocaleString("fr-FR")}
           </div>
@@ -440,8 +445,9 @@
     const adultCount = parseInt(document.getElementById("adultCount").value, 10) || 0;
     const childCount = parseInt(document.getElementById("childCount").value, 10) || 0;
     const babyCount = parseInt(document.getElementById("babyCount").value, 10) || 0;
+    const freeCount = parseInt(document.getElementById("freeCount").value, 10) || 0;
     const message = document.getElementById("message").value.trim();
-    const totalPeople = adultCount + childCount + babyCount;
+    const totalPeople = adultCount + childCount + babyCount + freeCount;
     if(!selected.length) return showStatus("err", "Choisissez au moins une place sur le plan.");
     if(!name || !email || !phone) return showStatus("err", "Merci de compléter le nom, l’email et le téléphone.");
     if(!isValidEmail(email)) return showStatus("err", "❌ Adresse email invalide. Vérifiez qu’il n’y a pas d’espace, d’accent ou de point manquant.");
@@ -469,7 +475,7 @@
         if(!ok) throw new Error(`La place ${seatId} vient d’être prise.`);
         acquired.push(seatId);
       }
-      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, totalPeople, amount, seats, message, adminNotificationEmail:ADMIN_NOTIFICATION_EMAIL };
+      const payload = { id:requestId, status:"nouvelle", source:"reservation-public-plan", showId:SHOW_ID, spectacle:"Je préfère qu’on reste amies", date:"11 octobre 2026 à 20h30", lieu:"Salle ISLEA à Avermes 03", createdAt, expiresAt, name, email, phone, adultCount, childCount, babyCount, freeCount, totalPeople, amount, seats, message, adminNotificationEmail:ADMIN_NOTIFICATION_EMAIL };
       await dbSet(`${REQUESTS_PATH}/${requestId}`, payload);
 
       showStatus("ok", "✅ Demande enregistrée. Envoi des emails en cours…");
@@ -484,6 +490,7 @@
       showStatus("ok", `✅ Votre demande a bien été envoyée.<br>Places bloquées temporairement : <strong>${seats.map(escapeHTML).join(", ")}</strong><br>Référence : <strong>${requestId}</strong><br>${customerOk ? "Un email récapitulatif vient d’être envoyé." : "La demande est enregistrée, mais l’email récapitulatif n’a pas pu être envoyé automatiquement."} La troupe vous recontactera pour confirmer.${adminOk ? "" : "<br><small>Notification admin non confirmée, mais la demande apparaîtra dans la liste des réservations.</small>"}`);
       document.getElementById("reservationForm").reset();
       document.getElementById("adultCount").value = 1;
+      document.getElementById("freeCount").value = 0;
       selected = [];
       await loadState();
     }catch(err){
