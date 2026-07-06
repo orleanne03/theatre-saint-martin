@@ -2014,6 +2014,36 @@ function escapeHTML(str="") {
     .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
 
+function seatBelongsToClient(data, clientName, clientEmail) {
+  if (!data) return false;
+  const sameEmail = clientEmail && data.email &&
+    String(data.email).toLowerCase() === String(clientEmail).toLowerCase();
+  const sameName = clientName && data.name === clientName;
+  return sameEmail || sameName;
+}
+
+function recalcClientReservation(clientName, clientEmail) {
+  const clientSeats = Object.values(seats || {})
+    .filter(data => seatBelongsToClient(data, clientName, clientEmail));
+
+  const nbAdult = clientSeats.filter(s => s.type === "adulte").length;
+  const nbChild = clientSeats.filter(s => s.type === "enfant").length;
+  const nbBaby  = clientSeats.filter(s => s.type === "moins8").length;
+  const amount = nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
+
+  for (const data of clientSeats) {
+    data.nbAdult = nbAdult;
+    data.nbChild = nbChild;
+    data.nbBaby = nbBaby;
+    data.amount = amount;
+    data.free = amount === 0;
+    if (amount === 0) data.paid = true;
+  }
+
+  return clientSeats.length;
+}
+
+
 async function loadParticipants(reservationId) {
   if (!reservationId) return;
 
@@ -2455,7 +2485,18 @@ s.type === "enfant" ? "🧒" : "🎟️";
         <span class="badge-seat" style="
           background:${s.paid ? "#43a047" : "#ef5350"};
           color:white;border-radius:6px;padding:4px 8px;font-size:0.85rem;
-        ">${icon} ${s.id} ${paidIcon}</span>
+          display:inline-flex;align-items:center;gap:6px;
+        ">
+          <span>${icon} ${s.id} ${paidIcon}</span>
+          ${admin ? `<button type="button"
+            class="delete-seat-badge-btn"
+            data-seat="${s.id}"
+            data-client="${name}"
+            title="Supprimer cette place"
+            style="background:rgba(255,255,255,.25);color:white;border:1px solid rgba(255,255,255,.7);
+                   border-radius:50%;width:20px;height:20px;line-height:16px;padding:0;
+                   font-weight:900;cursor:pointer;font-size:14px;">×</button>` : ""}
+        </span>
       `;
     }).join("")}
   </div>
@@ -2542,6 +2583,51 @@ s.type === "enfant" ? "🧒" : "🎟️";
 
 }); // ← ferme cb.addEventListener
 };   // ← ferme updateTable()
+
+// ===================================================
+// 🗑️ Suppression directe d’une place depuis la liste
+// ===================================================
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".delete-seat-badge-btn");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!admin) return alert("❌ Mode admin requis");
+
+  const seatId = btn.dataset.seat;
+  const data = seats[seatId];
+
+  if (!data) {
+    alert("Cette place est déjà libre.");
+    render();
+    updateTable();
+    updateStatsBar();
+    return;
+  }
+
+  const clientName = data.name || btn.dataset.client || "";
+  const clientEmail = data.email || "";
+
+  if (!confirm(`Supprimer la place ${seatId} de la réservation de ${clientName || "ce client"} ?`)) return;
+
+  delete seats[seatId];
+
+  const remaining = recalcClientReservation(clientName, clientEmail);
+
+  save();
+  render();
+  updateTable();
+  updateStatsBar();
+
+  if (remaining > 0 && clientEmail) {
+    const sendMail = await askEmailConfirmation(clientEmail);
+    if (sendMail) await notifyClientUpdate(clientEmail);
+  }
+
+  alert(`✅ Place ${seatId} supprimée. ${remaining ? "Réservation mise à jour." : "La réservation est maintenant vide."}`);
+});
 
 // ===================================================
 // 🎟️ Génération HTML du billet (client principal)
@@ -2857,9 +2943,16 @@ document.addEventListener("click", async (e) => {
 
     // --- SUPPRESSION
 if (groupMode === "remove") {
+  const removedSeatData = groupChanges
+    .map(id => seats[id])
+    .filter(Boolean);
+  const clientEmail = removedSeatData.find(s => s.email)?.email || "";
+
   for (const id of groupChanges) {
     if (seats[id]) delete seats[id];
   }
+
+  recalcClientReservation(groupClient, clientEmail);
 
   // ✅ Enregistre les changements et rafraîchit l’affichage
   save();
@@ -2867,7 +2960,7 @@ if (groupMode === "remove") {
   updateTable();
   updateStatsBar();
 
-  const clientData = Object.values(seats).find(s => s.name === groupClient);
+  const clientData = Object.values(seats).find(s => seatBelongsToClient(s, groupClient, clientEmail));
   if (clientData?.email) {
     const sendMail = await askEmailConfirmation(clientData.email);
 
