@@ -1,4 +1,3 @@
-<!-- redeploy -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -52,8 +51,9 @@
   const SEATS_PATH = "seats"; // ✅ synchronisé avec salle.html
   const HOLDS_PATH = `spectacles/${SHOW_ID}/holds`;
   const REQUESTS_PATH = `spectacles/${SHOW_ID}/public_requests`;
-  const PRICE_ADULT = 14;
-  const PRICE_CHILD = 10;
+  const PRICES_PATH = `spectacles/${SHOW_ID}/prices`;
+  let PRICE_ADULT = 14;
+  let PRICE_CHILD = 10;
 
   let requests = [];
   let confirmedSeats = {};
@@ -64,6 +64,19 @@
   async function dbSet(path, data){ const res = await fetch(dbUrl(path), {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
   async function dbPatch(path, data){ const res = await fetch(dbUrl(path), {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)}); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
   async function dbRemove(path){ const res = await fetch(dbUrl(path), {method:"DELETE"}); if(!res.ok) throw new Error(await res.text()); }
+
+  async function loadSharedPrices(){
+    try{
+      const data = await dbGet(PRICES_PATH).catch(() => null);
+      if(data){
+        const adult = parseFloat(data.adult);
+        const child = parseFloat(data.child);
+        if(Number.isFinite(adult) && adult >= 0) PRICE_ADULT = adult;
+        if(Number.isFinite(child) && child >= 0) PRICE_CHILD = child;
+      }
+    }catch(err){ console.warn("⚠️ Tarifs partagés non chargés", err); }
+  }
+
   function escapeHTML(str=""){ return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
   function fmtDate(iso){ if(!iso) return "—"; try{return new Date(iso).toLocaleString("fr-FR");}catch{return iso;} }
   function isExpired(r){ return r.expiresAt && new Date(r.expiresAt).getTime() <= Date.now() && !["confirmee","refusee","archivee","expiree"].includes(r.status); }
