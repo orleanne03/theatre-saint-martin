@@ -1077,6 +1077,9 @@ body {
 <div class="buttons">
   <button id="confirm">✅ Confirmer</button>
   <button id="admin">🔐 Admin</button>
+	<button id="openPublicReservation" type="button" style="background:#cf683d;">
+  🎟️ Page réservation public
+</button>
   <button id="reset">♻️ Réinitialiser</button>
   <button id="export" style="display:none;">📤 Export CSV</button>
   <button id="scanTicket">🎟️ Scanner un billet</button>
@@ -1234,7 +1237,9 @@ if (sidebarToggle) {
     else openSidebar();
   });
 }
-
+document.getElementById("openPublicReservation").onclick = () => {
+  window.open("reservation-public.html", "_blank");
+};
 document.addEventListener("click", (e) => {
   if (window.innerWidth > 900) return;
   if (!document.body.classList.contains("sidebar-open")) return;
