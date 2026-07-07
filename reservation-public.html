@@ -118,6 +118,19 @@
             <div><label for="babyCount">Moins de 8 ans <span class="price-note">gratuit</span></label><input id="babyCount" type="number" min="0" max="12" value="0" /></div>
             <div><label for="freeCount">Accompagnants — réservé aux membres de la troupe <span class="price-note">gratuit</span></label><input id="freeCount" type="number" min="0" max="12" value="0" /></div>
           </div>
+          <div id="childWarning" class="full" style="
+            display:none;
+            margin-top:8px;
+            padding:12px 14px;
+            border-radius:12px;
+            background:#fff2d8;
+            border-left:5px solid #cf683d;
+            color:#5c2c18;
+            font-weight:700;
+            line-height:1.45;
+          ">
+            ⚠️ À noter : le langage de certaines répliques peut heurter la sensibilité des jeunes enfants.
+          </div>
           <div class="full"><label for="message">Message facultatif</label><textarea id="message" placeholder="Exemple : arrivée avec une personne à mobilité réduite, besoin de rester côté allée…"></textarea></div>
         </div>
         <label class="checkbox-line"><input id="consent" type="checkbox" required /><span>J’accepte d’être contacté(e) par la Troupe Saint-Martin au sujet de cette demande de réservation.</span></label>
@@ -508,6 +521,19 @@
       await loadState();
     }finally{ submitBtn.disabled = false; }
   });
+
+
+  function updateChildWarning(){
+    const childCount = parseInt(document.getElementById("childCount")?.value || "0", 10) || 0;
+    const babyCount = parseInt(document.getElementById("babyCount")?.value || "0", 10) || 0;
+    const warning = document.getElementById("childWarning");
+    if (!warning) return;
+    warning.style.display = (childCount > 0 || babyCount > 0) ? "block" : "none";
+  }
+
+  document.getElementById("childCount")?.addEventListener("input", updateChildWarning);
+  document.getElementById("babyCount")?.addEventListener("input", updateChildWarning);
+  updateChildWarning();
 
   buildHall();
   loadPublicPrices().finally(loadState);
