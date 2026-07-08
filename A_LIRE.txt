@@ -1,0 +1,12 @@
+À ajouter dans le <head> de salle.html :
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#cf683d">
+
+À faire ensuite sur le téléphone :
+1. Supprimer l'ancien raccourci gris de l'écran d'accueil.
+2. Ouvrir salle.html dans Chrome.
+3. Menu ⋮ → Ajouter à l'écran d'accueil.
+4. Recréer le raccourci.
