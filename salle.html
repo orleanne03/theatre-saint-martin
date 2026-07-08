@@ -4779,9 +4779,13 @@ function buildNewPieceEmailHTML(name, bodyText) {
                     <div style="font-size:17px;font-weight:bold;margin-bottom:6px;">Ou réservation par téléphone</div>
                     <div style="font-size:20px;font-weight:bold;letter-spacing:1px;white-space:nowrap;">06&nbsp;46&nbsp;32&nbsp;06&nbsp;49</div>
                   </div>
-                  <p style="font-size:12px;color:#777;margin:16px 0 0 0;line-height:1.4;">
-                    Vous recevez cet email suite à votre réservation auprès du Théâtre Saint-Martin.
-                  </p>
+<p style="margin-top:18px;font-size:12px;line-height:1.5;color:#777;text-align:center;">
+  Vous recevez cet email car vous avez déjà réservé ou laissé vos coordonnées auprès de la Troupe Saint-Martin.<br>
+  Si vous ne souhaitez plus recevoir nos informations, vous pouvez répondre à cet email avec le mot
+  <strong>DÉSINSCRIPTION</strong><br>
+  ou écrire directement à :
+  <strong>theatre.sm.03@gmail.com</strong>
+</p>
                 </td>
               </tr>
 
@@ -4790,13 +4794,7 @@ function buildNewPieceEmailHTML(name, bodyText) {
         </tr>
       </table>
     </div>`;
-<p style="margin-top:18px;font-size:12px;line-height:1.5;color:#777;text-align:center;">
-  Vous recevez cet email car vous avez déjà réservé ou laissé vos coordonnées auprès de la Troupe Saint-Martin.<br>
-  Si vous ne souhaitez plus recevoir nos informations, vous pouvez répondre à cet email avec le mot
-  <strong>DÉSINSCRIPTION</strong><br>
-  ou écrire directement à :
-  <strong>theatre.sm.03@gmail.com</strong>
-</p>
+
 }
 
 function sleepMailing(ms) {
