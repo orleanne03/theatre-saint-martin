@@ -1,7 +1,7 @@
 {
   "name": "Tableau de bord théâtre",
-  "short_name": "Théâtre",
-  "start_url": "salle.html",
+  "short_name": "Théâtre ISLEA",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f6ead2",
   "theme_color": "#cf683d",
