@@ -78,13 +78,68 @@
     color: red;
     font-weight: 600;
 }
+
+    .poster{cursor:zoom-in;}
+    .poster-zoom-modal{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background:rgba(0,0,0,.84);
+      padding:18px;
+      align-items:center;
+      justify-content:center;
+    }
+    .poster-zoom-modal.open{display:flex;}
+    .poster-zoom-content{
+      position:relative;
+      max-width:min(94vw,900px);
+      max-height:94vh;
+    }
+    .poster-zoom-content img{
+      max-width:100%;
+      max-height:90vh;
+      display:block;
+      border-radius:16px;
+      box-shadow:0 12px 32px rgba(0,0,0,.45);
+      background:#fff;
+    }
+    .poster-zoom-close{
+      position:absolute;
+      top:-12px;
+      right:-12px;
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      border:2px solid #fff;
+      background:#b94825;
+      color:#fff;
+      font-size:26px;
+      line-height:1;
+      padding:0;
+      cursor:pointer;
+      box-shadow:0 4px 12px rgba(0,0,0,.35);
+    }
+    .poster-zoom-help{
+      margin-top:10px;
+      text-align:center;
+      color:#fff;
+      font-size:13px;
+      font-weight:700;
+    }
+
 </style>
 </head>
 <body>
   <main class="page">
     <section class="card">
       <div class="hero">
-        <div class="poster-wrap"><img class="poster" src="affiche-amies.png" alt="Affiche Je préfère qu’on reste amies" /></div>
+        <div class="poster-wrap">
+          <div>
+            <img class="poster" id="posterImage" src="affiche-amies.png" alt="Affiche Je préfère qu’on reste amies" title="Cliquez pour agrandir l’affiche" />
+            <div style="margin-top:8px;text-align:center;font-size:13px;font-weight:700;color:#8b3f1f;">🔎 Cliquez sur l’affiche pour l’agrandir</div>
+          </div>
+        </div>
         <div class="intro">
           <div class="kicker">La Troupe Saint-Martin présente</div>
           <h1>Je préfère qu’on reste amies</h1>
@@ -142,7 +197,44 @@
     </section>
   </main>
 
+
+  <div id="posterZoomModal" class="poster-zoom-modal" aria-hidden="true">
+    <div class="poster-zoom-content">
+      <button id="closePosterZoom" class="poster-zoom-close" type="button" aria-label="Fermer l’affiche agrandie">×</button>
+      <img src="affiche-amies.png" alt="Affiche Je préfère qu’on reste amies en grand" />
+      <div class="poster-zoom-help">Touchez en dehors de l’affiche ou appuyez sur × pour fermer</div>
+    </div>
+  </div>
+
 <script>
+
+  const posterImage = document.getElementById("posterImage");
+  const posterZoomModal = document.getElementById("posterZoomModal");
+  const closePosterZoom = document.getElementById("closePosterZoom");
+
+  function openPosterZoom(){
+    if (!posterZoomModal) return;
+    posterZoomModal.classList.add("open");
+    posterZoomModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closePosterZoomModal(){
+    if (!posterZoomModal) return;
+    posterZoomModal.classList.remove("open");
+    posterZoomModal.setAttribute("aria-hidden", "true");
+  }
+
+  posterImage?.addEventListener("click", openPosterZoom);
+  closePosterZoom?.addEventListener("click", closePosterZoomModal);
+
+  posterZoomModal?.addEventListener("click", e => {
+    if (e.target === posterZoomModal) closePosterZoomModal();
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closePosterZoomModal();
+  });
+
   const DB_BASE_URL = "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app";
   const SHOW_ID = "amies_2026_10_11";
   const SEATS_PATH = "seats"; // ✅ synchronisé avec salle.html
