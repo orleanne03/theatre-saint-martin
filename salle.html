@@ -2048,41 +2048,78 @@ async function notifyClientUpdate(email) {
 }
 }
 
-/* === Mode Admin === */
-adminBtn.onclick = () => {
+/* === Mode Admin avec mémorisation sur cet appareil === */
+function activateAdminMode() {
   const scanBtn = document.getElementById("scanTicket");
   const infoBtn = document.getElementById("info");
 
+  admin = true;
+  resetBtn.style.display = "inline-block";
+  document.getElementById("export").style.display = "inline-block";
+
+  if (scanBtn) scanBtn.style.display = "none";
+  if (infoBtn) infoBtn.style.display = "none";
+
+  document.body.classList.add("admin");
+  adminBtn.textContent = "🚪 Sortir du mode admin";
+
+  updateTable();
+  try { toggleAdminUI(); } catch(e) {}
+}
+
+function deactivateAdminMode() {
+  const scanBtn = document.getElementById("scanTicket");
+  const infoBtn = document.getElementById("info");
+
+  admin = false;
+  resetBtn.style.display = "none";
+  document.getElementById("export").style.display = "none";
+
+  if (scanBtn) scanBtn.style.display = "inline-block";
+  if (infoBtn) infoBtn.style.display = "inline-block";
+
+  document.body.classList.remove("admin");
+  adminBtn.textContent = "🔐 Admin";
+
+  updateTable();
+  try { toggleAdminUI(); } catch(e) {}
+}
+
+adminBtn.onclick = () => {
   if (!admin) {
     const p = prompt("Mot de passe admin :");
-    if (p === "admin123") {
-      admin = true;
-      alert("✅ Mode admin activé");
-      resetBtn.style.display = "inline-block";
-      document.getElementById("export").style.display = "inline-block";
-      scanBtn.style.display = "none";
-      infoBtn.style.display = "none";
-      document.body.classList.add("admin");
-      adminBtn.textContent = "🚪 Sortir du mode admin";
-      updateTable();
 
-      toggleAdminUI(); // ✅ ajoute cette ligne ici aussi
+    if (p === "admin123") {
+      activateAdminMode();
+
+      const remember = confirm("Mémoriser le mode admin sur cet appareil ?");
+      if (remember) {
+        localStorage.setItem("ADMIN_AUTO_LOGIN", "true");
+        alert("✅ Mode admin activé et mémorisé sur cet appareil.");
+      } else {
+        alert("✅ Mode admin activé.");
+      }
+
     } else {
       alert("❌ Mot de passe incorrect.");
     }
+
   } else {
-    admin = false;
+    const forget = confirm("Sortir du mode admin ?\n\nOK = sortir et oublier cet appareil\nAnnuler = sortir seulement pour cette fois");
+
+    if (forget) {
+      localStorage.removeItem("ADMIN_AUTO_LOGIN");
+    }
+
+    deactivateAdminMode();
     alert("👋 Mode admin désactivé");
-    resetBtn.style.display = "none";
-    document.getElementById("export").style.display = "none";
-    scanBtn.style.display = "inline-block";
-    infoBtn.style.display = "inline-block";
-    document.body.classList.remove("admin");
-    adminBtn.textContent = "🔐 Admin";
-    updateTable();
-    toggleAdminUI(); // ✅ déjà présent ici
   }
 };
+
+// ✅ Connexion automatique admin sur ton téléphone si déjà mémorisé
+if (localStorage.getItem("ADMIN_AUTO_LOGIN") === "true") {
+  activateAdminMode();
+}
 
 
 
