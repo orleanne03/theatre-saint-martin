@@ -20,6 +20,19 @@ button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer
 .accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%;max-width:500px}
 .panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px;max-width:500px;margin:0 auto 16px;overflow:auto}
 table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
+
+.history-complete {
+  background: #e8f5e9 !important;
+  color: #1b5e20;
+  font-weight: 800;
+}
+.history-complete td {
+  border-bottom-color: #a5d6a7;
+}
+.history-count {
+  font-weight: 950;
+  white-space: nowrap;
+}
 .big-result{font-size:1.2rem;padding:12px;border-radius:10px;margin:10px 0;background:#f5f5f5}.small{font-size:.9rem;color:#666;line-height:1.35}
 @media(max-width:480px){body{padding:10px}#reader{width:100%;max-width:330px}.panel{padding:12px}th,td{font-size:.9rem}}
 </style>
@@ -113,30 +126,69 @@ function vibrate(type = "ok") {
 
 function renderHistory(){
   const list = getScanned();
+  const state = getScanState();
   const tbody = document.getElementById("historyTable");
   tbody.innerHTML = "";
+
   const grouped = {};
   list.forEach(item => {
-    if (!grouped[item.ticketId]) grouped[item.ticketId] = { nom: item.nom, sieges: item.sieges, count: 0, lastDate: item.date };
+    if (!grouped[item.ticketId]) {
+      const savedState = state[item.ticketId] || {};
+      grouped[item.ticketId] = {
+        nom: item.nom,
+        sieges: item.sieges,
+        count: 0,
+        maxScans: Number(item.maxScans || savedState.maxScans || 1),
+        lastDate: item.date
+      };
+    }
     grouped[item.ticketId].count++;
     grouped[item.ticketId].lastDate = item.date;
+
+    const savedState = state[item.ticketId] || {};
+    const max = Number(item.maxScans || savedState.maxScans || grouped[item.ticketId].maxScans || 1);
+    if (max > grouped[item.ticketId].maxScans) grouped[item.ticketId].maxScans = max;
   });
+
   Object.entries(grouped).forEach(([ticketId, item]) => {
+    const maxScans = Math.max(Number(item.maxScans || 1), 1);
+    const isComplete = Number(item.count || 0) >= maxScans;
+
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${escapeHTML(item.nom)}</td><td>${escapeHTML(item.sieges)}</td><td>${escapeHTML(item.lastDate)}</td><td><strong>${item.count}</strong><span class="trash" style="margin-left:8px;">🗑️</span></td>`;
+    if (isComplete) tr.classList.add("history-complete");
+
+    tr.innerHTML = `
+      <td>${escapeHTML(item.nom)}</td>
+      <td>${escapeHTML(item.sieges)}</td>
+      <td>${escapeHTML(item.lastDate)}</td>
+      <td>
+        <strong class="history-count">${item.count}/${maxScans}</strong>
+        <span class="trash" style="margin-left:8px;">🗑️</span>
+      </td>
+    `;
     tbody.appendChild(tr);
+
     tr.querySelector(".trash").onclick = async () => {
       const local = getScanned();
       const idx = local.map(s => s.ticketId).lastIndexOf(ticketId);
       if (idx !== -1) { local.splice(idx, 1); setScanned(local); }
+
       scanState = getScanState();
       if (scanState[ticketId]) {
         const nextCount = Math.max(0, Number(scanState[ticketId].count || 0) - 1);
-        if (nextCount <= 0) { delete scanState[ticketId]; await set(ref(db, "scans/" + ticketId), null); }
-        else { scanState[ticketId].count = nextCount; scanState[ticketId].lastScan = Date.now(); await set(ref(db, "scans/" + ticketId), scanState[ticketId]); }
+        if (nextCount <= 0) {
+          delete scanState[ticketId];
+          await set(ref(db, "scans/" + ticketId), null);
+        } else {
+          scanState[ticketId].count = nextCount;
+          scanState[ticketId].lastScan = Date.now();
+          await set(ref(db, "scans/" + ticketId), scanState[ticketId]);
+        }
         setScanState(scanState);
       }
-      renderHistory(); updateCounter();
+
+      renderHistory();
+      updateCounter();
     };
   });
 }
@@ -221,7 +273,7 @@ async function onScanSuccess(text){
   scanState[ticket.ticketId] = current;
   setScanState(scanState);
   const list = getScanned();
-  list.push({ ticketId: ticket.ticketId, nom: current.nom, sieges: current.sieges, date: new Date().toLocaleString() });
+  list.push({ ticketId: ticket.ticketId, nom: current.nom, sieges: current.sieges, maxScans: ticket.maxScans, date: new Date().toLocaleString() });
   setScanned(list);
   renderHistory(); updateCounter();
   beep("ok"); vibrate("ok");
@@ -260,7 +312,7 @@ async function syncScansFromFirebase() {
     Object.entries(data).forEach(([ticketId, v]) => {
       const count = Number(v.count || 0);
       state[ticketId] = { count, nom: v.nom || "Participant", sieges: v.sieges || "", email: v.email || "", phone: v.phone || "", maxScans: Number(v.maxScans || 1), lastScan: Number(v.lastScan || Date.now()) };
-      for (let i = 0; i < count; i++) list.push({ ticketId, nom: state[ticketId].nom, sieges: state[ticketId].sieges, date: new Date(state[ticketId].lastScan || Date.now()).toLocaleString() });
+      for (let i = 0; i < count; i++) list.push({ ticketId, nom: state[ticketId].nom, sieges: state[ticketId].sieges, maxScans: state[ticketId].maxScans, date: new Date(state[ticketId].lastScan || Date.now()).toLocaleString() });
     });
   }
   scanState = state;
