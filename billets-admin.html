@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎟️ Admin billets — Théâtre Saint-Martin</title>
+  <style>
+    :root {
+      --blue: #0d47a1;
+      --green: #2e7d32;
+      --red: #c62828;
+      --orange: #ef6c00;
+      --bg: #eef6fc;
+      --card: #ffffff;
+      --text: #212121;
+      --muted: #666;
+      --border: #dde7f0;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #e3f2fd 0%, #fafafa 100%);
+      color: var(--text);
+      padding: 18px;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      color: var(--blue);
+      font-size: 1.7rem;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .admin-note {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fff8e1;
+      border-left: 5px solid #f9a825;
+      border-radius: 8px;
+      color: #5d4037;
+      font-size: .92rem;
+      line-height: 1.45;
+    }
+
+    .tools {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    input[type="search"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input[type="search"]:focus {
+      border-color: #64b5f6;
+      box-shadow: 0 0 0 3px rgba(100,181,246,.2);
+    }
+
+    .counter {
+      white-space: nowrap;
+      color: var(--blue);
+      font-weight: 800;
+      padding: 0 6px;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: .92rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .btn-view { background: #1565c0; color: white; }
+    .btn-sms { background: #2e7d32; color: white; }
+    .btn-copy { background: #455a64; color: white; }
+    .btn-disabled {
+      background: #e0e0e0;
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    .table-card {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      overflow: hidden;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    th {
+      background: var(--blue);
+      color: white;
+      text-align: left;
+      padding: 11px 10px;
+      font-size: .92rem;
+    }
+
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      vertical-align: top;
+      font-size: .92rem;
+    }
+
+    tr:hover td {
+      background: #f6fbff;
+    }
+
+    .name {
+      font-weight: 900;
+      color: #111;
+      margin-bottom: 3px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: .86rem;
+    }
+
+    .seats {
+      max-width: 220px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: .82rem;
+    }
+
+    .paid { background: #e8f5e9; color: var(--green); }
+    .unpaid { background: #ffebee; color: var(--red); }
+
+    .sms-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--red);
+    }
+
+    .sms-check.sent { color: var(--green); }
+    .sms-check input { transform: scale(1.25); cursor: pointer; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .empty, .locked, .loading {
+      text-align: center;
+      padding: 28px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .locked {
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      margin-top: 24px;
+    }
+
+    @media (max-width: 760px) {
+      body { padding: 10px; }
+      h1 { font-size: 1.35rem; }
+      .tools { grid-template-columns: 1fr; }
+      .counter { padding: 0; }
+      table { min-width: 900px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <header>
+      <h1>🎟️ Admin billets</h1>
+      <p class="subtitle">
+        Liste des billets ISLEA — recherche, visualisation du QR code et renvoi du lien billet par SMS.
+      </p>
+      <div class="admin-note">
+        ⚠️ Page admin pratique, mais hébergée sur GitHub Pages : ne partage pas son adresse. Pour une vraie protection, il faut aussi sécuriser les règles Firebase.
+      </div>
+    </header>
+
+    <section id="locked" class="locked" style="display:none;">
+      🔒 Accès admin refusé.<br>
+      Recharge la page pour réessayer.
+    </section>
+
+    <main id="adminArea" style="display:none;">
+      <section class="tools">
+        <input id="searchInput" type="search" placeholder="🔎 Rechercher par nom, téléphone, email ou siège…" autocomplete="off" />
+        <div id="counter" class="counter">0 billet</div>
+        <button id="refreshBtn" type="button" class="btn-copy">🔄 Actualiser</button>
+      </section>
+
+      <section class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th>Sièges</th>
+                <th>Paiement</th>
+                <th>SMS billet</th>
+                <th>Lien / actions</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsBody">
+              <tr><td colspan="6" class="loading">Chargement des billets…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXX_TON_API_KEY",
+      authDomain: "theatre-saint-martin.firebaseapp.com",
+      databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "theatre-saint-martin",
+      storageBucket: "theatre-saint-martin.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcd1234efgh"
+    };
+
+    const ADMIN_PASSWORD = "admin123";
+    const SITE_BASE_URL = "https://troupe-saint-martin.github.io/theatre-saint-martin/";
+    const PUBLIC_REQUESTS_PATH = "spectacles/amies_2026_10_11/public_requests";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const adminArea = document.getElementById("adminArea");
+    const locked = document.getElementById("locked");
+    const ticketsBody = document.getElementById("ticketsBody");
+    const searchInput = document.getElementById("searchInput");
+    const counter = document.getElementById("counter");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    let seats = {};
+    let groupedReservations = [];
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        "\"": "&quot;"
+      }[char]));
+    }
+
+    function normalize(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function cleanSmsPhone(phone) {
+      return String(phone || "").replace(/[^\d+]/g, "");
+    }
+
+    function sortSeatIds(a, b) {
+      return String(a).localeCompare(String(b), "fr", { numeric: true });
+    }
+
+    function buildTicketPageUrl(user = {}) {
+      const id = user.reservationId || "";
+      return SITE_BASE_URL + "b.html?r=" + encodeURIComponent(id);
+    }
+
+    function getTicketSmsMessage(user = {}) {
+      const ticketLink = buildTicketPageUrl(user);
+
+      return "Bonjour,\n\n"
+        + "✅ Bonne nouvelle : votre règlement a bien été reçu.\n\n"
+        + "Vous pouvez dès à présent consulter votre billet avec QR code pour la représentation du 10\u200Boctobre\u200B2026 à 20 h 30 à ISLEA en cliquant sur le lien ci-dessous 👇 :\n\n"
+        + ticketLink + "\n\n"
+        + "Ce billet vous est également envoyé par email avec votre QR code.\n\n"
+        + "Le jour J, pensez à présenter votre billet à l’entrée, histoire de ne pas jouer une scène d’improvisation dès l’accueil. 😉\n\n"
+        + "ℹ️ SMS automatique — pour toute question, contactez-nous au 06 46 32 06 49.\n\n"
+        + "Merci pour votre soutien à la Troupe Saint-Martin. ❤️";
+    }
+
+    function buildTicketSmsHref(phone, user = {}) {
+      const cleanPhone = cleanSmsPhone(phone);
+      return "sms:" + cleanPhone + "?body=" + encodeURIComponent(getTicketSmsMessage(user));
+    }
+
+    function groupSeatsByReservation(seatsData = {}) {
+      const grouped = {};
+
+      Object.entries(seatsData).forEach(([seatId, data]) => {
+        if (!data) return;
+
+        const reservationId = data.reservationId || "";
+        const key = reservationId || `${normalize(data.email)}__${normalize(data.name)}__${normalize(data.phone)}`;
+        if (!key || key === "____") return;
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            key,
+            reservationId,
+            name: data.name || "Inconnu",
+            email: data.email || "",
+            phone: data.phone || "",
+            amount: Number(data.amount || 0),
+            seats: [],
+            allPaid: true,
+            ticketSmsSentAt: data.ticketSmsSentAt || "",
+            ticketSmsSentBy: data.ticketSmsSentBy || ""
+          };
+        }
+
+        grouped[key].seats.push(seatId);
+        grouped[key].amount = Number(data.amount || grouped[key].amount || 0);
+        grouped[key].allPaid = grouped[key].allPaid && !!data.paid;
+
+        if (!grouped[key].reservationId && data.reservationId) grouped[key].reservationId = data.reservationId;
+        if (!grouped[key].email && data.email) grouped[key].email = data.email;
+        if (!grouped[key].phone && data.phone) grouped[key].phone = data.phone;
+        if (!grouped[key].name && data.name) grouped[key].name = data.name;
+
+        if (data.ticketSmsSentAt && (!grouped[key].ticketSmsSentAt || String(data.ticketSmsSentAt) > String(grouped[key].ticketSmsSentAt))) {
+          grouped[key].ticketSmsSentAt = data.ticketSmsSentAt;
+          grouped[key].ticketSmsSentBy = data.ticketSmsSentBy || grouped[key].ticketSmsSentBy || "";
+        }
+      });
+
+      return Object.values(grouped)
+        .map(item => ({ ...item, seats: item.seats.sort(sortSeatIds) }))
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "fr", { sensitivity: "base" }));
+    }
+
+    function getFilteredReservations() {
+      const q = normalize(searchInput.value);
+      if (!q) return groupedReservations;
+
+      return groupedReservations.filter(r => {
+        const haystack = normalize([
+          r.name,
+          r.email,
+          r.phone,
+          r.seats.join(" "),
+          r.reservationId
+        ].join(" "));
+        return haystack.includes(q);
+      });
+    }
+
+    function renderTable() {
+      const list = getFilteredReservations();
+      counter.textContent = `${list.length} billet${list.length > 1 ? "s" : ""}`;
+
+      if (!list.length) {
+        ticketsBody.innerHTML = `<tr><td colspan="6" class="empty">Aucun billet trouvé.</td></tr>`;
+        return;
+      }
+
+      ticketsBody.innerHTML = list.map(r => {
+        const userForTicket = {
+          reservationId: r.reservationId,
+          name: r.name,
+          email: r.email,
+          phone: r.phone
+        };
+        const ticketUrl = r.reservationId ? buildTicketPageUrl(userForTicket) : "";
+        const smsHref = r.phone && r.reservationId ? buildTicketSmsHref(r.phone, userForTicket) : "";
+        const sent = !!r.ticketSmsSentAt;
+        const safeName = escapeHTML(r.name || "Inconnu");
+        const safeEmail = escapeHTML(r.email || "");
+        const safePhone = escapeHTML(r.phone || "—");
+        const safeReservationId = escapeHTML(r.reservationId || "");
+
+        return `
+          <tr>
+            <td>
+              <div class="name">${safeName}</div>
+              <div class="muted">${safeEmail || "Email non renseigné"}</div>
+              <div class="muted">ID : ${safeReservationId || "—"}</div>
+            </td>
+            <td>
+              <strong>${safePhone}</strong>
+            </td>
+            <td>
+              <div class="seats">${escapeHTML(r.seats.join(", "))}</div>
+              <div class="muted">${r.seats.length} place${r.seats.length > 1 ? "s" : ""}</div>
+            </td>
+            <td>
+              <span class="status ${r.allPaid ? "paid" : "unpaid"}">${r.allPaid ? "✅ Tout payé" : "❌ Non payé"}</span>
+              <div class="muted">${Number(r.amount || 0).toFixed(2)} €</div>
+            </td>
+            <td>
+              <label class="sms-check ${sent ? "sent" : ""}">
+                <input
+                  type="checkbox"
+                  class="ticket-sms-toggle"
+                  data-reservation-id="${safeReservationId}"
+                  data-name="${safeName}"
+                  data-email="${safeEmail}"
+                  ${sent ? "checked" : ""}
+                >
+                <span>${sent ? "SMS billet envoyé" : "SMS billet non envoyé"}</span>
+              </label>
+              ${sent ? `<div class="muted">${new Date(r.ticketSmsSentAt).toLocaleString("fr-FR")}</div>` : ""}
+            </td>
+            <td>
+              <div class="actions">
+                ${ticketUrl ? `<a class="btn btn-view" href="${escapeHTML(ticketUrl)}" target="_blank" rel="noopener">👁️ Voir billet</a>` : `<span class="btn btn-disabled">👁️ Pas d’ID</span>`}
+                ${smsHref && r.allPaid ? `<a class="btn btn-sms" href="${escapeHTML(smsHref)}">📲 Renvoyer SMS</a>` : `<span class="btn btn-disabled">📲 SMS après paiement</span>`}
+                ${ticketUrl ? `<button type="button" class="btn-copy copy-link" data-link="${escapeHTML(ticketUrl)}">📋 Copier lien</button>` : ""}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function setTicketSmsStatus({ reservationId = "", clientName = "", clientEmail = "", sent = false } = {}) {
+      const now = new Date().toISOString();
+      const entries = Object.entries(seats || {}).filter(([_, data]) => {
+        if (!data) return false;
+        if (reservationId && data.reservationId === reservationId) return true;
+        if (clientEmail && normalize(data.email) === normalize(clientEmail)) return true;
+        return clientName && normalize(data.name) === normalize(clientName);
+      });
+
+      for (const [seatId, data] of entries) {
+        await set(ref(db, `seats/${seatId}`), {
+          ...data,
+          ticketSmsSentAt: sent ? now : "",
+          ticketSmsSentBy: sent ? "admin" : "",
+          updatedAt: now
+        });
+      }
+
+      if (reservationId) {
+        try {
+          const requestRef = ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`);
+          const snap = await get(requestRef);
+          if (snap.exists()) {
+            await set(requestRef, {
+              ...snap.val(),
+              ticketSmsSentAt: sent ? now : "",
+              ticketSmsSentBy: sent ? "admin" : "",
+              updatedAt: now
+            });
+          }
+        } catch (err) {
+          console.warn("Synchronisation public_requests impossible", err);
+        }
+      }
+    }
+
+    function loadData() {
+      ticketsBody.innerHTML = `<tr><td colspan="6" class="loading">Chargement des billets…</td></tr>`;
+      onValue(ref(db, "seats"), snapshot => {
+        seats = snapshot.val() || {};
+        groupedReservations = groupSeatsByReservation(seats);
+        renderTable();
+      });
+    }
+
+    function unlockAdmin() {
+      const alreadyUnlocked = sessionStorage.getItem("billetsAdminUnlocked") === "true";
+      const password = alreadyUnlocked ? ADMIN_PASSWORD : prompt("Mot de passe admin :");
+
+      if (password === ADMIN_PASSWORD) {
+        sessionStorage.setItem("billetsAdminUnlocked", "true");
+        adminArea.style.display = "block";
+        locked.style.display = "none";
+        loadData();
+      } else {
+        adminArea.style.display = "none";
+        locked.style.display = "block";
+      }
+    }
+
+    searchInput.addEventListener("input", renderTable);
+    refreshBtn.addEventListener("click", () => renderTable());
+
+    document.addEventListener("click", async (e) => {
+      const copyBtn = e.target.closest(".copy-link");
+      if (!copyBtn) return;
+
+      const link = copyBtn.dataset.link || "";
+      if (!link) return;
+
+      try {
+        await navigator.clipboard.writeText(link);
+        copyBtn.textContent = "✅ Copié";
+        setTimeout(() => copyBtn.textContent = "📋 Copier lien", 1200);
+      } catch (err) {
+        prompt("Copie le lien :", link);
+      }
+    });
+
+    document.addEventListener("change", async (e) => {
+      const checkbox = e.target.closest(".ticket-sms-toggle");
+      if (!checkbox) return;
+
+      const reservationId = checkbox.dataset.reservationId || "";
+      const clientName = checkbox.dataset.name || "";
+      const clientEmail = checkbox.dataset.email || "";
+      const sent = checkbox.checked;
+
+      checkbox.disabled = true;
+      try {
+        await setTicketSmsStatus({ reservationId, clientName, clientEmail, sent });
+      } catch (err) {
+        console.error("Erreur mise à jour SMS billet", err);
+        checkbox.checked = !sent;
+        alert("❌ Impossible de modifier le statut SMS billet.");
+      } finally {
+        checkbox.disabled = false;
+      }
+    });
+
+    unlockAdmin();
+  </script>
+</body>
+</html>
