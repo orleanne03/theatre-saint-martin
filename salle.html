@@ -2507,24 +2507,21 @@ function getTicketSeatList(user = {}) {
     .join(", ");
 }
 
-function buildTicketQrUrl(user = {}) {
-  const qrData = JSON.stringify({
-    nom: user.name || "",
-    email: user.email || "",
-    tel: user.phone || "",
-    sieges: getTicketSeatList(user)
-  });
+const TICKET_PAGE_BASE_URL = "https://troupe-saint-martin.github.io/theatre-saint-martin/b.html";
 
-  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+function buildTicketPageUrl(user = {}) {
+  const reservationId = String(user.reservationId || "").trim();
+  if (!reservationId) return "";
+  return `${TICKET_PAGE_BASE_URL}?r=${encodeURIComponent(reservationId)}`;
 }
 
 function getTicketSmsMessage(user = {}) {
-  const qrLink = buildTicketQrUrl(user);
+  const ticketLink = buildTicketPageUrl(user);
 
   return "Bonjour,\n\n"
     + "Votre règlement a bien été reçu.\n\n"
-    + "Voici le lien direct vers votre billet / QR code pour la représentation du 10 octobre 2026 à 20h30 à ISLEA :\n"
-    + qrLink + "\n\n"
+    + "Visualiser votre billet / QR code pour la représentation du 10 octobre 2026 à 20h30 à ISLEA :\n"
+    + ticketLink + "\n\n"
     + "Ce billet vous est également envoyé par email avec votre QR code.\n\n"
     + "Merci de présenter le billet ou le QR code à l'entrée.\n\n"
     + "Merci pour votre soutien à la Troupe Saint-Martin.";
@@ -2538,6 +2535,10 @@ function buildTicketSmsHref(phone, user = {}) {
 function openTicketSmsForUser(user = {}) {
   const cleanPhone = cleanSmsPhone(user.phone || "");
   if (!cleanPhone) return false;
+  if (!buildTicketPageUrl(user)) {
+    alert("⚠️ Impossible de préparer le SMS billet : identifiant de réservation introuvable.");
+    return false;
+  }
 
   window.location.href = buildTicketSmsHref(cleanPhone, user);
   return true;
