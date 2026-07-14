@@ -1096,6 +1096,9 @@ body {
   <button id="newPieceMailing" style="display:none;background:#8e24aa;">
     📢 Mailing nouvelle pièce
   </button>
+	<button id="openBilletsAdmin" type="button" style="background:#3949ab;">
+  🎟️ Gestion billets / SMS
+</button>
 
   <button id="archiveMailingContacts" style="display:none;background:#00695c;">
     💾 Sauvegarder contacts mailing
@@ -1240,6 +1243,9 @@ if (sidebarToggle) {
 }
 document.getElementById("openPublicReservation").onclick = () => {
   window.open("reservation-public.html", "_blank");
+};
+	document.getElementById("openBilletsAdmin").onclick = () => {
+  window.open("billets-admin.html", "_blank");
 };
 document.addEventListener("click", (e) => {
   if (window.innerWidth > 900) return;
