@@ -1246,6 +1246,40 @@ body {
 
 
 <script type="module">
+/* === Protection accès admin dès l’ouverture de salle.html === */
+const ADMIN_AUTO_KEY = "ADMIN_AUTO_LOGIN";
+const ADMIN_PASSWORD = "admin123";
+
+function requireAdminAccess() {
+  if (localStorage.getItem(ADMIN_AUTO_KEY) === "true") {
+    return true;
+  }
+
+  const password = prompt("Accès réservé — mot de passe admin :");
+
+  if (password === ADMIN_PASSWORD) {
+    const remember = confirm("Mémoriser cet appareil en admin ?");
+    if (remember) {
+      localStorage.setItem(ADMIN_AUTO_KEY, "true");
+    }
+    return true;
+  }
+
+  document.body.innerHTML = `
+    <div style="font-family:Arial,sans-serif;text-align:center;padding:40px;max-width:520px;margin:40px auto;line-height:1.5;">
+      <h2>🔒 Accès réservé</h2>
+      <p>Cette page est réservée à l'administration.</p>
+      <p style="color:#666;">Pour réserver des places, utilisez la page publique.</p>
+      <button onclick="location.href='reservation-public.html'" style="padding:12px 18px;border:none;border-radius:8px;background:#0d47a1;color:white;font-weight:bold;cursor:pointer;">
+        🎟️ Retour réservation publique
+      </button>
+    </div>
+  `;
+  throw new Error("Accès admin refusé");
+}
+
+requireAdminAccess();
+
 /* === Attente que Firebase soit prêt === */
 await new Promise(resolve => {
   const check = () => window._firebaseRef ? resolve() : setTimeout(check, 100);
