@@ -2519,12 +2519,13 @@ function getTicketSmsMessage(user = {}) {
   const ticketLink = buildTicketPageUrl(user);
 
   return "Bonjour,\n\n"
-    + "Votre règlement a bien été reçu.\n\n"
-    + "Visualiser votre billet / QR code pour la représentation du 10\u200Boctobre\u200B2026 à 20 h 30 à ISLEA :\n\n"
+    + "✅ Bonne nouvelle : votre règlement a bien été reçu.\n\n"
+    + "Vous pouvez dès à présent consulter votre billet avec QR code pour la représentation du 10\u200Boctobre\u200B2026 à 20 h 30 à ISLEA en cliquant sur le lien ci-dessous 👇 :\n\n"
     + ticketLink + "\n\n"
     + "Ce billet vous est également envoyé par email avec votre QR code.\n\n"
-    + "Merci de présenter le billet ou le QR code à l'entrée.\n\n"
-    + "Merci pour votre soutien à la Troupe Saint-Martin.";
+    + "Le jour J, pensez à présenter votre billet à l’entrée, histoire de ne pas jouer une scène d’improvisation dès l’accueil. 😉\n\n"
+    + "ℹ️ SMS automatique — pour toute question, contactez-nous au 06 46 32 06 49.\n\n"
+    + "Merci pour votre soutien à la Troupe Saint-Martin. ❤️";
 }
 
 function buildTicketSmsHref(phone, user = {}) {
