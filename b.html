@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎟️ Billet — Théâtre Saint-Martin</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #e3f2fd 0%, #fafafa 100%);
+      color: #212121;
+      text-align: center;
+      padding: 18px;
+    }
+    .card {
+      max-width: 520px;
+      margin: 24px auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.16);
+      padding: 22px;
+      box-sizing: border-box;
+    }
+    h1 {
+      margin: 8px 0 4px;
+      color: #0d47a1;
+      font-size: 1.6rem;
+    }
+    .subtitle {
+      margin: 0 0 18px;
+      color: #555;
+      font-weight: 600;
+    }
+    .name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 12px 0 6px;
+      color: #212121;
+    }
+    .info {
+      background: #f5f7fa;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 14px 0;
+      text-align: left;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+    #qrBox {
+      margin: 18px auto 10px;
+      padding: 14px;
+      width: fit-content;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #ddd;
+    }
+    .status-paid {
+      color: #2e7d32;
+      font-weight: 800;
+    }
+    .status-unpaid {
+      color: #c62828;
+      font-weight: 800;
+    }
+    .error {
+      color: #c62828;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+    .small {
+      color: #666;
+      font-size: .9rem;
+      margin-top: 14px;
+    }
+    button {
+      margin-top: 12px;
+      background: #0d47a1;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    @media print {
+      body { background: #fff; }
+      button { display: none; }
+      .card { box-shadow: none; border: 1px solid #ddd; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="app">
+    <h1>🎟️ Billet</h1>
+    <p class="subtitle">Chargement du billet…</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXX_TON_API_KEY",
+      authDomain: "theatre-saint-martin.firebaseapp.com",
+      databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "theatre-saint-martin",
+      storageBucket: "theatre-saint-martin.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcd1234efgh"
+    };
+
+    const SHOW_TITLE = "Je préfère qu'on reste amies";
+    const SHOW_DATE = "10 octobre 2026 à 20h30";
+    const SHOW_PLACE = "Salle ISLEA à Avermes (03)";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const root = document.getElementById("app");
+    const params = new URLSearchParams(window.location.search);
+    const reservationId = params.get("r") || params.get("id") || "";
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        "\"": "&quot;"
+      }[char]));
+    }
+
+    function sortSeatIds(a, b) {
+      return String(a).localeCompare(String(b), "fr", { numeric: true });
+    }
+
+    function renderError(message) {
+      root.innerHTML = `
+        <h1>🎟️ Billet</h1>
+        <p class="error">${escapeHTML(message)}</p>
+        <p class="small">Vérifiez le lien reçu par SMS ou contactez la Troupe Saint-Martin.</p>
+      `;
+    }
+
+    if (!reservationId) {
+      renderError("Lien de billet incomplet : identifiant de réservation manquant.");
+    } else {
+      onValue(ref(db, "seats"), snapshot => {
+        const seats = snapshot.val() || {};
+        const entries = Object.entries(seats)
+          .filter(([_, data]) => data && data.reservationId === reservationId)
+          .sort(([seatA], [seatB]) => sortSeatIds(seatA, seatB));
+
+        if (!entries.length) {
+          renderError("Billet introuvable ou réservation supprimée.");
+          return;
+        }
+
+        const first = entries[0][1] || {};
+        const seatIds = entries.map(([seatId]) => seatId);
+        const allPaid = entries.every(([_, data]) => data && data.paid);
+        const amount = Number(first.amount || 0);
+        const qrData = JSON.stringify({
+          reservationId,
+          nom: first.name || "",
+          email: first.email || "",
+          sieges: seatIds.join(", "),
+          spectacle: SHOW_TITLE,
+          date: SHOW_DATE,
+          lieu: SHOW_PLACE,
+          paye: allPaid
+        });
+
+        root.innerHTML = `
+          <h1>🎟️ Billet</h1>
+          <p class="subtitle">Théâtre Saint-Martin</p>
+          <div class="name">${escapeHTML(first.name || "Réservation")}</div>
+
+          <div class="info">
+            🎭 <strong>${escapeHTML(SHOW_TITLE)}</strong><br>
+            📅 ${escapeHTML(SHOW_DATE)}<br>
+            📍 ${escapeHTML(SHOW_PLACE)}<br>
+            🪑 Siège(s) : ${escapeHTML(seatIds.join(", "))}<br>
+            💶 Montant : ${amount.toFixed(2)} €<br>
+            <span class="${allPaid ? "status-paid" : "status-unpaid"}">${allPaid ? "✅ Paiement reçu" : "❌ Paiement non enregistré"}</span>
+          </div>
+
+          <div id="qrBox">
+            <canvas id="qrCanvas"></canvas>
+          </div>
+
+          <p class="small">Présentez ce QR code à l’entrée, directement sur téléphone ou imprimé.</p>
+          <button type="button" onclick="window.print()">🖨️ Imprimer</button>
+        `;
+
+        const canvas = document.getElementById("qrCanvas");
+        if (window.QRCode && canvas) {
+          QRCode.toCanvas(canvas, qrData, { width: 240, margin: 2 }, err => {
+            if (err) console.error("QR code impossible à générer", err);
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
