@@ -256,6 +256,7 @@
     };
 
     const ADMIN_PASSWORD = "admin123";
+    const ADMIN_AUTO_KEY = "ADMIN_AUTO_LOGIN"; // même clé que salle.html
     const SITE_BASE_URL = "https://troupe-saint-martin.github.io/theatre-saint-martin/";
     const PUBLIC_REQUESTS_PATH = "spectacles/amies_2026_10_11/public_requests";
 
@@ -499,15 +500,34 @@
       });
     }
 
+    function showAdminArea() {
+      adminArea.style.display = "block";
+      locked.style.display = "none";
+      loadData();
+    }
+
     function unlockAdmin() {
+      const autoAdmin = localStorage.getItem(ADMIN_AUTO_KEY) === "true";
       const alreadyUnlocked = sessionStorage.getItem("billetsAdminUnlocked") === "true";
-      const password = alreadyUnlocked ? ADMIN_PASSWORD : prompt("Mot de passe admin :");
+
+      // Si l'appareil est déjà mémorisé depuis salle.html, on entre directement.
+      if (autoAdmin || alreadyUnlocked) {
+        sessionStorage.setItem("billetsAdminUnlocked", "true");
+        showAdminArea();
+        return;
+      }
+
+      const password = prompt("Mot de passe admin :");
 
       if (password === ADMIN_PASSWORD) {
         sessionStorage.setItem("billetsAdminUnlocked", "true");
-        adminArea.style.display = "block";
-        locked.style.display = "none";
-        loadData();
+
+        const remember = confirm("Mémoriser l'accès admin sur cet appareil ?");
+        if (remember) {
+          localStorage.setItem(ADMIN_AUTO_KEY, "true");
+        }
+
+        showAdminArea();
       } else {
         adminArea.style.display = "none";
         locked.style.display = "block";
