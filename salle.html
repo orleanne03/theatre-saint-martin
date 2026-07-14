@@ -94,12 +94,15 @@ h1 {
 .reserved { background: #ef5350; }
 /* 🟣 Siège bloqué temporairement par une demande publique */
 .seat.test-seat {
-  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(255,112,67,.25), 0 3px 8px rgba(0,0,0,.22) !important;
+  box-shadow: 0 0 0 3px rgba(38,166,154,.25), 0 3px 8px rgba(0,0,0,.22) !important;
 }
 .seat.strapontin.test-seat {
-  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
+}
+.legend .test-legend {
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
 }
 
 .held {
@@ -109,12 +112,15 @@ h1 {
   box-shadow: 0 0 0 3px rgba(126,87,194,.22), 0 3px 8px rgba(0,0,0,.22);
 }
 .seat.strapontin.seat.test-seat {
-  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
   color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(255,112,67,.25), 0 3px 8px rgba(0,0,0,.22) !important;
+  box-shadow: 0 0 0 3px rgba(38,166,154,.25), 0 3px 8px rgba(0,0,0,.22) !important;
 }
 .seat.strapontin.test-seat {
-  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
+}
+.legend .test-legend {
+  background: linear-gradient(145deg, #26a69a, #00897b) !important;
 }
 
 .held {
@@ -1086,6 +1092,7 @@ body {
   <div><span class="held"></span>En attente public</div>
   <div><span class="strapontin"></span>Strapontin</div>
   <div><span class="paid"></span>Réservé et payé</div> <!-- 💚 ajouté -->
+  <div><span class="test-legend"></span>Test admin</div>
 </div>
 
 <div class="hall-wrapper">
@@ -2354,7 +2361,7 @@ function activateAdminMode() {
   if (generateTestBtn) generateTestBtn.style.display = "inline-block";
   if (deleteTestBtn) deleteTestBtn.style.display = "inline-block";
 
-  if (scanBtn) scanBtn.style.display = "none";
+  if (scanBtn) scanBtn.style.display = "inline-block";
   if (infoBtn) infoBtn.style.display = "none";
 
   document.body.classList.add("admin");
