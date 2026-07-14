@@ -2435,6 +2435,8 @@ function updateTable() {
         name: data.name || "Inconnu",
         email: data.email || "",
         phone: data.phone || "",
+        smsSentAt: data.smsSentAt || "",
+        smsSentBy: data.smsSentBy || "",
         reservationId: data.reservationId || null,
         publicRequest,
         isPublicRequest: data.source === "public_request",
@@ -2443,6 +2445,11 @@ function updateTable() {
         emails: new Set(),
         allPaid: true
       };
+    }
+
+    if (data.smsSentAt && (!grouped[key].smsSentAt || String(data.smsSentAt) > String(grouped[key].smsSentAt))) {
+      grouped[key].smsSentAt = data.smsSentAt;
+      grouped[key].smsSentBy = data.smsSentBy || grouped[key].smsSentBy || "";
     }
 
     grouped[key].seats.push({
@@ -2462,6 +2469,8 @@ function updateTable() {
       name: String(r.name || "Sans nom").toUpperCase(),
       email: String(r.email || "").toLowerCase(),
       phone: r.phone || "",
+      smsSentAt: r.smsSentAt || "",
+      smsSentBy: r.smsSentBy || "",
       reservationId: r.id,
       publicRequest: r,
       isPublicRequest: true,
@@ -2560,9 +2569,38 @@ function updateTable() {
     const children = info.seats.filter(s => s.type === "enfant");
     const babies = info.seats.filter(s => s.type === "moins8");
 
+    const smsPhone = String(info.phone || "").replace(/[^\d+]/g, "");
+    const smsMessageReservation = "Bonjour,\n\n"
+      + "Nous avons bien reçu votre réservation pour la représentation du 10 octobre 2026 à ISLEA pour la pièce : \"Je préfère qu'on reste amies\"\n\n"
+      + "Un email de confirmation vous a été envoyé.\n"
+      + "Si vous ne le voyez pas, pensez à vérifier vos spams ou courriers indésirables.\n\n"
+      + "Une fois le règlement reçu, vos billets vous seront envoyés par email.\n\n"
+      + "Merci pour votre soutien à la Troupe Saint-Martin.";
+
+    const smsPhoneLine = info.phone
+      ? `<a
+          class="sms-reservation-link"
+          href="sms:${escapeHTML(smsPhone)}?body=${encodeURIComponent(smsMessageReservation)}"
+          data-name="${escapeHTML(name)}"
+          data-email="${escapeHTML(info.email || "")}"
+          data-reservation-id="${escapeHTML(reservationId || "")}"
+          style="color:#1565c0;font-weight:700;text-decoration:none;">
+          💬 ${escapeHTML(info.phone)}
+        </a>`
+      : "—";
+
+    const smsStatusLine = info.smsSentAt
+      ? `<p style="color:#2e7d32;font-weight:700;margin:4px 0;">
+          ✅ SMS envoyé le ${new Date(info.smsSentAt).toLocaleString("fr-FR")}
+        </p>`
+      : `<p style="color:#c62828;font-weight:700;margin:4px 0;">
+          ❌ SMS non envoyé
+        </p>`;
+
     content.innerHTML = `
   <p><strong>Email :</strong> ${escapeHTML(info.email || "—")}</p>
-  <p><strong>Téléphone :</strong> ${escapeHTML(info.phone || "—")}</p>
+  <p><strong>Téléphone :</strong> ${smsPhoneLine}</p>
+  ${smsStatusLine}
 
   ${!isPendingPublic ? `
 <button
@@ -2770,6 +2808,61 @@ function updateTable() {
     });
   });
 };
+
+// ===================================================
+// 💬 SMS réservation : ouverture + marquage manuel
+// ===================================================
+document.addEventListener("click", (e) => {
+  const link = e.target.closest(".sms-reservation-link");
+  if (!link) return;
+
+  e.stopPropagation();
+
+  if (!admin) {
+    e.preventDefault();
+    alert("❌ Mode admin requis pour envoyer et marquer le SMS.");
+    return;
+  }
+
+  const reservationId = link.dataset.reservationId || "";
+  const clientName = link.dataset.name || "";
+  const clientEmail = link.dataset.email || "";
+
+  setTimeout(async () => {
+    const ok = confirm(`As-tu bien envoyé le SMS à ${clientName || clientEmail || "ce client"} ?`);
+    if (!ok) return;
+
+    const now = new Date().toISOString();
+
+    const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
+      if (!data) return false;
+      if (reservationId && data.reservationId === reservationId) return true;
+      if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
+      return normalizeClientValue(data.name) === normalizeClientValue(clientName);
+    });
+
+    for (const [seatId, data] of matchingSeats) {
+      await set(ref(db, `seats/${seatId}`), {
+        ...data,
+        smsSentAt: now,
+        smsSentBy: "admin"
+      });
+    }
+
+    if (reservationId && publicRequests[reservationId]) {
+      await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
+        ...publicRequests[reservationId],
+        smsSentAt: now,
+        smsSentBy: "admin",
+        updatedAt: now
+      });
+    }
+
+    render();
+    updateTable();
+    alert("✅ SMS marqué comme envoyé.");
+  }, 1200);
+});
 
 // ===================================================
 // 🗑️ Suppression directe d’une place depuis la liste
