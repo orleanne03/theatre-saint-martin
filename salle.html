@@ -2392,6 +2392,80 @@ updateTable(); // 🔄 rafraîchit le badge
 
   
 
+
+// ===================================================
+// 💬 SMS réservation : message + marquage partagé
+// ===================================================
+function getReservationSmsMessage() {
+  return "Bonjour,\n\n"
+    + "Nous avons bien reçu votre réservation pour la représentation du 10 octobre 2026 à ISLEA pour la pièce : \"Je préfère qu'on reste amies\"\n\n"
+    + "Un email de confirmation vous a été envoyé.\n"
+    + "Si vous ne le voyez pas, pensez à vérifier vos spams ou courriers indésirables.\n\n"
+    + "Une fois le règlement reçu, vos billets vous seront envoyés par email.\n\n"
+    + "Merci pour votre soutien à la Troupe Saint-Martin.";
+}
+
+function cleanSmsPhone(phone) {
+  return String(phone || "").replace(/[^\d+]/g, "");
+}
+
+function buildSmsHref(phone) {
+  const cleanPhone = cleanSmsPhone(phone);
+  return `sms:${cleanPhone}?body=${encodeURIComponent(getReservationSmsMessage())}`;
+}
+
+async function markReservationSmsSent({ reservationId = "", clientName = "", clientEmail = "" } = {}) {
+  const now = new Date().toISOString();
+
+  const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
+    if (!data) return false;
+    if (reservationId && data.reservationId === reservationId) return true;
+    if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
+    return normalizeClientValue(data.name) === normalizeClientValue(clientName);
+  });
+
+  for (const [seatId, data] of matchingSeats) {
+    await set(ref(db, `seats/${seatId}`), {
+      ...data,
+      smsSentAt: now,
+      smsSentBy: "admin"
+    });
+  }
+
+  if (reservationId && publicRequests[reservationId]) {
+    await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
+      ...publicRequests[reservationId],
+      smsSentAt: now,
+      smsSentBy: "admin",
+      updatedAt: now
+    });
+  }
+
+  render();
+  updateTable();
+  updateStatsBar();
+}
+
+function openReservationSmsAndAskConfirmation({ phone = "", clientName = "", clientEmail = "", reservationId = "" } = {}) {
+  const cleanPhone = cleanSmsPhone(phone);
+  if (!cleanPhone) {
+    alert("⚠️ Aucun numéro de téléphone disponible pour ouvrir le SMS.");
+    return false;
+  }
+
+  window.location.href = buildSmsHref(cleanPhone);
+
+  setTimeout(async () => {
+    const ok = confirm(`As-tu bien envoyé le SMS à ${clientName || clientEmail || "ce client"} ?`);
+    if (!ok) return;
+
+    await markReservationSmsSent({ reservationId, clientName, clientEmail });
+    alert("✅ SMS marqué comme envoyé.");
+  }, 1200);
+
+  return true;
+}
+
 function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
@@ -2569,18 +2643,12 @@ function updateTable() {
     const children = info.seats.filter(s => s.type === "enfant");
     const babies = info.seats.filter(s => s.type === "moins8");
 
-    const smsPhone = String(info.phone || "").replace(/[^\d+]/g, "");
-    const smsMessageReservation = "Bonjour,\n\n"
-      + "Nous avons bien reçu votre réservation pour la représentation du 10 octobre 2026 à ISLEA pour la pièce : \"Je préfère qu'on reste amies\"\n\n"
-      + "Un email de confirmation vous a été envoyé.\n"
-      + "Si vous ne le voyez pas, pensez à vérifier vos spams ou courriers indésirables.\n\n"
-      + "Une fois le règlement reçu, vos billets vous seront envoyés par email.\n\n"
-      + "Merci pour votre soutien à la Troupe Saint-Martin.";
+    const smsPhone = cleanSmsPhone(info.phone);
 
     const smsPhoneLine = info.phone
       ? `<a
           class="sms-reservation-link"
-          href="sms:${escapeHTML(smsPhone)}?body=${encodeURIComponent(smsMessageReservation)}"
+          href="${escapeHTML(buildSmsHref(smsPhone))}"
           data-name="${escapeHTML(name)}"
           data-email="${escapeHTML(info.email || "")}"
           data-reservation-id="${escapeHTML(reservationId || "")}"
@@ -2827,39 +2895,13 @@ document.addEventListener("click", (e) => {
   const reservationId = link.dataset.reservationId || "";
   const clientName = link.dataset.name || "";
   const clientEmail = link.dataset.email || "";
+  const phone = cleanSmsPhone(link.getAttribute("href") || "").replace(/^sms:/, "").split("?")[0];
 
   setTimeout(async () => {
     const ok = confirm(`As-tu bien envoyé le SMS à ${clientName || clientEmail || "ce client"} ?`);
     if (!ok) return;
 
-    const now = new Date().toISOString();
-
-    const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
-      if (!data) return false;
-      if (reservationId && data.reservationId === reservationId) return true;
-      if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
-      return normalizeClientValue(data.name) === normalizeClientValue(clientName);
-    });
-
-    for (const [seatId, data] of matchingSeats) {
-      await set(ref(db, `seats/${seatId}`), {
-        ...data,
-        smsSentAt: now,
-        smsSentBy: "admin"
-      });
-    }
-
-    if (reservationId && publicRequests[reservationId]) {
-      await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
-        ...publicRequests[reservationId],
-        smsSentAt: now,
-        smsSentBy: "admin",
-        updatedAt: now
-      });
-    }
-
-    render();
-    updateTable();
+    await markReservationSmsSent({ reservationId, clientName, clientEmail });
     alert("✅ SMS marqué comme envoyé.");
   }, 1200);
 });
@@ -3863,9 +3905,22 @@ async function confirmPublicRequestFromSalle(id) {
   updateTable();
   updateStatsBar();
 
-  alert(mailOk
+  const finalMessage = mailOk
     ? (ticketOk ? "✅ Réservation confirmée et email envoyé." : "✅ Réservation confirmée, mais le billet n’a pas pu être envoyé.")
-    : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.");
+    : "✅ Réservation confirmée, mais l’email n’a pas pu être envoyé.";
+
+  alert(base.phone
+    ? `${finalMessage}\n\n📲 Le SMS pré-rempli va maintenant s’ouvrir. Envoie-le, puis reviens ici pour confirmer.`
+    : `${finalMessage}\n\n⚠️ Aucun numéro de téléphone : SMS non ouvert.`);
+
+  if (base.phone) {
+    openReservationSmsAndAskConfirmation({
+      phone: base.phone,
+      clientName: base.name,
+      clientEmail: base.email,
+      reservationId: id
+    });
+  }
 }
 
 async function refusePublicRequestFromSalle(id) {
