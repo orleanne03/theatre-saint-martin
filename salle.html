@@ -93,13 +93,31 @@ h1 {
 .selected { background: #64b5f6; }
 .reserved { background: #ef5350; }
 /* 🟣 Siège bloqué temporairement par une demande publique */
+.seat.test-seat {
+  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(255,112,67,.25), 0 3px 8px rgba(0,0,0,.22) !important;
+}
+.seat.strapontin.test-seat {
+  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+}
+
 .held {
   background: linear-gradient(145deg, #9575cd, #5e35b1) !important;
   color: #ffffff !important;
   cursor: not-allowed;
   box-shadow: 0 0 0 3px rgba(126,87,194,.22), 0 3px 8px rgba(0,0,0,.22);
 }
-.seat.strapontin.held {
+.seat.strapontin.seat.test-seat {
+  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(255,112,67,.25), 0 3px 8px rgba(0,0,0,.22) !important;
+}
+.seat.strapontin.test-seat {
+  background: linear-gradient(145deg, #ff7043, #bf360c) !important;
+}
+
+.held {
   background: linear-gradient(145deg, #9575cd, #5e35b1) !important;
   color: #ffffff !important;
 }
@@ -1099,6 +1117,12 @@ body {
 	<button id="openBilletsAdmin" type="button" style="display:none;background:#3949ab;">
   🎟️ Gestion billets / SMS
 </button>
+  <button id="generateTestReservations" type="button" style="display:none;background:#0097a7;">
+    🧪 Créer réservations test
+  </button>
+  <button id="deleteTestReservations" type="button" style="display:none;background:#6d4c41;">
+    🧹 Supprimer réservations test
+  </button>
 
   <button id="archiveMailingContacts" style="display:none;background:#00695c;">
     💾 Sauvegarder contacts mailing
@@ -1247,6 +1271,14 @@ document.getElementById("openPublicReservation").onclick = () => {
 	document.getElementById("openBilletsAdmin").onclick = () => {
   window.open("billets-admin.html", "_blank");
 };
+const generateTestReservationsBtn = document.getElementById("generateTestReservations");
+if (generateTestReservationsBtn) {
+  generateTestReservationsBtn.onclick = generateTestReservations;
+}
+const deleteTestReservationsBtn = document.getElementById("deleteTestReservations");
+if (deleteTestReservationsBtn) {
+  deleteTestReservationsBtn.onclick = deleteTestReservations;
+}
 document.addEventListener("click", (e) => {
   if (window.innerWidth > 900) return;
   if (!document.body.classList.contains("sidebar-open")) return;
@@ -1323,8 +1355,9 @@ onValue(pricesRef, snapshot => {
   }
 });
 
-let seats = {}, publicHolds = {}, publicRequests = {}, selected = [], admin = false;
+let seats = {}, testSeats = {}, publicHolds = {}, publicRequests = {}, selected = [], admin = false;
 window.seats = seats;
+window.testSeats = testSeats;
 
 const hall = document.getElementById("hall");
 const resetBtn = document.getElementById("reset");
@@ -1374,6 +1407,8 @@ const seatsRef = ref(db, "seats");
 const publicHoldsRef = ref(db, "spectacles/amies_2026_10_11/holds");
 
 const PUBLIC_REQUESTS_PATH = "spectacles/amies_2026_10_11/public_requests";
+const TEST_SEATS_PATH = "spectacles/amies_2026_10_11/test_seats";
+const testSeatsRef = ref(db, TEST_SEATS_PATH);
 
 function getPublicRequestIdFromSeatData(data) {
   return data && data.source === "public_request" && data.reservationId
@@ -1388,6 +1423,65 @@ function sortSeatIdsForPublicRequest(a, b) {
 function normalizeClientValue(value) {
   return String(value || "").trim().toLowerCase();
 }
+
+function isTestReservationData(data) {
+  return !!data && (
+    data.testReservation === true ||
+    data.source === "test_data" ||
+    String(data.reservationId || "").startsWith("test_") ||
+    String(data.email || "").startsWith("test.reservation.") ||
+    String(data.name || "").startsWith("TEST ")
+  );
+}
+
+function getAdminDisplaySeats() {
+  // Les réservations fictives sont stockées séparément de "seats".
+  // Elles sont visibles uniquement en mode admin, donc la page publique ne les voit jamais.
+  return admin ? { ...(testSeats || {}), ...(seats || {}) } : (seats || {});
+}
+
+function getSeatDataForDisplay(seatId) {
+  return (seats || {})[seatId] || (admin ? (testSeats || {})[seatId] : null);
+}
+
+function getMatchingSeatEntriesForStatus({ reservationId = "", clientName = "", clientEmail = "" } = {}) {
+  const sources = [
+    { dbPath: "seats", data: seats || {}, isTest: false },
+    { dbPath: TEST_SEATS_PATH, data: testSeats || {}, isTest: true }
+  ];
+
+  const matches = [];
+
+  for (const source of sources) {
+    for (const [seatId, data] of Object.entries(source.data || {})) {
+      if (!data) continue;
+      const ok =
+        (reservationId && data.reservationId === reservationId) ||
+        (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) ||
+        (!reservationId && !clientEmail && normalizeClientValue(data.name) === normalizeClientValue(clientName));
+
+      if (ok) {
+        matches.push({ ...source, seatId, data });
+      }
+    }
+  }
+
+  return matches;
+}
+
+async function writeSeatStatusEntries(entries, patch = {}) {
+  for (const entry of entries) {
+    const path = entry.isTest
+      ? `${TEST_SEATS_PATH}/${entry.seatId}`
+      : `seats/${entry.seatId}`;
+
+    await set(ref(db, path), {
+      ...entry.data,
+      ...patch
+    });
+  }
+}
+
 
 function seatBelongsToClient(seatData, clientName = "", clientEmail = "", reservationId = "") {
   if (!seatData) return false;
@@ -1483,11 +1577,21 @@ function isActivePublicHold(h) {
 
 onValue(seatsRef, snapshot => {
   seats = snapshot.val() || {};
+  window.seats = seats;
   render();
   updateTable();
   updateStatsBar(); // ✅ AJOUT ICI — met à jour les compteurs au chargement
   renderPublicRequestsPanel();
   setTimeout(() => loader.classList.add("hidden"), 400);
+});
+
+onValue(testSeatsRef, snapshot => {
+  testSeats = snapshot.val() || {};
+  window.testSeats = testSeats;
+  if (admin) {
+    render();
+    updateTable();
+  }
 });
 
 
@@ -1503,6 +1607,190 @@ onValue(publicRequestsRef, snapshot => {
 });
 
 function save(){ return set(seatsRef, seats || {}); }
+
+// ===================================================
+// 🧪 Réservations fictives pour tester billets / SMS / scanner
+// ===================================================
+const TEST_NAMES = [
+  "TEST MARTIN ALICE",
+  "TEST BERNARD LUCAS",
+  "TEST DUBOIS EMMA",
+  "TEST MOREAU HUGO",
+  "TEST LAURENT JADE",
+  "TEST SIMON LÉO",
+  "TEST MICHEL CHLOÉ",
+  "TEST GARCIA NINA",
+  "TEST ROUX NOÉ",
+  "TEST FOURNIER LINA",
+  "TEST GIRARD TOM",
+  "TEST ANDRÉ ZOÉ",
+  "TEST MERCIER ADAM",
+  "TEST LAMBERT MIA",
+  "TEST BONNET LOUIS",
+  "TEST FRANÇOIS ROSE"
+];
+
+function makeTestReservationId(index = 0) {
+  const randomPart = (crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+  return `test_${index + 1}_${randomPart}`;
+}
+
+function getFreeSeatIdsForTests() {
+  const ids = [];
+  rows.forEach(rowLetter => {
+    seatNums.forEach(seatNum => {
+      const id = `${rowLetter}-${seatNum}`;
+      if (!seats[id] && !testSeats[id]) ids.push(id);
+    });
+  });
+  return ids;
+}
+
+function buildTestPhone(index) {
+  const suffix = String(index + 1).padStart(2, "0");
+  return `06 00 00 00 ${suffix}`;
+}
+
+async function generateTestReservations() {
+  if (!admin) return alert("Active d'abord le mode admin.");
+
+  const raw = prompt("Combien de réservations test veux-tu créer ?", "12");
+  if (raw === null) return;
+
+  const count = Math.max(1, Math.min(80, parseInt(raw, 10) || 0));
+  if (!count) return alert("Nombre invalide.");
+
+  const availableSeats = getFreeSeatIdsForTests();
+  if (!availableSeats.length) return alert("Aucune place libre disponible pour créer des tests.");
+
+  const createdReservations = [];
+  const now = new Date().toISOString();
+  let seatIndex = 0;
+
+  for (let i = 0; i < count; i++) {
+    // On varie volontairement : 1, 2, 3 ou 4 places pour tester les billets multi-entrées.
+    const wantedSeats = [1, 2, 3, 4][i % 4];
+    const remaining = availableSeats.length - seatIndex;
+    if (remaining <= 0) break;
+
+    const seatCount = Math.min(wantedSeats, remaining);
+    const reservationSeats = availableSeats.slice(seatIndex, seatIndex + seatCount);
+    seatIndex += seatCount;
+
+    const reservationId = makeTestReservationId(i);
+    const name = TEST_NAMES[i % TEST_NAMES.length] + ` ${String(i + 1).padStart(2, "0")}`;
+    const email = `test.reservation.${String(i + 1).padStart(2, "0")}@exemple.fr`;
+    const phone = buildTestPhone(i);
+
+    const nbChild = seatCount >= 3 ? 1 : 0;
+    const nbBaby = seatCount >= 4 ? 1 : 0;
+    const nbAdult = Math.max(1, seatCount - nbChild - nbBaby);
+    const nbFree = 0;
+    const amount = nbAdult * PRICE_ADULT + nbChild * PRICE_CHILD;
+
+    const baseUser = {
+      reservationId,
+      name,
+      email,
+      phone,
+      paid: true,
+      free: false,
+      nbAdult,
+      nbChild,
+      nbBaby,
+      nbFree,
+      amount,
+      testReservation: true,
+      source: "test_data",
+      noteAdmin: "Réservation fictive générée pour test.",
+      ticketEmailSentAt: now,
+      ticketSmsSentAt: "",
+      ticketSmsSentBy: "",
+      createdAt: now,
+      updatedAt: now
+    };
+
+    let adultLeft = nbAdult;
+    let childLeft = nbChild;
+    let babyLeft = nbBaby;
+
+    reservationSeats.forEach(seatId => {
+      const seatData = { ...baseUser };
+      if (adultLeft > 0) {
+        seatData.type = "adulte";
+        adultLeft--;
+      } else if (childLeft > 0) {
+        seatData.type = "enfant";
+        childLeft--;
+      } else if (babyLeft > 0) {
+        seatData.type = "moins8";
+        babyLeft--;
+      } else {
+        seatData.type = "adulte";
+      }
+      testSeats[seatId] = seatData;
+    });
+
+    createdReservations.push({ name, seats: reservationSeats });
+  }
+
+  if (!createdReservations.length) {
+    return alert("Aucune réservation test créée.");
+  }
+
+  await set(testSeatsRef, testSeats || {});
+  render();
+  updateTable();
+
+  alert(
+    `✅ ${createdReservations.length} réservation(s) test créée(s).\n\n` +
+    "Elles sont stockées dans une zone Firebase séparée : elles ne bloquent PAS la page publique.\n\n" +
+    "Elles restent visibles en admin pour tester : billets, SMS, page b.html et scanner.\n\n" +
+    "Tu peux les supprimer ensuite avec le bouton 🧹 Supprimer réservations test."
+  );
+}
+
+async function deleteTestReservations() {
+  if (!admin) return alert("Active d'abord le mode admin.");
+
+  const testEntries = Object.entries(testSeats || {}).filter(([_, data]) => isTestReservationData(data));
+
+  if (!testEntries.length) {
+    return alert("Aucune réservation test à supprimer.");
+  }
+
+  const testReservationIds = [...new Set(testEntries
+    .map(([_, data]) => data.reservationId)
+    .filter(Boolean))];
+
+  if (!confirm(`Supprimer ${testEntries.length} place(s) de test et ${testReservationIds.length} réservation(s) test ?
+
+Les vraies réservations ne seront pas touchées.`)) {
+    return;
+  }
+
+  testSeats = {};
+  window.testSeats = testSeats;
+  await set(testSeatsRef, null);
+
+  // Nettoie aussi les scans Firebase liés aux billets test, pour repartir propre.
+  for (const reservationId of testReservationIds) {
+    try {
+      await set(ref(db, `scans/${reservationId}`), null);
+    } catch (err) {
+      console.warn("Scan test non supprimé", reservationId, err);
+    }
+  }
+
+  render();
+  updateTable();
+  updateStatsBar();
+
+  alert("🧹 Réservations test supprimées. Les vraies réservations n'ont pas été touchées.");
+}
+
 // 🎨 Nouvelle modale de choix du type de billet (accessible partout)
 async function askSeatType(id) {
   return new Promise(resolve => {
@@ -1546,9 +1834,12 @@ function render() {
     el.className = "seat";
     if (wasStrap) el.classList.add("strapontin");
 
-    const seatData = seats[id];
+    const seatData = getSeatDataForDisplay(id);
 if (seatData) {
-  if (seatData.type === "gratuit") {
+  if (isTestReservationData(seatData)) {
+    el.classList.add("test-seat");
+    el.title = "Réservation fictive TEST";
+  } else if (seatData.type === "gratuit") {
     el.classList.add("free-ticket"); // 🟣 GRATUIT uniquement
   } else if (seatData.paid) {
     el.classList.add("paid");
@@ -2053,11 +2344,15 @@ function activateAdminMode() {
   const scanBtn = document.getElementById("scanTicket");
   const infoBtn = document.getElementById("info");
   const billetsBtn = document.getElementById("openBilletsAdmin");
+  const generateTestBtn = document.getElementById("generateTestReservations");
+  const deleteTestBtn = document.getElementById("deleteTestReservations");
 
   admin = true;
   resetBtn.style.display = "inline-block";
   document.getElementById("export").style.display = "inline-block";
   if (billetsBtn) billetsBtn.style.display = "inline-block";
+  if (generateTestBtn) generateTestBtn.style.display = "inline-block";
+  if (deleteTestBtn) deleteTestBtn.style.display = "inline-block";
 
   if (scanBtn) scanBtn.style.display = "none";
   if (infoBtn) infoBtn.style.display = "none";
@@ -2073,11 +2368,15 @@ function deactivateAdminMode() {
   const scanBtn = document.getElementById("scanTicket");
   const infoBtn = document.getElementById("info");
   const billetsBtn = document.getElementById("openBilletsAdmin");
+  const generateTestBtn = document.getElementById("generateTestReservations");
+  const deleteTestBtn = document.getElementById("deleteTestReservations");
 
   admin = false;
   resetBtn.style.display = "none";
   document.getElementById("export").style.display = "none";
   if (billetsBtn) billetsBtn.style.display = "none";
+  if (generateTestBtn) generateTestBtn.style.display = "none";
+  if (deleteTestBtn) deleteTestBtn.style.display = "none";
 
   if (scanBtn) scanBtn.style.display = "inline-block";
   if (infoBtn) infoBtn.style.display = "inline-block";
@@ -2496,20 +2795,13 @@ async function markReservationSmsSent({ reservationId = "", clientName = "", cli
 async function setReservationSmsStatus({ reservationId = "", clientName = "", clientEmail = "", sent = false } = {}) {
   const now = new Date().toISOString();
 
-  const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
-    if (!data) return false;
-    if (reservationId && data.reservationId === reservationId) return true;
-    if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
-    return normalizeClientValue(data.name) === normalizeClientValue(clientName);
-  });
+  const matchingEntries = getMatchingSeatEntriesForStatus({ reservationId, clientName, clientEmail });
 
-  for (const [seatId, data] of matchingSeats) {
-    await set(ref(db, `seats/${seatId}`), {
-      ...data,
-      smsSentAt: sent ? now : "",
-      smsSentBy: sent ? "admin" : ""
-    });
-  }
+  await writeSeatStatusEntries(matchingEntries, {
+    smsSentAt: sent ? now : "",
+    smsSentBy: sent ? "admin" : "",
+    updatedAt: now
+  });
 
   if (reservationId && publicRequests[reservationId]) {
     await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
@@ -2559,7 +2851,8 @@ const TICKET_PAGE_BASE_URL = "https://troupe-saint-martin.github.io/theatre-sain
 function buildTicketPageUrl(user = {}) {
   const reservationId = String(user.reservationId || "").trim();
   if (!reservationId) return "";
-  return `${TICKET_PAGE_BASE_URL}?r=${encodeURIComponent(reservationId)}`;
+  const isTest = user.testReservation === true || String(reservationId).startsWith("test_");
+  return `${TICKET_PAGE_BASE_URL}?r=${encodeURIComponent(reservationId)}${isTest ? "&test=1" : ""}`;
 }
 
 function getTicketSmsMessage(user = {}) {
@@ -2595,20 +2888,13 @@ function openTicketSmsForUser(user = {}) {
 async function setTicketSmsStatus({ reservationId = "", clientName = "", clientEmail = "", sent = false } = {}) {
   const now = new Date().toISOString();
 
-  const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
-    if (!data) return false;
-    if (reservationId && data.reservationId === reservationId) return true;
-    if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
-    return normalizeClientValue(data.name) === normalizeClientValue(clientName);
-  });
+  const matchingEntries = getMatchingSeatEntriesForStatus({ reservationId, clientName, clientEmail });
 
-  for (const [seatId, data] of matchingSeats) {
-    await set(ref(db, `seats/${seatId}`), {
-      ...data,
-      ticketSmsSentAt: sent ? now : "",
-      ticketSmsSentBy: sent ? "admin" : ""
-    });
-  }
+  await writeSeatStatusEntries(matchingEntries, {
+    ticketSmsSentAt: sent ? now : "",
+    ticketSmsSentBy: sent ? "admin" : "",
+    updatedAt: now
+  });
 
   if (reservationId && publicRequests[reservationId]) {
     await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
@@ -2628,7 +2914,8 @@ function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
 
-  const entries = Object.entries(seats || {});
+  const displaySeats = getAdminDisplaySeats();
+  const entries = Object.entries(displaySeats || {});
   const pendingPublicRequests = (typeof getPublicRequestArray === "function" ? getPublicRequestArray() : [])
     .filter(r => !["confirmee", "refusee", "archivee"].includes(r.status || "nouvelle"))
     .filter(r => {
@@ -2675,6 +2962,7 @@ function updateTable() {
         publicRequest,
         isPublicRequest: data.source === "public_request",
         isPublicRequestPending: false,
+        isTestReservation: isTestReservationData(data),
         seats: [],
         emails: new Set(),
         allPaid: true
@@ -2769,7 +3057,8 @@ function updateTable() {
 
     header.innerHTML = `
 <div>
-  ${isPublic ? "📨" : "👤"} ${escapeHTML(name)}
+  ${info.isTestReservation ? `<span style="display:inline-block;background:#bf360c;color:white;border-radius:999px;padding:2px 8px;margin-bottom:4px;font-size:.78rem;font-weight:900;">🧪 TEST</span><br>` : ""}
+  ${info.isTestReservation ? "🧪" : (isPublic ? "📨" : "👤")} ${escapeHTML(name)}
   ${
     info.free
       ? ""
@@ -2844,7 +3133,8 @@ function updateTable() {
       reservationId,
       name,
       email: info.email || "",
-      phone: info.phone || ""
+      phone: info.phone || "",
+      testReservation: !!info.isTestReservation
     };
 
     const ticketSmsLine = info.allPaid
@@ -2878,6 +3168,7 @@ function updateTable() {
       : `<p style="margin:6px 0;color:#777;font-weight:600;">🎟️ SMS billet : disponible après paiement.</p>`;
 
     content.innerHTML = `
+  ${info.isTestReservation ? `<p style="background:#fff3e0;border-left:5px solid #bf360c;padding:8px;border-radius:6px;font-weight:800;color:#bf360c;">🧪 Réservation fictive — visible uniquement en admin, invisible sur la page publique.</p>` : ""}
   <p><strong>Email :</strong> ${escapeHTML(info.email || "—")}</p>
   <p><strong>Téléphone :</strong> ${smsPhoneLine}</p>
   ${smsStatusLine}
@@ -2966,7 +3257,7 @@ function updateTable() {
           display:inline-flex;align-items:center;gap:6px;
         ">
           <span>${icon} ${escapeHTML(s.id)} ${paidIcon}</span>
-          ${admin && !isPendingPublic ? `<button type="button"
+          ${admin && !isPendingPublic && !info.isTestReservation ? `<button type="button"
             class="delete-seat-badge-btn"
             data-seat="${escapeHTML(s.id)}"
             data-client="${escapeHTML(name)}"
@@ -2987,10 +3278,11 @@ function updateTable() {
       data-name="${escapeHTML(name)}"
       data-reservation-id="${escapeHTML(reservationId || "")}"
       data-public-pending="${isPendingPublic ? "true" : "false"}"
+      data-test="${info.isTestReservation ? "true" : "false"}"
       ${info.allPaid ? "checked" : ""}>
   </label>
 
-  ${admin ? `
+  ${admin && !info.isTestReservation ? `
   <div class="group-actions" data-client="${escapeHTML(name)}" style="display:flex;gap:6px;flex-wrap:wrap;">
     ${isPendingPublic ? `
       <button class="public-confirm-btn" data-id="${escapeHTML(reservationId)}" style="background:#2e7d32;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">✅ Valider + envoyer confirmation</button>
@@ -3030,7 +3322,14 @@ function updateTable() {
       const clientName = e.target.dataset.name;
       const reservationId = e.target.dataset.reservationId || "";
       const isPendingPublic = e.target.dataset.publicPending === "true";
+      const isTestReservation = e.target.dataset.test === "true";
       const isPaid = e.target.checked;
+
+      if (isTestReservation) {
+        alert("🧪 Réservation test : paiement fictif déjà validé. Utilise le bouton 🧹 pour supprimer les tests.");
+        e.target.checked = true;
+        return;
+      }
 
       if (isPendingPublic && reservationId && publicRequests[reservationId]) {
         await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
@@ -3893,6 +4192,14 @@ function toggleAdminUI() {
   const billetsAdminBtn = document.getElementById("openBilletsAdmin");
   if (billetsAdminBtn) {
     billetsAdminBtn.style.display = isAdmin ? "inline-block" : "none";
+  }
+  const generateTestReservationsBtn = document.getElementById("generateTestReservations");
+  if (generateTestReservationsBtn) {
+    generateTestReservationsBtn.style.display = isAdmin ? "inline-block" : "none";
+  }
+  const deleteTestReservationsBtn = document.getElementById("deleteTestReservations");
+  if (deleteTestReservationsBtn) {
+    deleteTestReservationsBtn.style.display = isAdmin ? "inline-block" : "none";
   }
   const archiveMailingContactsBtn = document.getElementById("archiveMailingContacts");
   if (archiveMailingContactsBtn) {
