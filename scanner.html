@@ -65,6 +65,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const TEST_SEATS_PATH = "spectacles/amies_2026_10_11/test_seats";
 
 let scanner;
 let scanning = false;
@@ -270,30 +271,59 @@ async function syncScansFromFirebase() {
 async function syncReservationsFromFirebase() {
   validTickets = {};
   ticketBySeats = {};
-  const snap = await get(ref(db, "seats"));
-  if (!snap.exists()) return 0;
-  const seatsData = snap.val() || {};
+
+  const [realSnap, testSnap] = await Promise.all([
+    get(ref(db, "seats")),
+    get(ref(db, TEST_SEATS_PATH))
+  ]);
+
   const grouped = {};
-  Object.entries(seatsData).forEach(([seatId, data]) => {
-    if (!data) return;
-    const reservationId = data.reservationId || "";
-    const key = reservationId || `${normalize(data.email)}__${normalize(data.name)}__${normalize(data.phone)}`;
-    if (!key || key === "____") return;
-    if (!grouped[key]) grouped[key] = { ticketId: reservationId || key, reservationId, nom: data.name || "Participant", email: data.email || "", phone: data.phone || "", sieges: [], paid: true };
-    grouped[key].sieges.push(seatId);
-    grouped[key].paid = grouped[key].paid && !!data.paid;
-    if (!grouped[key].reservationId && data.reservationId) grouped[key].reservationId = data.reservationId;
-    if (!grouped[key].email && data.email) grouped[key].email = data.email;
-    if (!grouped[key].phone && data.phone) grouped[key].phone = data.phone;
-    if (!grouped[key].nom && data.name) grouped[key].nom = data.name;
-  });
+
+  function addSeatsToGroup(seatsData = {}, isTestSource = false) {
+    Object.entries(seatsData || {}).forEach(([seatId, data]) => {
+      if (!data) return;
+      const reservationId = data.reservationId || "";
+      const key = reservationId || `${normalize(data.email)}__${normalize(data.name)}__${normalize(data.phone)}`;
+      if (!key || key === "____") return;
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          ticketId: reservationId || key,
+          reservationId,
+          nom: data.name || "Participant",
+          email: data.email || "",
+          phone: data.phone || "",
+          sieges: [],
+          paid: true,
+          testReservation: isTestSource || data.testReservation === true || data.source === "test_data"
+        };
+      }
+
+      grouped[key].sieges.push(seatId);
+      grouped[key].paid = grouped[key].paid && !!data.paid;
+
+      if (!grouped[key].reservationId && data.reservationId) grouped[key].reservationId = data.reservationId;
+      if (!grouped[key].email && data.email) grouped[key].email = data.email;
+      if (!grouped[key].phone && data.phone) grouped[key].phone = data.phone;
+      if (!grouped[key].nom && data.name) grouped[key].nom = data.name;
+    });
+  }
+
+  if (realSnap.exists()) addSeatsToGroup(realSnap.val() || {}, false);
+  if (testSnap.exists()) addSeatsToGroup(testSnap.val() || {}, true);
+
   Object.values(grouped).forEach(ticket => {
     ticket.sieges = ticket.sieges.sort(sortSeatIds).join(", ");
     ticket.maxScans = Math.max(ticket.sieges.split(",").filter(Boolean).length, 1);
-    if (!ticket.paid) return; // On charge uniquement les billets payés.
+
+    // Vraies réservations : seulement les billets payés.
+    // Réservations test : toujours chargées pour permettre les essais.
+    if (!ticket.testReservation && !ticket.paid) return;
+
     validTickets[ticket.ticketId] = ticket;
     ticketBySeats[normalizeSeats(ticket.sieges)] = ticket;
   });
+
   localStorage.setItem("validTicketsLoadedAt", new Date().toISOString());
   localStorage.setItem("validTicketsCount", String(Object.keys(validTickets).length));
   return Object.keys(validTickets).length;
