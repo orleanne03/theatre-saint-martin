@@ -6,6 +6,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>🎭 Tableau de bord – Théâtre Saint Martin</title>
 
+<script>
+(function() {
+  const ADMIN_AUTO_KEY = "ADMIN_AUTO_LOGIN";
+  const ADMIN_PASSWORD = "admin123";
+
+  // Si cet appareil est déjà mémorisé admin, on laisse passer.
+  if (localStorage.getItem(ADMIN_AUTO_KEY) === "true") {
+    return;
+  }
+
+  const password = prompt("Accès réservé — mot de passe admin :");
+
+  if (password === ADMIN_PASSWORD) {
+    const remember = confirm("Mémoriser cet appareil en admin ?");
+    if (remember) {
+      localStorage.setItem(ADMIN_AUTO_KEY, "true");
+    }
+    return;
+  }
+
+  alert("Accès réservé à l’administration.");
+  window.location.replace("reservation-public.html");
+})();
+</script>
+
+
 <style>
 :root {
   --gold: #f7d65a;
