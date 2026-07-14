@@ -259,6 +259,7 @@
     const ADMIN_AUTO_KEY = "ADMIN_AUTO_LOGIN"; // même clé que salle.html
     const SITE_BASE_URL = "https://troupe-saint-martin.github.io/theatre-saint-martin/";
     const PUBLIC_REQUESTS_PATH = "spectacles/amies_2026_10_11/public_requests";
+    const TEST_SEATS_PATH = "spectacles/amies_2026_10_11/test_seats";
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -271,6 +272,7 @@
     const refreshBtn = document.getElementById("refreshBtn");
 
     let seats = {};
+    let testSeats = {};
     let publicRequests = {};
     let groupedReservations = [];
 
@@ -299,7 +301,8 @@
     function buildTicketPageUrl(user = {}) {
       const id = String(user.reservationId || "").trim();
       if (!id) return "";
-      return SITE_BASE_URL + "b.html?r=" + encodeURIComponent(id);
+      const isTest = user.testReservation === true || String(id).startsWith("test_");
+      return SITE_BASE_URL + "b.html?r=" + encodeURIComponent(id) + (isTest ? "&test=1" : "");
     }
 
     function getTicketSmsMessage(user = {}) {
@@ -320,7 +323,7 @@
       return "sms:" + cleanPhone + "?body=" + encodeURIComponent(getTicketSmsMessage(user));
     }
 
-    function groupSeatsByReservation(seatsData = {}) {
+    function groupSeatsByReservation(seatsData = {}, isTestSource = false) {
       const grouped = {};
 
       Object.entries(seatsData).forEach(([seatId, data]) => {
@@ -342,7 +345,8 @@
             allPaid: true,
             ticketEmailSentAt: data.ticketEmailSentAt || publicRequest.ticketEmailSentAt || "",
             ticketSmsSentAt: data.ticketSmsSentAt || publicRequest.ticketSmsSentAt || "",
-            ticketSmsSentBy: data.ticketSmsSentBy || publicRequest.ticketSmsSentBy || ""
+            ticketSmsSentBy: data.ticketSmsSentBy || publicRequest.ticketSmsSentBy || "",
+            testReservation: isTestSource || data.testReservation === true || data.source === "test_data"
           };
         }
 
@@ -370,7 +374,7 @@
           // On affiche seulement les billets réellement disponibles :
           // soit un email billet a été enregistré, soit la réservation est payée,
           // soit le SMS billet a déjà été marqué comme envoyé.
-          return !!item.reservationId && (!!item.ticketEmailSentAt || item.allPaid || !!item.ticketSmsSentAt);
+          return !!item.reservationId && (item.testReservation || !!item.ticketEmailSentAt || item.allPaid || !!item.ticketSmsSentAt);
         })
         .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "fr", { sensitivity: "base" }));
     }
@@ -402,7 +406,8 @@
           reservationId: r.reservationId,
           name: r.name,
           email: r.email,
-          phone: r.phone
+          phone: r.phone,
+          testReservation: !!r.testReservation
         };
 
         const ticketUrl = buildTicketPageUrl(user);
@@ -417,7 +422,7 @@
                 <div class="name">${escapeHTML(r.name || "Inconnu")}</div>
                 <div class="seats">${escapeHTML(seatLabel)}</div>
               </div>
-              <span class="badge">✅ Billet disponible</span>
+              <span class="badge">${r.testReservation ? "🧪 TEST" : "✅ Billet disponible"}</span>
             </div>
 
             <div class="actions">
@@ -447,16 +452,27 @@
 
     async function setTicketSmsStatus({ reservationId = "", clientName = "", clientEmail = "", sent = false } = {}) {
       const now = new Date().toISOString();
-      const entries = Object.entries(seats || {}).filter(([_, data]) => {
-        if (!data) return false;
-        if (reservationId && data.reservationId === reservationId) return true;
-        if (clientEmail && normalize(data.email) === normalize(clientEmail)) return true;
-        return clientName && normalize(data.name) === normalize(clientName);
-      });
 
-      for (const [seatId, data] of entries) {
-        await set(ref(db, `seats/${seatId}`), {
-          ...data,
+      const sources = [
+        { dbPath: "seats", data: seats || {}, isTest: false },
+        { dbPath: TEST_SEATS_PATH, data: testSeats || {}, isTest: true }
+      ];
+
+      const entries = [];
+      for (const source of sources) {
+        for (const [seatId, data] of Object.entries(source.data || {})) {
+          if (!data) continue;
+          const ok =
+            (reservationId && data.reservationId === reservationId) ||
+            (clientEmail && normalize(data.email) === normalize(clientEmail)) ||
+            (clientName && normalize(data.name) === normalize(clientName));
+          if (ok) entries.push({ ...source, seatId, data });
+        }
+      }
+
+      for (const entry of entries) {
+        await set(ref(db, `${entry.dbPath}/${entry.seatId}`), {
+          ...entry.data,
           ticketSmsSentAt: sent ? now : "",
           ticketSmsSentBy: sent ? "admin" : "",
           updatedAt: now
@@ -482,7 +498,10 @@
     }
 
     function rebuild() {
-      groupedReservations = groupSeatsByReservation(seats);
+      groupedReservations = [
+        ...groupSeatsByReservation(seats, false),
+        ...groupSeatsByReservation(testSeats, true)
+      ].sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "fr", { sensitivity: "base" }));
       renderCards();
     }
 
@@ -496,6 +515,11 @@
 
       onValue(ref(db, "seats"), snapshot => {
         seats = snapshot.val() || {};
+        rebuild();
+      });
+
+      onValue(ref(db, TEST_SEATS_PATH), snapshot => {
+        testSeats = snapshot.val() || {};
         rebuild();
       });
     }
