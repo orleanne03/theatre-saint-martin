@@ -34,6 +34,43 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
   white-space: nowrap;
 }
 .big-result{font-size:1.2rem;padding:12px;border-radius:10px;margin:10px 0;background:#f5f5f5}.small{font-size:.9rem;color:#666;line-height:1.35}
+
+.handscanner-box{
+  margin:12px auto 4px;
+  padding:12px;
+  max-width:500px;
+  background:#fff;
+  border:2px dashed #90caf9;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.handscanner-title{
+  font-weight:900;
+  color:#0d47a1;
+  margin-bottom:8px;
+}
+#handScannerInput{
+  width:100%;
+  padding:13px 12px;
+  border:1px solid #90caf9;
+  border-radius:10px;
+  font-size:1rem;
+  box-sizing:border-box;
+  outline:none;
+}
+#handScannerInput:focus{
+  border-color:#1976d2;
+  box-shadow:0 0 0 3px rgba(25,118,210,.18);
+}
+.handscanner-actions{
+  margin-top:8px;
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.orange{background:#ef6c00}
+
 @media(max-width:480px){body{padding:10px}#reader{width:100%;max-width:330px}.panel{padding:12px}th,td{font-size:.9rem}}
 </style>
 </head>
@@ -43,6 +80,18 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
 <p>Alignez le QR dans le carré pour valider un billet.</p>
 
 <div id="reader"></div>
+
+<div class="handscanner-box">
+  <div class="handscanner-title">🔫 Douchette Tera 8100</div>
+  <input id="handScannerInput" type="text" inputmode="none" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Clique ici puis scanne avec la douchette" />
+  <div class="handscanner-actions">
+    <button id="handScannerModeBtn" class="orange" type="button">🔫 Mode douchette</button>
+    <button id="cameraModeBtn" class="green" type="button">📷 Mode caméra</button>
+    <button id="manualScanBtn" class="blue" type="button">✅ Valider le code</button>
+  </div>
+  <p class="small">Avec la douchette, clique dans le champ puis scanne. Si elle ajoute Entrée automatiquement, la validation se fait toute seule.</p>
+</div>
+
 
 <div class="panel">
   <p id="status">Chargement des données…</p>
@@ -82,6 +131,8 @@ const TEST_SEATS_PATH = "spectacles/amies_2026_10_11/test_seats";
 
 let scanner;
 let scanning = false;
+let handScannerMode = false;
+let handScannerBusy = false;
 let scanState = {};      // État local des billets déjà scannés
 let validTickets = {};   // Réservations chargées depuis Firebase
 let ticketBySeats = {};  // Accès rapide par sièges
@@ -90,6 +141,10 @@ const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
 const syncInfoEl = document.getElementById("syncInfo");
+const handScannerInput = document.getElementById("handScannerInput");
+const handScannerModeBtn = document.getElementById("handScannerModeBtn");
+const cameraModeBtn = document.getElementById("cameraModeBtn");
+const manualScanBtn = document.getElementById("manualScanBtn");
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>'"]/g, char => ({
@@ -194,6 +249,7 @@ function renderHistory(){
 }
 
 async function startScanner(){
+  if (handScannerMode) return;
   if (scanning) return;
   scanning = true;
   try {
@@ -243,7 +299,8 @@ async function persistScan(ticketId) {
   catch (err) { console.warn("Scan non sauvegardé immédiatement", err); syncInfoEl.textContent = "⚠️ Scan gardé sur ce téléphone. Resynchronise dès que le réseau revient."; }
 }
 
-async function onScanSuccess(text){
+async function onScanSuccess(text, options = {}){
+  const restartCameraAfterScan = options.restartCamera !== false;
   await stopScanner();
   const ticket = parseQrText(text);
   const current = scanState[ticket.ticketId] || { count: 0, nom: ticket.nom, sieges: ticket.sieges, lastScan: 0 };
@@ -252,7 +309,7 @@ async function onScanSuccess(text){
     statusEl.innerHTML = "<span class='err'>⛔ Billet non reconnu</span>";
     detailsEl.style.display = "block";
     detailsEl.innerHTML = `<div class="big-result">Ce QR code ne correspond à aucune réservation chargée.</div><strong>Données lues :</strong><br>Nom : ${escapeHTML(ticket.nom)}<br>Sièges : ${escapeHTML(ticket.sieges || "—")}`;
-    setTimeout(startScanner, 900);
+    if (restartCameraAfterScan) setTimeout(startScanner, 900); else setTimeout(focusHandScannerInput, 120);
     return;
   }
   if (Number(current.count || 0) >= ticket.maxScans) {
@@ -260,7 +317,7 @@ async function onScanSuccess(text){
     statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
     detailsEl.style.display = "block";
     detailsEl.innerHTML = `<div class="big-result">Déjà scanné ${current.count}/${ticket.maxScans}</div><strong>Réservation :</strong><br><b>${escapeHTML(current.nom || ticket.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || ticket.sieges)}`;
-    setTimeout(startScanner, 900);
+    if (restartCameraAfterScan) setTimeout(startScanner, 900); else setTimeout(focusHandScannerInput, 120);
     return;
   }
   current.count = Number(current.count || 0) + 1;
@@ -281,8 +338,71 @@ async function onScanSuccess(text){
   detailsEl.style.display = "block";
   detailsEl.innerHTML = `<div class="big-result ok">Entrée validée</div><strong>Réservation au nom de :</strong><br><b>${escapeHTML(current.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || "—")}`;
   persistScan(ticket.ticketId);
-  setTimeout(startScanner, 650);
+  if (restartCameraAfterScan) setTimeout(startScanner, 650); else setTimeout(focusHandScannerInput, 120);
 }
+
+
+function focusHandScannerInput() {
+  if (!handScannerInput) return;
+  try {
+    handScannerInput.focus({ preventScroll: true });
+    handScannerInput.select();
+  } catch(e) {
+    handScannerInput.focus();
+  }
+}
+
+async function activateHandScannerMode() {
+  handScannerMode = true;
+  await stopScanner();
+  statusEl.innerHTML = "<span class='ok'>🔫 Mode douchette actif. Scanne dans le champ.</span>";
+  syncInfoEl.textContent = "Douchette Tera 8100 : prête à recevoir un QR code.";
+  focusHandScannerInput();
+}
+
+async function activateCameraMode() {
+  handScannerMode = false;
+  statusEl.innerHTML = "<span class='ok'>📷 Mode caméra actif.</span>";
+  await startScanner();
+}
+
+async function processHandScannerValue() {
+  if (!handScannerInput || handScannerBusy) return;
+  const value = handScannerInput.value.trim();
+  if (!value) return;
+
+  handScannerBusy = true;
+  handScannerInput.value = "";
+
+  try {
+    await onScanSuccess(value, { restartCamera: false });
+  } finally {
+    handScannerBusy = false;
+    setTimeout(focusHandScannerInput, 120);
+  }
+}
+
+if (handScannerInput) {
+  handScannerInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      processHandScannerValue();
+    }
+  });
+
+  // Si la douchette ne met pas Entrée, on traite automatiquement après une courte pause.
+  let handScannerTimer = null;
+  handScannerInput.addEventListener("input", () => {
+    clearTimeout(handScannerTimer);
+    handScannerTimer = setTimeout(() => {
+      if (handScannerInput.value.trim().length > 20) processHandScannerValue();
+    }, 350);
+  });
+}
+
+if (handScannerModeBtn) handScannerModeBtn.onclick = activateHandScannerMode;
+if (cameraModeBtn) cameraModeBtn.onclick = activateCameraMode;
+if (manualScanBtn) manualScanBtn.onclick = processHandScannerValue;
 
 document.querySelector(".accordion").onclick=()=>{
   const p=document.getElementById("historyPanel");
