@@ -11,52 +11,50 @@
 body{font-family:system-ui;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
 h1{color:#0d47a1}
 #reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden}
-.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px}
-.ok{color:#2e7d32;font-weight:700}
-.err{color:#d32f2f;font-weight:700}
-button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px}
-.violet{background:#8e24aa}
-.green{background:#2e7d32}
-#counter{font-weight:700;color:#0d47a1}
+.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ok{color:#2e7d32;font-weight:800}.err{color:#d32f2f;font-weight:800}.warn{color:#ef6c00;font-weight:800}
+button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px;font-weight:700}
+.violet{background:#8e24aa}.green{background:#2e7d32}.blue{background:#1976d2}.grey{background:#455a64}
+#counter,#syncInfo{font-weight:700;color:#0d47a1}#syncInfo{font-size:.95rem;margin-top:8px}
 #details{margin-top:10px;text-align:left;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
-.accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%}
-.panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:8px;border-bottom:1px solid #ddd}
-.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
+.accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%;max-width:500px}
+.panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px;max-width:500px;margin:0 auto 16px;overflow:auto}
+table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
+.big-result{font-size:1.2rem;padding:12px;border-radius:10px;margin:10px 0;background:#f5f5f5}.small{font-size:.9rem;color:#666;line-height:1.35}
+@media(max-width:480px){body{padding:10px}#reader{width:100%;max-width:330px}.panel{padding:12px}th,td{font-size:.9rem}}
 </style>
 </head>
 
 <body>
-
 <h1>🎭 Théâtre Saint Martin — Scanner</h1>
 <p>Alignez le QR dans le carré pour valider un billet.</p>
 
 <div id="reader"></div>
 
 <div class="panel">
-  <p id="status">Prêt à scanner.</p>
+  <p id="status">Chargement des données…</p>
   <p id="counter">Billets scannés : 0</p>
+  <p id="syncInfo">Synchronisation en attente…</p>
   <div id="details" style="display:none;"></div>
 
+  <button id="syncBtn" class="blue">🔄 Synchroniser avant ouverture</button>
   <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
-  <button id="gotoHome" class="violet">🏠 Tableau de bord</button>
+  <button id="gotoHome" class="grey">🏠 Tableau de bord</button>
+
+  <p class="small">Conseil : avant l’arrivée du public, appuie sur <b>Synchroniser</b>. Ensuite les scans sont validés en local, donc beaucoup plus vite.</p>
 </div>
 
 <button class="accordion">📜 Historique des scans</button>
 <div class="panel-acc" id="historyPanel">
   <table>
-    <thead>
-      <tr><th>Nom</th><th>Sièges</th><th>Date</th><th></th></tr>
-    </thead>
+    <thead><tr><th>Nom</th><th>Sièges</th><th>Date</th><th></th></tr></thead>
     <tbody id="historyTable"></tbody>
   </table>
 </div>
 
 <script type="module">
-/* 🔥 CONFIG FIREBASE — REMPLACE ICI */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, runTransaction, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
@@ -68,208 +66,259 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* === LOGIQUE SCANNER === */
 let scanner;
 let scanning = false;
+let scanState = {};      // État local des billets déjà scannés
+let validTickets = {};   // Réservations chargées depuis Firebase
+let ticketBySeats = {};  // Accès rapide par sièges
 
 const statusEl = document.getElementById("status");
 const counterEl = document.getElementById("counter");
 const detailsEl = document.getElementById("details");
+const syncInfoEl = document.getElementById("syncInfo");
 
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>'"]/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;"
+  }[char]));
+}
+function normalize(value) { return String(value || "").trim().toLowerCase(); }
+function sortSeatIds(a, b) { return String(a).localeCompare(String(b), "fr", { numeric: true }); }
+function normalizeSeats(value) {
+  return String(value || "").split(",").map(s => s.trim()).filter(Boolean).sort(sortSeatIds).join(",");
+}
 function getScanned(){ return JSON.parse(localStorage.getItem("scannedTickets") || "[]"); }
 function setScanned(v){ localStorage.setItem("scannedTickets", JSON.stringify(v)); }
+function getScanState(){ return JSON.parse(localStorage.getItem("scanState") || "{}"); }
+function setScanState(v){ localStorage.setItem("scanState", JSON.stringify(v)); }
 
-function updateCounter(){
-  const list = getScanned();
-  counterEl.textContent = "Billets scannés : " + list.length;
+function updateCounter(){ counterEl.textContent = "Billets scannés : " + getScanned().length; }
+
+function beep(type = "ok") {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = type === "ok" ? 880 : 220;
+    gain.gain.value = 0.08;
+    osc.start();
+    setTimeout(() => { osc.stop(); ctx.close(); }, type === "ok" ? 120 : 250);
+  } catch(e) {}
 }
-
+function vibrate(type = "ok") {
+  try { if (navigator.vibrate) navigator.vibrate(type === "ok" ? 80 : [120, 80, 120]); } catch(e) {}
+}
 
 function renderHistory(){
   const list = getScanned();
   const tbody = document.getElementById("historyTable");
   tbody.innerHTML = "";
-
   const grouped = {};
   list.forEach(item => {
-    if (!grouped[item.ticketId]) {
-      grouped[item.ticketId] = { nom: item.nom, sieges: item.sieges, count: 0, lastDate: item.date };
-    }
+    if (!grouped[item.ticketId]) grouped[item.ticketId] = { nom: item.nom, sieges: item.sieges, count: 0, lastDate: item.date };
     grouped[item.ticketId].count++;
     grouped[item.ticketId].lastDate = item.date;
   });
-
   Object.entries(grouped).forEach(([ticketId, item]) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.nom}</td>
-      <td>${item.sieges}</td>
-      <td>${item.lastDate}</td>
-      <td>
-        <strong>${item.count}</strong>
-        <span class="trash" style="margin-left:8px;">🗑️</span>
-      </td>
-    `;
+    tr.innerHTML = `<td>${escapeHTML(item.nom)}</td><td>${escapeHTML(item.sieges)}</td><td>${escapeHTML(item.lastDate)}</td><td><strong>${item.count}</strong><span class="trash" style="margin-left:8px;">🗑️</span></td>`;
     tbody.appendChild(tr);
-
-    // 🗑️ supprime 1 scan (décrémente)
     tr.querySelector(".trash").onclick = async () => {
-      // 1) local : enlève le dernier scan de CE ticket
       const local = getScanned();
       const idx = local.map(s => s.ticketId).lastIndexOf(ticketId);
-      if (idx !== -1) {
-        local.splice(idx, 1);
-        setScanned(local);
+      if (idx !== -1) { local.splice(idx, 1); setScanned(local); }
+      scanState = getScanState();
+      if (scanState[ticketId]) {
+        const nextCount = Math.max(0, Number(scanState[ticketId].count || 0) - 1);
+        if (nextCount <= 0) { delete scanState[ticketId]; await set(ref(db, "scans/" + ticketId), null); }
+        else { scanState[ticketId].count = nextCount; scanState[ticketId].lastScan = Date.now(); await set(ref(db, "scans/" + ticketId), scanState[ticketId]); }
+        setScanState(scanState);
       }
-
-      // 2) firebase : décrémente count (et supprime le node si count=0)
-      const ticketRef = ref(db, "scans/" + ticketId);
-      await runTransaction(ticketRef, (current) => {
-        if (!current) return null;
-        const c = Number(current.count || 0);
-        if (c <= 1) return null;  // supprime le billet si plus aucun scan
-        current.count = c - 1;
-        current.lastScan = Date.now();
-        return current;
-      });
-
-      renderHistory();
-      updateCounter();
+      renderHistory(); updateCounter();
     };
   });
 }
 
-
 async function startScanner(){
   if (scanning) return;
   scanning = true;
-  scanner = new Html5Qrcode("reader");
-  await scanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess);
+  try {
+    if (!scanner) scanner = new Html5Qrcode("reader");
+    await scanner.start({facingMode:"environment"}, {fps:12, qrbox:250}, onScanSuccess);
+  } catch (err) {
+    scanning = false;
+    statusEl.innerHTML = "<span class='err'>❌ Caméra indisponible. Vérifie l’autorisation caméra.</span>";
+    console.error(err);
+  }
+}
+async function stopScanner(){
+  try { if(scanner && scanning) await scanner.stop(); } catch(e) { console.warn("Arrêt scanner impossible", e); }
+  scanning = false;
 }
 
-async function stopScanner(){
-  if(scanner){ await scanner.stop(); scanning=false; }
+function parseQrText(text) {
+  let data = null;
+  try { data = JSON.parse(text); } catch(e) {}
+  const reservationId = data?.reservationId || data?.id || data?.r || "";
+  const sieges = data?.sieges || data?.seats || data?.places || "";
+  const normalizedSeatKey = normalizeSeats(sieges);
+  const ticketFromReservation = reservationId ? validTickets[reservationId] : null;
+  const ticketFromSeats = normalizedSeatKey ? ticketBySeats[normalizedSeatKey] : null;
+  const matchedTicket = ticketFromReservation || ticketFromSeats || null;
+  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || text;
+  const resolvedSeats = matchedTicket?.sieges || sieges || "";
+  const seatCount = String(resolvedSeats || "").split(",").map(s => s.trim()).filter(Boolean).length;
+  return {
+    raw: text,
+    data,
+    matchedTicket,
+    ticketId,
+    nom: matchedTicket?.nom || data?.nom || data?.name || "Participant",
+    email: matchedTicket?.email || data?.email || "",
+    phone: matchedTicket?.phone || data?.tel || data?.phone || "",
+    sieges: resolvedSeats,
+    maxScans: Math.max(seatCount || 1, 1),
+    isKnownTicket: !!matchedTicket || Object.keys(validTickets).length === 0
+  };
+}
+
+async function persistScan(ticketId) {
+  const item = scanState[ticketId];
+  if (!item) return;
+  try { await set(ref(db, "scans/" + ticketId), item); syncInfoEl.textContent = "✅ Dernier scan sauvegardé dans Firebase."; }
+  catch (err) { console.warn("Scan non sauvegardé immédiatement", err); syncInfoEl.textContent = "⚠️ Scan gardé sur ce téléphone. Resynchronise dès que le réseau revient."; }
 }
 
 async function onScanSuccess(text){
   await stopScanner();
-
-  let data=null;
-  try{ data=JSON.parse(text); }catch(e){}
-
-  const ticketId = data?.sieges?.replace(/\s+/g,"") || text;
-  const sieges = data?.sieges || "";
-  const maxScans = sieges.split(",").filter(Boolean).length || 1;
-
-  const ticketRef = ref(db,"scans/"+ticketId);
-
-  runTransaction(ticketRef,(current)=>{
-    if(!current){
-return {
-  count: 1,
-  nom: data?.nom || "Participant",
-  sieges,
-  lastScan: Date.now()
-};
-
-    }
-    if(current.count>=maxScans) return;
-    if(data?.nom && current.nom==="Participant") current.nom=data.nom;
-current.count++;
-current.lastScan = Date.now();
-return current;
-
-  }).then(res=>{
-
-if (!res.committed) {
-  statusEl.innerHTML="<span class='err'>⛔ Billet déjà utilisé</span>";
-  startScanner();
-  return;
-}
-
-
-
-    const v = res.snapshot.val();
-
-    // ✅ HISTORIQUE LOCAL (UI COMME AVANT)
-    const list = getScanned();
-    list.push({
-      ticketId,
-      nom: v.nom,
-      sieges: v.sieges,
-      date: new Date().toLocaleString()
-    });
-    setScanned(list);
-    renderHistory();
-    updateCounter();
-
-    statusEl.innerHTML = `<span class='ok'>✅ Scan ${v.count}/${maxScans}</span>`;
-    detailsEl.style.display="block";
-    detailsEl.innerHTML = `
-      <strong>Réservation au nom de :</strong><br>
-      <b>${v.nom}</b><hr>
-      <strong>🎟️ Sièges :</strong> ${v.sieges}
-    `;
-
-    setTimeout(startScanner,1200);
-  });
+  const ticket = parseQrText(text);
+  const current = scanState[ticket.ticketId] || { count: 0, nom: ticket.nom, sieges: ticket.sieges, lastScan: 0 };
+  if (!ticket.isKnownTicket) {
+    beep("err"); vibrate("err");
+    statusEl.innerHTML = "<span class='err'>⛔ Billet non reconnu</span>";
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `<div class="big-result">Ce QR code ne correspond à aucune réservation chargée.</div><strong>Données lues :</strong><br>Nom : ${escapeHTML(ticket.nom)}<br>Sièges : ${escapeHTML(ticket.sieges || "—")}`;
+    setTimeout(startScanner, 900);
+    return;
+  }
+  if (Number(current.count || 0) >= ticket.maxScans) {
+    beep("err"); vibrate("err");
+    statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
+    detailsEl.style.display = "block";
+    detailsEl.innerHTML = `<div class="big-result">Déjà scanné ${current.count}/${ticket.maxScans}</div><strong>Réservation :</strong><br><b>${escapeHTML(current.nom || ticket.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || ticket.sieges)}`;
+    setTimeout(startScanner, 900);
+    return;
+  }
+  current.count = Number(current.count || 0) + 1;
+  current.nom = ticket.nom || current.nom || "Participant";
+  current.sieges = ticket.sieges || current.sieges || "";
+  current.email = ticket.email || current.email || "";
+  current.phone = ticket.phone || current.phone || "";
+  current.maxScans = ticket.maxScans;
+  current.lastScan = Date.now();
+  scanState[ticket.ticketId] = current;
+  setScanState(scanState);
+  const list = getScanned();
+  list.push({ ticketId: ticket.ticketId, nom: current.nom, sieges: current.sieges, date: new Date().toLocaleString() });
+  setScanned(list);
+  renderHistory(); updateCounter();
+  beep("ok"); vibrate("ok");
+  statusEl.innerHTML = `<span class='ok'>✅ Scan ${current.count}/${ticket.maxScans}</span>`;
+  detailsEl.style.display = "block";
+  detailsEl.innerHTML = `<div class="big-result ok">Entrée validée</div><strong>Réservation au nom de :</strong><br><b>${escapeHTML(current.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || "—")}`;
+  persistScan(ticket.ticketId);
+  setTimeout(startScanner, 650);
 }
 
 document.querySelector(".accordion").onclick=()=>{
   const p=document.getElementById("historyPanel");
   p.style.display=p.style.display==="block"?"none":"block";
 };
-
-
+document.getElementById("gotoHome").onclick = () => { window.location.href = "index.html"; };
 
 document.getElementById("resetScanBtn").onclick = async () => {
-  const pwd = prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
+  const autoAdmin = localStorage.getItem("ADMIN_AUTO_LOGIN") === "true";
+  const pwd = autoAdmin ? "admin123" : prompt("🔐 Entrez le mot de passe administrateur pour réinitialiser :");
   if (pwd !== "admin123") return alert("❌ Mot de passe incorrect.");
-
   if (!confirm("Tout effacer (Firebase + historique local) ?")) return;
-
-  await set(ref(db, "scans"), null);              // ✅ vide Firebase
-  localStorage.removeItem("scannedTickets");      // ✅ vide local
-
-  renderHistory();
-  updateCounter();
+  await set(ref(db, "scans"), null);
+  localStorage.removeItem("scannedTickets");
+  localStorage.removeItem("scanState");
+  scanState = {};
+  renderHistory(); updateCounter();
+  statusEl.innerHTML = "<span class='ok'>✅ Historique réinitialisé.</span>";
 };
 
-
-
-async function syncFromFirebase() {
+async function syncScansFromFirebase() {
   const snap = await get(ref(db, "scans"));
-  if (!snap.exists()) {
-    localStorage.removeItem("scannedTickets");
-    return;
-  }
-
-  const data = snap.val();
+  const state = {};
   const list = [];
-
-  Object.entries(data).forEach(([ticketId, v]) => {
-    const count = Number(v.count || 0);
-    for (let i = 0; i < count; i++) {
-      list.push({
-        ticketId,
-        nom: v.nom || "Participant",
-        sieges: v.sieges || "",
-        date: new Date(v.lastScan || Date.now()).toLocaleString()
-      });
-    }
-  });
-
+  if (snap.exists()) {
+    const data = snap.val() || {};
+    Object.entries(data).forEach(([ticketId, v]) => {
+      const count = Number(v.count || 0);
+      state[ticketId] = { count, nom: v.nom || "Participant", sieges: v.sieges || "", email: v.email || "", phone: v.phone || "", maxScans: Number(v.maxScans || 1), lastScan: Number(v.lastScan || Date.now()) };
+      for (let i = 0; i < count; i++) list.push({ ticketId, nom: state[ticketId].nom, sieges: state[ticketId].sieges, date: new Date(state[ticketId].lastScan || Date.now()).toLocaleString() });
+    });
+  }
+  scanState = state;
+  setScanState(scanState);
   setScanned(list);
 }
 
+async function syncReservationsFromFirebase() {
+  validTickets = {};
+  ticketBySeats = {};
+  const snap = await get(ref(db, "seats"));
+  if (!snap.exists()) return 0;
+  const seatsData = snap.val() || {};
+  const grouped = {};
+  Object.entries(seatsData).forEach(([seatId, data]) => {
+    if (!data) return;
+    const reservationId = data.reservationId || "";
+    const key = reservationId || `${normalize(data.email)}__${normalize(data.name)}__${normalize(data.phone)}`;
+    if (!key || key === "____") return;
+    if (!grouped[key]) grouped[key] = { ticketId: reservationId || key, reservationId, nom: data.name || "Participant", email: data.email || "", phone: data.phone || "", sieges: [], paid: true };
+    grouped[key].sieges.push(seatId);
+    grouped[key].paid = grouped[key].paid && !!data.paid;
+    if (!grouped[key].reservationId && data.reservationId) grouped[key].reservationId = data.reservationId;
+    if (!grouped[key].email && data.email) grouped[key].email = data.email;
+    if (!grouped[key].phone && data.phone) grouped[key].phone = data.phone;
+    if (!grouped[key].nom && data.name) grouped[key].nom = data.name;
+  });
+  Object.values(grouped).forEach(ticket => {
+    ticket.sieges = ticket.sieges.sort(sortSeatIds).join(", ");
+    ticket.maxScans = Math.max(ticket.sieges.split(",").filter(Boolean).length, 1);
+    if (!ticket.paid) return; // On charge uniquement les billets payés.
+    validTickets[ticket.ticketId] = ticket;
+    ticketBySeats[normalizeSeats(ticket.sieges)] = ticket;
+  });
+  localStorage.setItem("validTicketsLoadedAt", new Date().toISOString());
+  localStorage.setItem("validTicketsCount", String(Object.keys(validTickets).length));
+  return Object.keys(validTickets).length;
+}
 
-window.onload = async () => {
-  await syncFromFirebase(); // 🔥 récupère Firebase
-  renderHistory();         // affiche la liste
-  updateCounter();         // met le bon nombre
-  startScanner();          // démarre la caméra
-};
+async function fullSync() {
+  statusEl.innerHTML = "🔄 Synchronisation en cours…";
+  syncInfoEl.textContent = "Chargement réservations + historique scans…";
+  try {
+    const [ticketCount] = await Promise.all([ syncReservationsFromFirebase(), syncScansFromFirebase() ]);
+    renderHistory(); updateCounter();
+    const now = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    syncInfoEl.textContent = `✅ Synchronisé à ${now} — ${ticketCount} billet${ticketCount > 1 ? "s" : ""} chargé${ticketCount > 1 ? "s" : ""}.`;
+    statusEl.innerHTML = "<span class='ok'>Prêt à scanner.</span>";
+  } catch (err) {
+    console.error("Erreur synchronisation", err);
+    syncInfoEl.textContent = "⚠️ Synchronisation Firebase impossible. Les scans locaux restent disponibles.";
+    statusEl.innerHTML = "<span class='warn'>Mode local actif.</span>";
+    scanState = getScanState();
+    renderHistory(); updateCounter();
+  }
+}
 
+document.getElementById("syncBtn").onclick = fullSync;
+window.onload = async () => { await fullSync(); startScanner(); };
 </script>
 </body>
 </html>
