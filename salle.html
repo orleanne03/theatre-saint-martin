@@ -2489,6 +2489,92 @@ function openReservationSmsAndAskConfirmation({ phone = "" } = {}) {
   return true;
 }
 
+// ===================================================
+// 🎟️ SMS billet : lien QR + marquage partagé
+// ===================================================
+function getTicketSeatList(user = {}) {
+  const reservationId = user.reservationId || "";
+  const email = normalizeClientValue(user.email || "");
+
+  return Object.entries(seats || {})
+    .filter(([_, data]) => {
+      if (!data) return false;
+      if (reservationId && data.reservationId === reservationId) return true;
+      return email && normalizeClientValue(data.email) === email;
+    })
+    .map(([seatId]) => seatId)
+    .sort((a, b) => String(a).localeCompare(String(b), "fr", { numeric: true }))
+    .join(", ");
+}
+
+function buildTicketQrUrl(user = {}) {
+  const qrData = JSON.stringify({
+    nom: user.name || "",
+    email: user.email || "",
+    tel: user.phone || "",
+    sieges: getTicketSeatList(user)
+  });
+
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
+}
+
+function getTicketSmsMessage(user = {}) {
+  const qrLink = buildTicketQrUrl(user);
+
+  return "Bonjour,\n\n"
+    + "Votre règlement a bien été reçu.\n\n"
+    + "Voici le lien direct vers votre billet / QR code pour la représentation du 10 octobre 2026 à 20h30 à ISLEA :\n"
+    + qrLink + "\n\n"
+    + "Ce billet vous est également envoyé par email avec votre QR code.\n\n"
+    + "Merci de présenter le billet ou le QR code à l'entrée.\n\n"
+    + "Merci pour votre soutien à la Troupe Saint-Martin.";
+}
+
+function buildTicketSmsHref(phone, user = {}) {
+  const cleanPhone = cleanSmsPhone(phone);
+  return `sms:${cleanPhone}?body=${encodeURIComponent(getTicketSmsMessage(user))}`;
+}
+
+function openTicketSmsForUser(user = {}) {
+  const cleanPhone = cleanSmsPhone(user.phone || "");
+  if (!cleanPhone) return false;
+
+  window.location.href = buildTicketSmsHref(cleanPhone, user);
+  return true;
+}
+
+async function setTicketSmsStatus({ reservationId = "", clientName = "", clientEmail = "", sent = false } = {}) {
+  const now = new Date().toISOString();
+
+  const matchingSeats = Object.entries(seats || {}).filter(([_, data]) => {
+    if (!data) return false;
+    if (reservationId && data.reservationId === reservationId) return true;
+    if (clientEmail && normalizeClientValue(data.email) === normalizeClientValue(clientEmail)) return true;
+    return normalizeClientValue(data.name) === normalizeClientValue(clientName);
+  });
+
+  for (const [seatId, data] of matchingSeats) {
+    await set(ref(db, `seats/${seatId}`), {
+      ...data,
+      ticketSmsSentAt: sent ? now : "",
+      ticketSmsSentBy: sent ? "admin" : ""
+    });
+  }
+
+  if (reservationId && publicRequests[reservationId]) {
+    await set(ref(db, `${PUBLIC_REQUESTS_PATH}/${reservationId}`), {
+      ...publicRequests[reservationId],
+      ticketSmsSentAt: sent ? now : "",
+      ticketSmsSentBy: sent ? "admin" : "",
+      updatedAt: now
+    });
+  }
+
+  render();
+  updateTable();
+  updateStatsBar();
+}
+
 function updateTable() {
   const container = document.getElementById("resBody");
   container.innerHTML = "";
@@ -2534,6 +2620,8 @@ function updateTable() {
         phone: data.phone || "",
         smsSentAt: data.smsSentAt || "",
         smsSentBy: data.smsSentBy || "",
+        ticketSmsSentAt: data.ticketSmsSentAt || "",
+        ticketSmsSentBy: data.ticketSmsSentBy || "",
         reservationId: data.reservationId || null,
         publicRequest,
         isPublicRequest: data.source === "public_request",
@@ -2547,6 +2635,11 @@ function updateTable() {
     if (data.smsSentAt && (!grouped[key].smsSentAt || String(data.smsSentAt) > String(grouped[key].smsSentAt))) {
       grouped[key].smsSentAt = data.smsSentAt;
       grouped[key].smsSentBy = data.smsSentBy || grouped[key].smsSentBy || "";
+    }
+
+    if (data.ticketSmsSentAt && (!grouped[key].ticketSmsSentAt || String(data.ticketSmsSentAt) > String(grouped[key].ticketSmsSentAt))) {
+      grouped[key].ticketSmsSentAt = data.ticketSmsSentAt;
+      grouped[key].ticketSmsSentBy = data.ticketSmsSentBy || grouped[key].ticketSmsSentBy || "";
     }
 
     grouped[key].seats.push({
@@ -2568,6 +2661,8 @@ function updateTable() {
       phone: r.phone || "",
       smsSentAt: r.smsSentAt || "",
       smsSentBy: r.smsSentBy || "",
+      ticketSmsSentAt: r.ticketSmsSentAt || "",
+      ticketSmsSentBy: r.ticketSmsSentBy || "",
       reservationId: r.id,
       publicRequest: r,
       isPublicRequest: true,
@@ -2692,14 +2787,52 @@ function updateTable() {
           ${admin ? "" : "disabled"}
           style="transform:scale(1.25);cursor:pointer;"
         >
-        <span>${info.smsSentAt ? "✅ SMS envoyé" : "❌ SMS non envoyé"}</span>
+        <span>${info.smsSentAt ? "✅ SMS réservation envoyé" : "❌ SMS réservation non envoyé"}</span>
         ${info.smsSentAt ? `<small style="font-weight:500;color:#555;">${new Date(info.smsSentAt).toLocaleString("fr-FR")}</small>` : ""}
       </label>`;
+
+    const ticketSmsUser = {
+      reservationId,
+      name,
+      email: info.email || "",
+      phone: info.phone || ""
+    };
+
+    const ticketSmsLine = info.allPaid
+      ? (info.phone ? `
+        <p style="margin:6px 0;">
+          <a
+            class="ticket-sms-link"
+            href="${escapeHTML(buildTicketSmsHref(info.phone || "", ticketSmsUser))}"
+            data-name="${escapeHTML(name)}"
+            data-email="${escapeHTML(info.email || "")}" 
+            data-phone="${escapeHTML(info.phone || "")}" 
+            data-reservation-id="${escapeHTML(reservationId || "")}" 
+            style="color:#6a1b9a;font-weight:700;text-decoration:none;">
+            📲 Envoyer le billet par SMS
+          </a>
+        </p>
+        <label style="display:flex;align-items:center;gap:8px;margin:6px 0;font-weight:700;color:${info.ticketSmsSentAt ? "#2e7d32" : "#c62828"};">
+          <input
+            type="checkbox"
+            class="ticket-sms-sent-toggle"
+            data-name="${escapeHTML(name)}"
+            data-email="${escapeHTML(info.email || "")}" 
+            data-reservation-id="${escapeHTML(reservationId || "")}" 
+            ${info.ticketSmsSentAt ? "checked" : ""}
+            ${admin ? "" : "disabled"}
+            style="transform:scale(1.25);cursor:pointer;"
+          >
+          <span>${info.ticketSmsSentAt ? "✅ SMS billet envoyé" : "❌ SMS billet non envoyé"}</span>
+          ${info.ticketSmsSentAt ? `<small style="font-weight:500;color:#555;">${new Date(info.ticketSmsSentAt).toLocaleString("fr-FR")}</small>` : ""}
+        </label>` : `<p style="margin:6px 0;color:#777;font-weight:600;">⚠️ SMS billet impossible : aucun téléphone.</p>`)
+      : `<p style="margin:6px 0;color:#777;font-weight:600;">🎟️ SMS billet : disponible après paiement.</p>`;
 
     content.innerHTML = `
   <p><strong>Email :</strong> ${escapeHTML(info.email || "—")}</p>
   <p><strong>Téléphone :</strong> ${smsPhoneLine}</p>
   ${smsStatusLine}
+  ${ticketSmsLine}
 
   ${!isPendingPublic ? `
 <button
@@ -2884,13 +3017,16 @@ function updateTable() {
       const clientSeat = matchingSeats.map(([_, s]) => s).find(Boolean);
       if (isPaid && clientSeat?.email) {
         try {
-          const html = generateBilletHTML({
+          const userForTicket = {
+            reservationId,
             name: clientSeat.name,
             email: clientSeat.email,
             phone: clientSeat.phone || "",
             paid: true,
             amount: clientSeat.amount || 0
-          });
+          };
+
+          const html = generateBilletHTML(userForTicket);
 
           await sendViaBrevo(
             clientSeat.email,
@@ -2898,7 +3034,10 @@ function updateTable() {
             html
           );
 
-          alert(`✅ Paiement validé. Billet envoyé à ${clientSeat.email}.`);
+          const smsOpened = openTicketSmsForUser(userForTicket);
+          if (!smsOpened) {
+            alert(`✅ Paiement validé. Billet envoyé par email à ${clientSeat.email}. Aucun téléphone disponible pour le SMS.`);
+          }
         } catch (err) {
           console.error("Erreur d’envoi du billet :", err);
           alert("✅ Paiement validé, mais le billet n’a pas pu être envoyé. Regarde la console.");
@@ -2913,6 +3052,13 @@ function updateTable() {
 // ===================================================
 document.addEventListener("click", (e) => {
   const link = e.target.closest(".sms-reservation-link");
+  if (!link) return;
+
+  e.stopPropagation();
+});
+
+document.addEventListener("click", (e) => {
+  const link = e.target.closest(".ticket-sms-link");
   if (!link) return;
 
   e.stopPropagation();
@@ -2941,6 +3087,32 @@ document.addEventListener("change", async (e) => {
     console.error("❌ Erreur mise à jour statut SMS", err);
     checkbox.checked = !sent;
     alert("❌ Impossible de modifier le statut SMS.");
+  }
+});
+
+document.addEventListener("change", async (e) => {
+  const checkbox = e.target.closest(".ticket-sms-sent-toggle");
+  if (!checkbox) return;
+
+  e.stopPropagation();
+
+  if (!admin) {
+    checkbox.checked = !checkbox.checked;
+    alert("❌ Mode admin requis pour modifier le statut SMS billet.");
+    return;
+  }
+
+  const reservationId = checkbox.dataset.reservationId || "";
+  const clientName = checkbox.dataset.name || "";
+  const clientEmail = checkbox.dataset.email || "";
+  const sent = checkbox.checked;
+
+  try {
+    await setTicketSmsStatus({ reservationId, clientName, clientEmail, sent });
+  } catch (err) {
+    console.error("❌ Erreur mise à jour statut SMS billet", err);
+    checkbox.checked = !sent;
+    alert("❌ Impossible de modifier le statut SMS billet.");
   }
 });
 
