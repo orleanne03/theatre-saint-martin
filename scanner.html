@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
     <button id="cameraModeBtn" class="green" type="button">📷 Mode caméra</button>
     <button id="manualScanBtn" class="blue" type="button">✅ Valider le code</button>
   </div>
-  <p class="small">Avec la douchette, clique dans le champ puis scanne. Si elle ajoute Entrée automatiquement, la validation se fait toute seule.</p>
+  <p class="small">Avec la douchette, clique dans le champ puis scanne. Le nouveau QR court R:identifiant est accepté et sera plus rapide.</p>
 </div>
 
 
@@ -267,19 +267,56 @@ async function stopScanner(){
 }
 
 function parseQrText(text) {
+  let rawText = String(text || "").trim();
+
+  // Nettoyage des retours envoyés par la douchette.
+  rawText = rawText.replace(/[\r\n\t]/g, "").trim();
+
   let data = null;
-  try { data = JSON.parse(text); } catch(e) {}
-  const reservationId = data?.reservationId || data?.id || data?.r || "";
-  const sieges = data?.sieges || data?.seats || data?.places || "";
+  let reservationId = "";
+  let sieges = "";
+
+  // Nouveau QR court ultra rapide :
+  // Exemple : R:-NvAbc123xyz
+  // La douchette tape seulement cet identifiant, puis le scanner retrouve tout localement.
+  if (/^R:/i.test(rawText)) {
+    reservationId = rawText.slice(2).trim();
+  }
+
+  // QR qui serait une URL de billet :
+  // Exemple : https://.../b.html?r=-NvAbc123xyz
+  if (!reservationId && /^https?:\/\//i.test(rawText)) {
+    try {
+      const url = new URL(rawText);
+      reservationId = (url.searchParams.get("r") || url.searchParams.get("reservationId") || "").trim();
+    } catch(e) {}
+  }
+
+  // Ancien QR long JSON : on le garde compatible pour ne pas casser les billets déjà créés.
+  if (!reservationId) {
+    try {
+      data = JSON.parse(rawText);
+      reservationId = data?.reservationId || data?.id || data?.r || "";
+      sieges = data?.sieges || data?.seats || data?.places || "";
+    } catch(e) {}
+  }
+
+  // Ancien fallback : texte brut.
+  if (!reservationId && !sieges) {
+    reservationId = rawText;
+  }
+
   const normalizedSeatKey = normalizeSeats(sieges);
   const ticketFromReservation = reservationId ? validTickets[reservationId] : null;
   const ticketFromSeats = normalizedSeatKey ? ticketBySeats[normalizedSeatKey] : null;
   const matchedTicket = ticketFromReservation || ticketFromSeats || null;
-  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || text;
+
+  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || rawText;
   const resolvedSeats = matchedTicket?.sieges || sieges || "";
   const seatCount = String(resolvedSeats || "").split(",").map(s => s.trim()).filter(Boolean).length;
+
   return {
-    raw: text,
+    raw: rawText,
     data,
     matchedTicket,
     ticketId,
@@ -395,8 +432,30 @@ if (handScannerInput) {
   handScannerInput.addEventListener("input", () => {
     clearTimeout(handScannerTimer);
     handScannerTimer = setTimeout(() => {
-      if (handScannerInput.value.trim().length > 20) processHandScannerValue();
-    }, 350);
+      const value = handScannerInput.value.trim();
+
+      // Nouveau QR court : validation plus rapide.
+      // Exemple : R:-NvAbc123xyz
+      if (/^R:.{4,}$/i.test(value)) {
+        processHandScannerValue();
+        return;
+      }
+
+      // Ancien QR JSON : on attend d’avoir le texte complet.
+      if (value.startsWith("{") && value.endsWith("}")) {
+        processHandScannerValue();
+        return;
+      }
+
+      // URL de billet éventuelle.
+      if (/^https?:\/\/.+[?&](r|reservationId)=/i.test(value)) {
+        processHandScannerValue();
+        return;
+      }
+
+      // Ancien comportement conservé.
+      if (value.length > 20) processHandScannerValue();
+    }, 180);
   });
 }
 
