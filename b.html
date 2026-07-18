@@ -56,6 +56,12 @@
       border-radius: 14px;
       border: 1px solid #ddd;
     }
+    .qr-code-text {
+      margin: 6px 0 0;
+      color: #666;
+      font-size: .78rem;
+      word-break: break-all;
+    }
     .status-paid {
       color: #2e7d32;
       font-weight: 800;
@@ -102,13 +108,10 @@
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyXXXX_TON_API_KEY",
+      apiKey: "AIzaSyBzHCn3c-7oz9XyEqhQilz3bGbVJErMULw",
       authDomain: "theatre-saint-martin.firebaseapp.com",
       databaseURL: "https://theatre-saint-martin-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "theatre-saint-martin",
-      storageBucket: "theatre-saint-martin.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcd1234efgh"
+      projectId: "theatre-saint-martin"
     };
 
     const SHOW_TITLE = "Je préfère qu'on reste amies";
@@ -165,21 +168,19 @@
         const seatIds = entries.map(([seatId]) => seatId);
         const allPaid = entries.every(([_, data]) => data && data.paid);
         const amount = Number(first.amount || 0);
-        const qrData = JSON.stringify({
-          reservationId,
-          nom: first.name || "",
-          email: first.email || "",
-          sieges: seatIds.join(", "),
-          spectacle: SHOW_TITLE,
-          date: SHOW_DATE,
-          lieu: SHOW_PLACE,
-          paye: allPaid
-        });
+
+        // QR COURT POUR DOUCHETTE RAPIDE.
+        // Ancien format : un gros JSON avec nom, email, sièges, date, lieu...
+        // Nouveau format : uniquement l'identifiant de réservation.
+        // Le scanner retrouve ensuite toutes les infos grâce à la synchronisation Firebase.
+        const qrData = `R:${reservationId}`;
 
         root.innerHTML = `
           <h1>🎟️ Billet</h1>
           <p class="subtitle">Théâtre Saint-Martin</p>
+
           ${isTestTicket ? `<p style="display:inline-block;background:#bf360c;color:white;border-radius:999px;padding:4px 10px;font-weight:900;margin:4px 0 10px;">🧪 BILLET TEST</p>` : ""}
+
           <div class="name">${escapeHTML(first.name || "Réservation")}</div>
 
           <div class="info">
@@ -193,6 +194,7 @@
 
           <div id="qrBox">
             <canvas id="qrCanvas"></canvas>
+            <p class="qr-code-text">Code billet : ${escapeHTML(qrData)}</p>
           </div>
 
           <p class="small">Présentez ce QR code à l’entrée, directement sur téléphone ou imprimé.</p>
