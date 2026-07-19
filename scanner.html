@@ -428,19 +428,54 @@ async function stopScanner(){
 }
 
 function parseQrText(text) {
+  let rawText = String(text || "").trim();
+
+  // Nettoyage des caractères envoyés par la douchette.
+  rawText = rawText.replace(/[\r\n\t]/g, "").trim();
+
   let data = null;
-  try { data = JSON.parse(text); } catch(e) {}
-  const reservationId = data?.reservationId || data?.id || data?.r || "";
-  const sieges = data?.sieges || data?.seats || data?.places || "";
+  let reservationId = "";
+  let sieges = "";
+
+  // Nouveau QR court :
+  // Exemple : R:test_4_b6e1a634-4839-45f2-809d-70bb05136cac
+  // On enlève "R:" avant de chercher dans Firebase.
+  if (/^R:/i.test(rawText)) {
+    reservationId = rawText.slice(2).trim();
+  }
+
+  // Lien éventuel vers b.html?r=...
+  if (!reservationId && /^https?:\/\//i.test(rawText)) {
+    try {
+      const url = new URL(rawText);
+      reservationId = (url.searchParams.get("r") || url.searchParams.get("reservationId") || "").trim();
+    } catch(e) {}
+  }
+
+  // Ancien QR long JSON : compatibilité gardée.
+  if (!reservationId) {
+    try {
+      data = JSON.parse(rawText);
+      reservationId = data?.reservationId || data?.id || data?.r || "";
+      sieges = data?.sieges || data?.seats || data?.places || "";
+    } catch(e) {}
+  }
+
+  // Dernier recours : ancien identifiant brut sans R:
+  if (!reservationId && !sieges) {
+    reservationId = rawText;
+  }
+
   const normalizedSeatKey = normalizeSeats(sieges);
   const ticketFromReservation = reservationId ? validTickets[reservationId] : null;
   const ticketFromSeats = normalizedSeatKey ? ticketBySeats[normalizedSeatKey] : null;
   const matchedTicket = ticketFromReservation || ticketFromSeats || null;
-  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || text;
+  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || rawText;
   const resolvedSeats = matchedTicket?.sieges || sieges || "";
   const seatCount = String(resolvedSeats || "").split(",").map(s => s.trim()).filter(Boolean).length;
+
   return {
-    raw: text,
+    raw: rawText,
     data,
     matchedTicket,
     ticketId,
@@ -560,11 +595,30 @@ if (handScannerInput) {
   handScannerInput.addEventListener("input", () => {
     clearTimeout(handScannerTimer);
     handScannerTimer = setTimeout(() => {
-      if (handScannerInput.value.trim().length > 20) processHandScannerValue();
-    }, 350);
+      const value = handScannerInput.value.trim();
+
+      // QR court R:... : traitement plus rapide.
+      if (/^R:.{4,}$/i.test(value)) {
+        processHandScannerValue();
+        return;
+      }
+
+      // Ancien QR JSON : on attend d’avoir probablement la fin.
+      if (value.startsWith("{") && value.endsWith("}")) {
+        processHandScannerValue();
+        return;
+      }
+
+      // URL éventuelle.
+      if (/^https?:\/\/.+[?&](r|reservationId)=/i.test(value)) {
+        processHandScannerValue();
+        return;
+      }
+
+      if (value.length > 20) processHandScannerValue();
+    }, 180);
   });
 }
-
 if (handScannerModeBtn) handScannerModeBtn.onclick = activateHandScannerMode;
 if (cameraModeBtn) cameraModeBtn.onclick = activateCameraMode;
 if (manualScanBtn) manualScanBtn.onclick = processHandScannerValue;
