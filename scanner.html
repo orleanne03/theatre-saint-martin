@@ -228,6 +228,22 @@ th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}
   .handscanner-box{padding:9px}
   .big-result{font-size:1.05rem}
 }
+
+/* 🎟️ Billet déjà utilisé : bloc rose pâle */
+.compact-result.used-ticket {
+  background: #fdecef !important;
+  border: 2px solid #f8bbd0;
+}
+
+.compact-result.used-ticket #details {
+  background: #fff7fa !important;
+  border: 1px solid #f5c6d6 !important;
+}
+
+.compact-result.used-ticket .big-result {
+  background: #fce4ec !important;
+}
+
 </style>
 </head>
 
@@ -495,6 +511,13 @@ async function persistScan(ticketId) {
   catch (err) { console.warn("Scan non sauvegardé immédiatement", err); syncInfoEl.textContent = "⚠️ Scan gardé sur ce téléphone. Resynchronise dès que le réseau revient."; }
 }
 
+
+function setUsedTicketVisual(isUsed) {
+  const box = document.querySelector(".compact-result");
+  if (!box) return;
+  box.classList.toggle("used-ticket", !!isUsed);
+}
+
 async function onScanSuccess(text, options = {}){
   const restartCameraAfterScan = options.restartCamera !== false;
   await stopScanner();
@@ -503,6 +526,7 @@ async function onScanSuccess(text, options = {}){
   if (!ticket.isKnownTicket) {
     beep("err"); vibrate("err");
     statusEl.innerHTML = "<span class='err'>⛔ Billet non reconnu</span>";
+    setUsedTicketVisual(false);
     detailsEl.style.display = "block";
     detailsEl.innerHTML = `<div class="big-result">Ce QR code ne correspond à aucune réservation chargée.</div><strong>Données lues :</strong><br>Nom : ${escapeHTML(ticket.nom)}<br>Sièges : ${escapeHTML(ticket.sieges || "—")}`;
     if (restartCameraAfterScan) setTimeout(startScanner, 900); else setTimeout(focusHandScannerInput, 120);
@@ -511,6 +535,7 @@ async function onScanSuccess(text, options = {}){
   if (Number(current.count || 0) >= ticket.maxScans) {
     beep("err"); vibrate("err");
     statusEl.innerHTML = "<span class='err'>⛔ Billet déjà utilisé</span>";
+    setUsedTicketVisual(true);
     detailsEl.style.display = "block";
     detailsEl.innerHTML = `<div class="big-result">Déjà scanné ${current.count}/${ticket.maxScans}</div><strong>Réservation :</strong><br><b>${escapeHTML(current.nom || ticket.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || ticket.sieges)}`;
     if (restartCameraAfterScan) setTimeout(startScanner, 900); else setTimeout(focusHandScannerInput, 120);
@@ -531,6 +556,7 @@ async function onScanSuccess(text, options = {}){
   renderHistory(); updateCounter();
   beep("ok"); vibrate("ok");
   statusEl.innerHTML = `<span class='ok'>✅ Scan ${current.count}/${ticket.maxScans}</span>`;
+  setUsedTicketVisual(false);
   detailsEl.style.display = "block";
   detailsEl.innerHTML = `<div class="big-result ok">Entrée validée</div><strong>Réservation au nom de :</strong><br><b>${escapeHTML(current.nom)}</b><hr><strong>🎟️ Sièges :</strong> ${escapeHTML(current.sieges || "—")}`;
   persistScan(ticket.ticketId);
@@ -640,6 +666,7 @@ document.getElementById("resetScanBtn").onclick = async () => {
   scanState = {};
   renderHistory(); updateCounter();
   statusEl.innerHTML = "<span class='ok'>✅ Historique réinitialisé.</span>";
+  setUsedTicketVisual(false);
 };
 
 async function syncScansFromFirebase() {
@@ -729,6 +756,7 @@ async function fullSync() {
     const now = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     syncInfoEl.textContent = `✅ Synchronisé à ${now} — ${ticketCount} billet${ticketCount > 1 ? "s" : ""} chargé${ticketCount > 1 ? "s" : ""}.`;
     statusEl.innerHTML = "<span class='ok'>Prêt à scanner.</span>";
+    setUsedTicketVisual(false);
   } catch (err) {
     console.error("Erreur synchronisation", err);
     syncInfoEl.textContent = "⚠️ Synchronisation Firebase impossible. Les scans locaux restent disponibles.";
