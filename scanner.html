@@ -8,19 +8,96 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body{font-family:system-ui;margin:0;padding:16px;text-align:center;background:linear-gradient(180deg,#f9f9f9,#e3f2fd)}
-h1{color:#0d47a1}
-#reader{width:320px;margin:12px auto;border-radius:10px;overflow:hidden}
-.panel{max-width:500px;margin:16px auto;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.ok{color:#2e7d32;font-weight:800}.err{color:#d32f2f;font-weight:800}.warn{color:#ef6c00;font-weight:800}
-button{padding:10px 14px;border-radius:8px;border:none;color:#fff;cursor:pointer;margin:6px;font-weight:700}
-.violet{background:#8e24aa}.green{background:#2e7d32}.blue{background:#1976d2}.grey{background:#455a64}
-#counter,#syncInfo{font-weight:700;color:#0d47a1}#syncInfo{font-size:.95rem;margin-top:8px}
-#details{margin-top:10px;text-align:left;background:#f9f9f9;padding:10px;border-radius:8px;border:1px solid #ddd}
-.accordion{background:#1976d2;color:white;padding:10px;border-radius:8px;width:100%;max-width:500px}
-.panel-acc{display:none;background:#fff;border-radius:0 0 10px 10px;max-width:500px;margin:0 auto 16px;overflow:auto}
-table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
+body{
+  font-family:system-ui;
+  margin:0;
+  padding:8px;
+  text-align:center;
+  background:linear-gradient(180deg,#f9f9f9,#e3f2fd);
+  color:#111;
+}
+h1{
+  color:#0d47a1;
+  font-size:1.55rem;
+  line-height:1.15;
+  margin:8px 0 4px;
+}
+body > p{
+  margin:4px 0 8px;
+  font-size:.95rem;
+  color:#555;
+}
+#reader{
+  width:320px;
+  margin:10px auto;
+  border-radius:10px;
+  overflow:hidden;
+  display:none;
+}
+.panel{
+  max-width:500px;
+  margin:8px auto;
+  background:#fff;
+  padding:12px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.ok{color:#2e7d32;font-weight:900}
+.err{color:#d32f2f;font-weight:900}
+.warn{color:#ef6c00;font-weight:900}
+button{
+  padding:10px 12px;
+  border-radius:9px;
+  border:none;
+  color:#fff;
+  cursor:pointer;
+  margin:4px;
+  font-weight:800;
+  font-size:.95rem;
+}
+.violet{background:#8e24aa}
+.green{background:#2e7d32}
+.blue{background:#1976d2}
+.grey{background:#455a64}
+.orange{background:#ef6c00}
 
+#counter,#syncInfo{
+  font-weight:800;
+  color:#0d47a1;
+}
+#syncInfo{
+  font-size:.9rem;
+  margin-top:5px;
+}
+#details{
+  margin-top:8px;
+  text-align:left;
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:.98rem;
+}
+.accordion{
+  background:#1976d2;
+  color:white;
+  padding:10px;
+  border-radius:9px;
+  width:100%;
+  max-width:500px;
+  margin-top:8px;
+}
+.panel-acc{
+  display:none;
+  background:#fff;
+  border-radius:0 0 10px 10px;
+  max-width:500px;
+  margin:0 auto 16px;
+  overflow:auto;
+}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}
+.trash{cursor:pointer;color:#d32f2f;font-weight:bold}
 .history-complete {
   background: #e8f5e9 !important;
   color: #1b5e20;
@@ -33,28 +110,43 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
   font-weight: 950;
   white-space: nowrap;
 }
-.big-result{font-size:1.2rem;padding:12px;border-radius:10px;margin:10px 0;background:#f5f5f5}.small{font-size:.9rem;color:#666;line-height:1.35}
+.big-result{
+  font-size:1.15rem;
+  padding:10px;
+  border-radius:10px;
+  margin:6px 0 8px;
+  background:#f5f5f5;
+}
+.small{
+  font-size:.88rem;
+  color:#666;
+  line-height:1.3;
+}
 
 .handscanner-box{
-  margin:12px auto 4px;
-  padding:12px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  margin:6px auto 8px;
+  padding:10px;
   max-width:500px;
   background:#fff;
-  border:2px dashed #90caf9;
-  border-radius:12px;
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  border:2px solid #90caf9;
+  border-radius:14px;
+  box-shadow:0 3px 14px rgba(0,0,0,.14);
 }
 .handscanner-title{
-  font-weight:900;
+  font-weight:950;
   color:#0d47a1;
-  margin-bottom:8px;
+  margin-bottom:6px;
+  font-size:1.15rem;
 }
 #handScannerInput{
   width:100%;
   padding:13px 12px;
-  border:1px solid #90caf9;
+  border:2px solid #90caf9;
   border-radius:10px;
-  font-size:1rem;
+  font-size:1.05rem;
   box-sizing:border-box;
   outline:none;
 }
@@ -63,23 +155,87 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
   box-shadow:0 0 0 3px rgba(25,118,210,.18);
 }
 .handscanner-actions{
-  margin-top:8px;
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  flex-wrap:wrap;
+  margin-top:7px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
 }
-.orange{background:#ef6c00}
+.handscanner-actions button{
+  width:100%;
+  margin:0;
+}
+#manualScanBtn{
+  grid-column:1 / -1;
+}
+.handscanner-box .small{
+  margin:7px 0 0;
+  font-size:.82rem;
+}
 
-@media(max-width:480px){body{padding:10px}#reader{width:100%;max-width:330px}.panel{padding:12px}th,td{font-size:.9rem}}
+.compact-result{
+  max-width:500px;
+  margin:8px auto;
+  background:#fff;
+  padding:12px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.compact-result #status{
+  font-size:1.15rem;
+  margin:4px 0 8px;
+}
+.compact-result #counter{
+  margin:4px 0;
+}
+.compact-result #syncInfo{
+  margin:4px 0 8px;
+}
+.compact-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  max-width:500px;
+  margin:8px auto;
+}
+.compact-actions button{
+  width:100%;
+  margin:0;
+}
+.sync-line{
+  max-width:500px;
+  margin:8px auto;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+}
+.sync-line button{
+  width:100%;
+  margin:0;
+}
+.scan-note{
+  display:none;
+}
+.camera-only{
+  display:none;
+}
+
+@media(max-width:480px){
+  body{padding:6px}
+  h1{font-size:1.35rem}
+  #reader{width:100%;max-width:330px}
+  .panel{padding:10px}
+  th,td{font-size:.9rem}
+  .handscanner-box{padding:9px}
+  .big-result{font-size:1.05rem}
+}
 </style>
 </head>
 
 <body>
-<h1>🎭 Théâtre Saint Martin — Scanner</h1>
-<p>Alignez le QR dans le carré pour valider un billet.</p>
+<h1>🎭 Scanner billets</h1>
+<p>Mode douchette rapide — résultat juste dessous.</p>
 
-<div id="reader"></div>
+<div id="reader" class="camera-only"></div>
 
 <div class="handscanner-box">
   <div class="handscanner-title">🔫 Douchette Tera 8100</div>
@@ -89,22 +245,27 @@ table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px so
     <button id="cameraModeBtn" class="green" type="button">📷 Mode caméra</button>
     <button id="manualScanBtn" class="blue" type="button">✅ Valider le code</button>
   </div>
-  <p class="small">Avec la douchette, clique dans le champ puis scanne. Le nouveau QR court R:identifiant est accepté et sera plus rapide.</p>
+  <p class="small">Avec la douchette, clique dans le champ puis scanne. Si elle ajoute Entrée automatiquement, la validation se fait toute seule.</p>
 </div>
 
 
-<div class="panel">
+<div class="compact-result">
   <p id="status">Chargement des données…</p>
   <p id="counter">Billets scannés : 0</p>
   <p id="syncInfo">Synchronisation en attente…</p>
   <div id="details" style="display:none;"></div>
+</div>
 
+<div class="sync-line">
   <button id="syncBtn" class="blue">🔄 Synchroniser avant ouverture</button>
+</div>
+
+<div class="compact-actions">
   <button id="resetScanBtn" class="violet">♻️ Réinitialiser</button>
   <button id="gotoHome" class="grey">🏠 Tableau de bord</button>
-
-  <p class="small">Conseil : avant l’arrivée du public, appuie sur <b>Synchroniser</b>. Ensuite les scans sont validés en local, donc beaucoup plus vite.</p>
 </div>
+
+<p class="small scan-note">Conseil : avant l’arrivée du public, appuie sur <b>Synchroniser</b>. Ensuite les scans sont validés en local, donc beaucoup plus vite.</p>
 
 <button class="accordion">📜 Historique des scans</button>
 <div class="panel-acc" id="historyPanel">
@@ -267,56 +428,19 @@ async function stopScanner(){
 }
 
 function parseQrText(text) {
-  let rawText = String(text || "").trim();
-
-  // Nettoyage des retours envoyés par la douchette.
-  rawText = rawText.replace(/[\r\n\t]/g, "").trim();
-
   let data = null;
-  let reservationId = "";
-  let sieges = "";
-
-  // Nouveau QR court ultra rapide :
-  // Exemple : R:-NvAbc123xyz
-  // La douchette tape seulement cet identifiant, puis le scanner retrouve tout localement.
-  if (/^R:/i.test(rawText)) {
-    reservationId = rawText.slice(2).trim();
-  }
-
-  // QR qui serait une URL de billet :
-  // Exemple : https://.../b.html?r=-NvAbc123xyz
-  if (!reservationId && /^https?:\/\//i.test(rawText)) {
-    try {
-      const url = new URL(rawText);
-      reservationId = (url.searchParams.get("r") || url.searchParams.get("reservationId") || "").trim();
-    } catch(e) {}
-  }
-
-  // Ancien QR long JSON : on le garde compatible pour ne pas casser les billets déjà créés.
-  if (!reservationId) {
-    try {
-      data = JSON.parse(rawText);
-      reservationId = data?.reservationId || data?.id || data?.r || "";
-      sieges = data?.sieges || data?.seats || data?.places || "";
-    } catch(e) {}
-  }
-
-  // Ancien fallback : texte brut.
-  if (!reservationId && !sieges) {
-    reservationId = rawText;
-  }
-
+  try { data = JSON.parse(text); } catch(e) {}
+  const reservationId = data?.reservationId || data?.id || data?.r || "";
+  const sieges = data?.sieges || data?.seats || data?.places || "";
   const normalizedSeatKey = normalizeSeats(sieges);
   const ticketFromReservation = reservationId ? validTickets[reservationId] : null;
   const ticketFromSeats = normalizedSeatKey ? ticketBySeats[normalizedSeatKey] : null;
   const matchedTicket = ticketFromReservation || ticketFromSeats || null;
-
-  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || rawText;
+  const ticketId = matchedTicket?.ticketId || reservationId || normalizedSeatKey || text;
   const resolvedSeats = matchedTicket?.sieges || sieges || "";
   const seatCount = String(resolvedSeats || "").split(",").map(s => s.trim()).filter(Boolean).length;
-
   return {
-    raw: rawText,
+    raw: text,
     data,
     matchedTicket,
     ticketId,
@@ -392,6 +516,8 @@ function focusHandScannerInput() {
 async function activateHandScannerMode() {
   handScannerMode = true;
   await stopScanner();
+  const reader = document.getElementById("reader");
+  if (reader) reader.style.display = "none";
   statusEl.innerHTML = "<span class='ok'>🔫 Mode douchette actif. Scanne dans le champ.</span>";
   syncInfoEl.textContent = "Douchette Tera 8100 : prête à recevoir un QR code.";
   focusHandScannerInput();
@@ -399,6 +525,8 @@ async function activateHandScannerMode() {
 
 async function activateCameraMode() {
   handScannerMode = false;
+  const reader = document.getElementById("reader");
+  if (reader) reader.style.display = "block";
   statusEl.innerHTML = "<span class='ok'>📷 Mode caméra actif.</span>";
   await startScanner();
 }
@@ -432,30 +560,8 @@ if (handScannerInput) {
   handScannerInput.addEventListener("input", () => {
     clearTimeout(handScannerTimer);
     handScannerTimer = setTimeout(() => {
-      const value = handScannerInput.value.trim();
-
-      // Nouveau QR court : validation plus rapide.
-      // Exemple : R:-NvAbc123xyz
-      if (/^R:.{4,}$/i.test(value)) {
-        processHandScannerValue();
-        return;
-      }
-
-      // Ancien QR JSON : on attend d’avoir le texte complet.
-      if (value.startsWith("{") && value.endsWith("}")) {
-        processHandScannerValue();
-        return;
-      }
-
-      // URL de billet éventuelle.
-      if (/^https?:\/\/.+[?&](r|reservationId)=/i.test(value)) {
-        processHandScannerValue();
-        return;
-      }
-
-      // Ancien comportement conservé.
-      if (value.length > 20) processHandScannerValue();
-    }, 180);
+      if (handScannerInput.value.trim().length > 20) processHandScannerValue();
+    }, 350);
   });
 }
 
@@ -579,7 +685,7 @@ async function fullSync() {
 }
 
 document.getElementById("syncBtn").onclick = fullSync;
-window.onload = async () => { await fullSync(); startScanner(); };
+window.onload = async () => { await fullSync(); activateHandScannerMode(); };
 </script>
 </body>
 </html>
